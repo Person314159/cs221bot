@@ -625,6 +625,14 @@ class Main(commands.Cog):
             embed.set_thumbnail(url = image[0])
             await ctx.send(embed = embed)
 
+    async def userstats(self, ctx):
+        """
+        `!userstats` __`Check user profile and stats`__
+
+        **Usage:** !userstats <mention user>
+
+        """
+
     # add more commands here with the same syntax
     # also just look up the docs lol i can't do everything
 
