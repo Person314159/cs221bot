@@ -625,13 +625,60 @@ class Main(commands.Cog):
             embed.set_thumbnail(url = image[0])
             await ctx.send(embed = embed)
 
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def userstats(self, ctx):
         """
         `!userstats` __`Check user profile and stats`__
 
-        **Usage:** !userstats <mention user>
+        **Usage:** !userstats <USER ID>
 
         """
+        user_string = ctx.message.content.split(' ') # command has two arguments, 
+                                                     # !userstats, and the user mention
+        user_string = user_string[1]     # get the second arg
+
+        user = self.bot.get_user(int(user_string))
+        member = ctx.message.guild.get_member(int(user_string))
+
+        # we use both user and member objects, since some stats can only be obtained
+        # from either user or member object     
+
+        list_of_roles = []
+        most_active_channel = 0
+        most_active_channel_name = ''
+        cum_message_count = 0
+        yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
+
+        list_of_text_channels = ctx.channel.guild.text_channels
+
+        for channel in list_of_text_channels:
+            counter = 0
+            async for message in channel.history(after=yesterday):
+                if message.author == user:
+                    counter += 1
+                    cum_message_count += 1
+            if counter > most_active_channel:
+                most_active_channel = counter
+                most_active_channel_name = channel.name
+
+        for role in member.roles:
+            if role.name == '@everyone':
+                continue
+            list_of_roles.append(role.name)
+
+        result = f'Report for user `{user.name}#{user.discriminator}` (all time in UTC):'
+        result += f"""```
+Joined server: {str(member.joined_at)[:19]}
+Account created: {str(member.created_at)[:19]}
+Roles: {list_of_roles}
+
+-- Most active text channel --  
+Last 24hr: #{most_active_channel_name} ({most_active_channel} messages)
+
+-- Total Messages sent -- 
+Last 24hr: {cum_message_count}```"""
+        await ctx.send(result)
 
     # add more commands here with the same syntax
     # also just look up the docs lol i can't do everything
