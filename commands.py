@@ -696,41 +696,42 @@ class Main(commands.Cog):
         # we use both user and member objects, since some stats can only be obtained
         # from either user or member object     
 
-        list_of_roles = []
-        most_active_channel = 0
-        most_active_channel_name = ''
-        cum_message_count = 0
-        yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
+        async with ctx.channel.typing():
+            list_of_roles = []
+            most_active_channel = 0
+            most_active_channel_name = ''
+            cum_message_count = 0
+            yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
 
-        list_of_text_channels = ctx.channel.guild.text_channels
+            list_of_text_channels = ctx.channel.guild.text_channels
 
-        for channel in list_of_text_channels:
-            counter = 0
-            async for message in channel.history(after=yesterday):
-                if message.author == user:
-                    counter += 1
-                    cum_message_count += 1
-            if counter > most_active_channel:
-                most_active_channel = counter
-                most_active_channel_name = channel.name
+            for channel in list_of_text_channels:
+                counter = 0
+                async for message in channel.history(after=yesterday):
+                    if message.author == user:
+                        counter += 1
+                        cum_message_count += 1
+                if counter > most_active_channel:
+                    most_active_channel = counter
+                    most_active_channel_name = channel.name
 
-        for role in member.roles:
-            if role.name == '@everyone':
-                continue
-            list_of_roles.append(role.name)
+            for role in member.roles:
+                if role.name == '@everyone':
+                    continue
+                list_of_roles.append(role.name)
 
-        result = f'Report for user `{user.name}#{user.discriminator}` (all time in UTC):'
-        result += f"""```
-Joined server: {str(member.joined_at)[:19]}
-Account created: {str(member.created_at)[:19]}
-Roles: {list_of_roles}
+            result = f'Report for user `{user.name}#{user.discriminator}` (all time in UTC):'
+            result += f"""```
+    Joined server: {str(member.joined_at)[:19]}
+    Account created: {str(member.created_at)[:19]}
+    Roles: {list_of_roles}
 
--- Most active text channel --  
-Last 24hr: #{most_active_channel_name} ({most_active_channel} messages)
+    -- Most active text channel --  
+    Last 24hr: #{most_active_channel_name} ({most_active_channel} messages)
 
--- Total Messages sent -- 
-Last 24hr: {cum_message_count}```"""
-        await ctx.send(result)
+    -- Total Messages sent -- 
+    Last 24hr: {cum_message_count}```"""
+            await ctx.send(result)
 
     # add more commands here with the same syntax
     # also just look up the docs lol i can't do everything
