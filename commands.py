@@ -591,7 +591,7 @@ class Main(commands.Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def userstats(self, ctx, userid):
+    async def userstats(self, ctx, *userid):
         """
         `!userstats` __`Check user profile and stats`__
 
@@ -600,12 +600,15 @@ class Main(commands.Cog):
         **Examples:** `!userstats 226878658013298690` [embed]
         """
 
-        try:
-            userid = int(userid)
-        except ValueError:
-            return await ctx.send("Please enter a user id", delete_after = 5)
+        if not userid:
+            user = ctx.author
+        else:
+            try:
+                userid = int(userid)
+            except ValueError:
+                return await ctx.send("Please enter a user id", delete_after = 5)
 
-        user = ctx.guild.get_member(userid)
+            user = ctx.guild.get_member(userid)
 
         if not user:
             return await ctx.send("That user does not exist", delete_after = 5)
@@ -613,32 +616,33 @@ class Main(commands.Cog):
         # we use both user and member objects, since some stats can only be obtained
         # from either user or member object     
 
-        list_of_roles = user.roles[1:]
-        most_active_channel = 0
-        most_active_channel_name = None
-        cum_message_count = 0
-        yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
+        async with ctx.channel.typing():
+            list_of_roles = user.roles[1:]
+            most_active_channel = 0
+            most_active_channel_name = None
+            cum_message_count = 0
+            yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
 
-        for channel in ctx.guild.text_channels:
-            counter = 0
+            for channel in ctx.guild.text_channels:
+                counter = 0
 
-            async for message in channel.history(after = yesterday):
-                if message.author == user:
-                    counter += 1
-                    cum_message_count += 1
+                async for message in channel.history(after = yesterday):
+                    if message.author == user:
+                        counter += 1
+                        cum_message_count += 1
 
-            if counter > most_active_channel:
-                most_active_channel = counter
-                most_active_channel_name = "#" + channel.name
+                if counter > most_active_channel:
+                    most_active_channel = counter
+                    most_active_channel_name = "#" + channel.name
 
-        embed = discord.Embed(title = f"Report for user `{user.name}#{user.discriminator}` (all times in UTC)")
-        embed.add_field(name = "Date Joined", value = user.joined_at.strftime('%A, %Y %B %d @ %H:%M:%S'), inline = True)
-        embed.add_field(name = "Account Created", value = user.created_at.strftime('%A, %Y %B %d @ %H:%M:%S'), inline = True)
-        embed.add_field(name = "Roles", value = ", ".join([str(i) for i in sorted(user.roles[1:], key = lambda role: role.position, reverse = True)]), inline = True)
-        embed.add_field(name = "Most active text channel in last 24 h", value = f"{most_active_channel_name} ({most_active_channel} messages)", inline = True)
-        embed.add_field(name = "Total messages sent in last 24 h", value = cum_message_count, inline = True)
+            embed = discord.Embed(title = f"Report for user `{user.name}#{user.discriminator}` (all times in UTC)")
+            embed.add_field(name = "Date Joined", value = user.joined_at.strftime('%A, %Y %B %d @ %H:%M:%S'), inline = True)
+            embed.add_field(name = "Account Created", value = user.created_at.strftime('%A, %Y %B %d @ %H:%M:%S'), inline = True)
+            embed.add_field(name = "Roles", value = ", ".join([str(i) for i in sorted(user.roles[1:], key = lambda role: role.position, reverse = True)]), inline = True)
+            embed.add_field(name = "Most active text channel in last 24 h", value = f"{most_active_channel_name} ({most_active_channel} messages)", inline = True)
+            embed.add_field(name = "Total messages sent in last 24 h", value = cum_message_count, inline = True)
 
-        await ctx.send(embed = embed)
+            await ctx.send(embed = embed)
 
 
     @commands.command()
@@ -652,30 +656,30 @@ class Main(commands.Cog):
         **Examples:**
         `!votes` returns top 5 icons sorted by score (up - down)
         """
+        async with ctx.channel.typing():
+            images = []
 
-        images = []
+            async for message in self.bot.get_channel(745517292892454963).history():
+                if message.attachments or message.embeds:
+                    temp = []
+                    for reaction in message.reactions:
+                        if reaction.emoji == "⬆️":
+                            temp.append(reaction.count)
+                            temp.append(await reaction.users().flatten())
+                        elif reaction.emoji == "⬇️":
+                            temp.append(reaction.count)
+                            temp.append(await reaction.users().flatten())
 
-        async for message in self.bot.get_channel(745517292892454963).history():
-            if message.attachments or message.embeds:
-                temp = []
-                for reaction in message.reactions:
-                    if reaction.emoji == "⬆️":
-                        temp.append(reaction.count)
-                        temp.append(await reaction.users().flatten())
-                    elif reaction.emoji == "⬇️":
-                        temp.append(reaction.count)
-                        temp.append(await reaction.users().flatten())
+                    images.append([message.attachments[0].url, (temp[0] - 1 - (message.author in temp[1]))])
 
-                images.append([message.attachments[0].url, (temp[0] - 1 - (message.author in temp[1])) - (temp[2] - 1 - (message.author in temp[3]))])
+            images.sort(key = lambda image: image[1], reverse = True)
+            images = images[:5]
 
-        images.sort(key = lambda image: image[1], reverse = True)
-        images = images[:5]
-
-        for image in images:
-            embed = discord.Embed(colour = random.randint(0, 0xFFFFFF))
-            embed.add_field(name = "Score", value = image[1], inline = True)
-            embed.set_thumbnail(url = image[0])
-            await ctx.send(embed = embed)
+            for image in images:
+                embed = discord.Embed(colour = random.randint(0, 0xFFFFFF))
+                embed.add_field(name = "Score", value = image[1], inline = True)
+                embed.set_thumbnail(url = image[0])
+                await ctx.send(embed = embed)
 
     # add more commands here with the same syntax
     # also just look up the docs lol i can't do everything
