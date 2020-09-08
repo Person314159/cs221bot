@@ -117,14 +117,6 @@ async def on_message(message):
             new = message.content.replace("<@&457618814058758146>", "@")
             await message.channel.send(new)
 
-        if message.channel.id == 745517292892454963 and (message.attachments or message.embeds):
-            if (message.attachments[0].height, message.attachments[0].width) < (512, 512):
-                await message.delete()
-                await message.channel.send("Please submit an image with at least 512x512 dimensions!", delete_after = 5)
-            else: 
-                await message.add_reaction("⬆️")
-                await message.add_reaction("⬇️")
-
         await bot.process_commands(message)
 
 
