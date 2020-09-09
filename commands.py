@@ -604,7 +604,7 @@ class Main(commands.Cog):
             user = ctx.author
         else:
             try:
-                userid = int(userid)
+                userid = int(userid[0])
             except ValueError:
                 return await ctx.send("Please enter a user id", delete_after = 5)
 
@@ -617,7 +617,6 @@ class Main(commands.Cog):
         # from either user or member object     
 
         async with ctx.channel.typing():
-            list_of_roles = user.roles[1:]
             most_active_channel = 0
             most_active_channel_name = None
             cum_message_count = 0
@@ -644,42 +643,6 @@ class Main(commands.Cog):
 
             await ctx.send(embed = embed)
 
-
-    @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    async def votes(self, ctx):
-        """
-        `!votes` __`Top votes for server icon`__
-
-        **Usage:** !votes
-
-        **Examples:**
-        `!votes` returns top 5 icons sorted by score (up - down)
-        """
-        async with ctx.channel.typing():
-            images = []
-
-            async for message in self.bot.get_channel(745517292892454963).history():
-                if message.attachments or message.embeds:
-                    temp = []
-                    for reaction in message.reactions:
-                        if reaction.emoji == "⬆️":
-                            temp.append(reaction.count)
-                            temp.append(await reaction.users().flatten())
-                        elif reaction.emoji == "⬇️":
-                            temp.append(reaction.count)
-                            temp.append(await reaction.users().flatten())
-
-                    images.append([message.attachments[0].url, (temp[0] - 1 - (message.author in temp[1]))])
-
-            images.sort(key = lambda image: image[1], reverse = True)
-            images = images[:5]
-
-            for image in images:
-                embed = discord.Embed(colour = random.randint(0, 0xFFFFFF))
-                embed.add_field(name = "Score", value = image[1], inline = True)
-                embed.set_thumbnail(url = image[0])
-                await ctx.send(embed = embed)
 
     # add more commands here with the same syntax
     # also just look up the docs lol i can't do everything
