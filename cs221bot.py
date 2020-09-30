@@ -10,6 +10,14 @@ from os.path import isfile, join
 
 import discord
 from discord.ext import commands
+from dotenv import load_dotenv
+from commands import Main
+
+CANVAS_COLOR = 0xe13f2b
+CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
+
+load_dotenv()
+CS221BOT_KEY = os.getenv('CS221BOT_KEY')
 
 bot = commands.Bot(command_prefix = "!", help_command = None)
 
@@ -52,7 +60,12 @@ async def status_task():
         await asyncio.sleep(30)
 
 def startup():
-    bot.poll_dict = bot.loadJSON("poll.json")
+    try:
+        bot.poll_dict = bot.loadJSON("poll.json")
+    except FileNotFoundError:
+        bot.writeJSON({},"poll.json")
+        bot.poll_dict = bot.loadJSON("poll.json")
+    
 
     for channel in list(bot.poll_dict):
         if not bot.get_channel(int(channel)):
@@ -149,4 +162,7 @@ async def on_command_error(ctx, error):
         except Exception:
             print("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```".replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
 
-bot.run(os.getenv("CS221BOT_KEY"))
+
+bot.loop.create_task(Main.live_tracking(bot.get_cog('Main')))
+bot.loop.create_task(Main.assignment_reminder(bot.get_cog('Main')))
+bot.run(CS221BOT_KEY)
