@@ -1,2 +1,5 @@
 /poll.json
 /__pycache__
+.vscode/
+.env
+testing.py
