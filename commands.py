@@ -2,16 +2,33 @@ import ast
 import asyncio
 import datetime
 import mimetypes
+import os
 import random
 import re
+from datetime import timedelta
 from fractions import Fraction
 from io import BytesIO
+from typing import List, Optional
 
+import dateutil.parser.isoparser
 import discord
 import requests
 import webcolors
+from bs4 import BeautifulSoup
+from canvasapi import Canvas
 from discord.ext import commands
+from dotenv import load_dotenv
 from googletrans import Translator, constants
+
+from canvas_handler import CanvasHandler
+from discord_handler import DiscordHandler
+
+CANVAS_COLOR = 0xe13f2b
+CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
+
+load_dotenv()
+CANVAS_API_URL = "https://canvas.ubc.ca"
+CANVAS_API_KEY = os.getenv('CANVAS_API_KEY')
 
 #################### COMMANDS ####################
 
@@ -19,6 +36,7 @@ class Main(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.add_instructor_role_counter = 0
+        self.d_handler = DiscordHandler()
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -659,7 +677,253 @@ class Main(commands.Cog):
             embed.add_field(name = "Total messages sent in last 24 h", value = cum_message_count, inline = True)
 
             await ctx.send(embed = embed)
+    
+    @commands.command(hidden = True)
+    @commands.is_owner()
+    @commands.guild_only()
+    async def track(self, ctx:commands.Context, *course_ids:str):
+        self._add_guild(ctx.message.guild)
+        
+        c_handler = self._get_canvas_handler(ctx.message.guild)
+        if not isinstance(c_handler, CanvasHandler):
+            return None
 
+        c_handler.track_course(course_ids, ctx.channel)
+
+        embed_var = self._get_tracking_courses(c_handler, ctx.message.channel, CANVAS_API_URL)
+        await ctx.send(embed=embed_var)
+
+    @commands.command(hidden = True)
+    @commands.is_owner()
+    @commands.guild_only()
+    async def untrack(self, ctx:commands.Context, *course_ids:str):
+        c_handler = self._get_canvas_handler(ctx.message.guild)
+        if not isinstance(c_handler, CanvasHandler):
+            return None
+
+        c_handler.untrack_course(course_ids, ctx.message.channel)
+
+        embed_var = self._get_tracking_courses(c_handler, ctx.message.channel, CANVAS_API_URL)
+        await ctx.send(embed=embed_var)
+
+    @commands.command()
+    @commands.guild_only()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def ass(self, ctx:commands.Context, *args):
+        """
+        `!cd-ass ( | (-till (n-(hour|day|week|month|year)) | YYYY-MM-DD | YYYY-MM-DD-HH:MM:SS) | -all)`
+
+        Argument can be left blank for sending assignments due 2 weeks from now.
+
+        *Filter till due date:*
+
+        `!cd-ass -till` can be in time from now e.g.: `-till 4-hour` or all assignments before a certain date e.g.: `-till 2020-10-21`
+
+        *All assignments:*
+
+        `!cd-ass -all` returns ALL assignments.
+        """
+        c_handler = self._get_canvas_handler(ctx.message.guild)
+        if not isinstance(c_handler, CanvasHandler):
+            return None
+
+        if args and args[0].startswith('-till'):
+            till = args[1]
+            course_ids = args[2:]
+        elif args and args[0].startswith('-all'):
+            till = None
+            course_ids = args[1:]
+        else:
+            till = "2-week"
+            course_ids = args
+
+        
+        for data in c_handler.get_assignments(till, course_ids, ctx.message.channel, CANVAS_API_URL):
+            embed_var=discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR)
+            embed_var.set_author(name=data[0],url=data[1])
+            embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
+            embed_var.add_field(name="Created at", value=data[5], inline=True)
+            embed_var.add_field(name="Due at", value=data[6], inline=True)
+            await ctx.send(embed=embed_var)
+
+    @commands.command(hidden = True)
+    @commands.is_owner()
+    @commands.guild_only()
+    async def live(self, ctx:commands.Context):
+        c_handler = self._get_canvas_handler(ctx.message.guild)
+        if not isinstance(c_handler, CanvasHandler):
+            return None
+        if ctx.message.channel not in c_handler.live_channels:
+            c_handler.live_channels.append(ctx.message.channel)
+
+    @commands.command(hidden = True)
+    @commands.is_owner()
+    @commands.guild_only()
+    async def unlive(self, ctx:commands.Context):
+        c_handler = self._get_canvas_handler(ctx.message.guild)
+        if not isinstance(c_handler, CanvasHandler):
+            return None
+        if ctx.message.channel in c_handler.live_channels:
+            c_handler.live_channels.remove(ctx.message.channel)
+
+    @commands.command(hidden = True)
+    @commands.is_owner()
+    @commands.guild_only()
+    async def info(self, ctx:commands.Context):
+        c_handler = self._get_canvas_handler(ctx.message.guild)
+        if not isinstance(c_handler, CanvasHandler):
+            return None
+
+        await ctx.send(str(c_handler.courses) + "\n" +
+                    str(c_handler.guild) + "\n" + 
+                    str(c_handler.mode) + "\n" +
+                    str(c_handler.channels_courses) + "\n" +
+                    str(c_handler.live_channels) + "\n" +
+                    str(c_handler.timings) + "\n" +
+                    str(c_handler.due_week) + "\n" +
+                    str(c_handler.due_day))
+
+    @commands.command(hidden = True)
+    @commands.is_owner()
+    @commands.guild_only()
+    async def mode(self, ctx:commands.Context, mode:str):
+        self._add_guild(ctx.message.guild)
+
+        c_handler = self._get_canvas_handler(ctx.message.guild)
+        if not isinstance(c_handler, CanvasHandler):
+            return None
+
+        if mode in ["guild", "channels"]:
+            c_handler.mode = mode
+            await ctx.send(mode)
+        else:
+            await ctx.send("```Invalid mode```")
+
+    @commands.command()
+    @commands.guild_only()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def stream(self, ctx:commands.Context, *args):
+        """
+        `!cd-stream ( | (-till (n-(hour|day|week|month|year)) | YYYY-MM-DD | YYYY-MM-DD-HH:MM:SS) | -all)`
+
+        Argument can be left blank for sending announcements from 2 weeks ago to now.
+
+        *Filter till due date:*
+
+        `!cd-stream -till` can be in time from now e.g.: `-till 4-hour` or all announcements after a certain date e.g.: `-till 2020-10-21`
+
+        *All announcements:*
+
+        `!cd-stream -all` returns ALL announcements.
+        """
+        c_handler = self._get_canvas_handler(ctx.message.guild)
+        if not isinstance(c_handler, CanvasHandler):
+            return None
+        
+        if args and args[0].startswith('-till'):
+            till = args[1]
+            course_ids = args[2:]
+        elif args and args[0].startswith('-all'):
+            till = None
+            course_ids = args[1:]
+        else:
+            till = "2-week"
+            course_ids = args
+
+        for data in c_handler.get_course_stream_ch(till, course_ids, ctx.message.channel, CANVAS_API_URL, CANVAS_API_KEY):
+            embed_var=discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR)
+            embed_var.set_author(name=data[0],url=data[1])
+            embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
+            embed_var.add_field(name="Created at", value=data[5], inline=True)
+            await ctx.send(embed=embed_var)
+
+    def _add_guild(self, guild:discord.Guild):
+        if guild not in [ch.guild for ch in self.d_handler.canvas_handlers]:
+            self.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, CANVAS_API_KEY, guild))
+
+    def _get_canvas_handler(self, guild:discord.Guild) -> Optional[CanvasHandler]:
+        for ch in self.d_handler.canvas_handlers:
+            if ch.guild == guild:
+                return ch
+        return None
+
+    def _get_tracking_courses(self, c_handler:CanvasHandler, channel:discord.TextChannel, CANVAS_API_URL) -> discord.Embed:
+        course_names = c_handler.get_course_names(channel, CANVAS_API_URL)
+        embed_var=discord.Embed(title="Tracking Courses:", color=CANVAS_COLOR)
+        embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
+        for c_name in course_names:
+            embed_var.add_field(name=c_name[0], value="[Course Page]({})".format(c_name[1]))
+        return embed_var
+    
+    @staticmethod
+    async def live_tracking(self):
+        while True:
+            for ch in self.d_handler.canvas_handlers:
+                if len(ch.live_channels) > 0:
+                    notify_role = None
+                    for role in ch.guild.roles:
+                        if role.name == "notify":
+                            notify_role = role
+                            break
+                    if ch.mode == "guild":
+                        for c in ch.courses:
+                            till = ch.timings[str(c.id)]
+                            till = re.sub(r"\s", "-", till)
+                            data_list = ch.get_course_stream_ch(till, (str(c.id),), None, CANVAS_API_URL, CANVAS_API_KEY)
+                            if notify_role and data_list:
+                                for channel in ch.live_channels:
+                                    await channel.send(notify_role.mention)
+                            for data in data_list:
+                                embed_var=discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR)
+                                embed_var.set_author(name=data[0],url=data[1])
+                                embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
+                                embed_var.add_field(name="Created at", value=data[5], inline=True)
+                                for channel in ch.live_channels:
+                                    await channel.send(embed=embed_var)
+                            if data_list:
+                                # latest announcement first
+                                ch.timings[str(c.id)] = data_list[0][5]
+            await asyncio.sleep(3600)
+
+    @staticmethod
+    async def assignment_reminder(self):
+        while True:
+            for ch in self.d_handler.canvas_handlers:
+                if len(ch.live_channels) > 0:
+                    notify_role = None
+                    for role in ch.guild.roles:
+                        if role.name == "notify":
+                            notify_role = role
+                            break
+                    if ch.mode == "guild":
+                        for c in ch.courses:
+                            data_list = ch.get_assignments("1-week", (str(c.id),), None, CANVAS_API_URL)
+                            recorded_ass_ids = ch.due_week[str(c.id)]
+                            ass_ids = await self._assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role)
+                            ch.due_week[str(c.id)] = ass_ids
+
+                            data_list = ch.get_assignments("1-day", (str(c.id),), None, CANVAS_API_URL)
+                            recorded_ass_ids = ch.due_day[str(c.id)]
+                            ass_ids = await self._assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role)
+                            ch.due_day[str(c.id)] = ass_ids
+            await asyncio.sleep(3600)
+
+    @staticmethod
+    async def _assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role):
+        ass_ids = [data[-1] for data in data_list]
+        not_recorded = [data_list[ass_ids.index(i)] for i in ass_ids if i not in recorded_ass_ids]
+        if notify_role and not_recorded:
+            for channel in ch.live_channels:
+                await channel.send(notify_role.mention)
+        for data in not_recorded:
+            embed_var=discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR)
+            embed_var.set_author(name=data[0],url=data[1])
+            embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
+            embed_var.add_field(name="Created at", value=data[5], inline=True)
+            embed_var.add_field(name="Due at", value=data[6], inline=True)
+            for channel in ch.live_channels:
+                await channel.send(embed=embed_var)
+        return ass_ids
 
     # add more commands here with the same syntax
     # also just look up the docs lol i can't do everything
