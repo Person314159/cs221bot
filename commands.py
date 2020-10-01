@@ -661,7 +661,7 @@ class Main(commands.Cog):
 
             await ctx.send(embed = embed)
     
-    @commands.command()
+    @commands.command(hidden = True)
     @commands.is_owner()
     @commands.guild_only()
     async def track(self, ctx:commands.Context, *course_ids:str):
@@ -676,7 +676,7 @@ class Main(commands.Cog):
         embed_var = self._get_tracking_courses(c_handler, ctx.message.channel, CANVAS_API_URL)
         await ctx.send(embed=embed_var)
 
-    @commands.command()
+    @commands.command(hidden = True)
     @commands.is_owner()
     @commands.guild_only()
     async def untrack(self, ctx:commands.Context, *course_ids:str):
@@ -693,6 +693,19 @@ class Main(commands.Cog):
     @commands.guild_only()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def ass(self, ctx:commands.Context, *args):
+        """
+        `!cd-ass ( | (-till (n-(hour|day|week|month|year)) | YYYY-MM-DD | YYYY-MM-DD-HH:MM:SS) | -all)`
+
+        Argument can be left blank for sending assignments due 2 weeks from now.
+
+        *Filter till due date:*
+
+        `!cd-ass -till` can be in time from now e.g.: `-till 4-hour` or all assignments before a certain date e.g.: `-till 2020-10-21`
+
+        *All assignments:*
+
+        `!cd-ass -all` returns ALL assignments.
+        """
         c_handler = self._get_canvas_handler(ctx.message.guild)
         if not isinstance(c_handler, CanvasHandler):
             return None
@@ -716,7 +729,7 @@ class Main(commands.Cog):
             embed_var.add_field(name="Due at", value=data[6], inline=True)
             await ctx.send(embed=embed_var)
 
-    @commands.command()
+    @commands.command(hidden = True)
     @commands.is_owner()
     @commands.guild_only()
     async def live(self, ctx:commands.Context):
@@ -726,7 +739,7 @@ class Main(commands.Cog):
         if ctx.message.channel not in c_handler.live_channels:
             c_handler.live_channels.append(ctx.message.channel)
 
-    @commands.command()
+    @commands.command(hidden = True)
     @commands.is_owner()
     @commands.guild_only()
     async def unlive(self, ctx:commands.Context):
@@ -736,7 +749,7 @@ class Main(commands.Cog):
         if ctx.message.channel in c_handler.live_channels:
             c_handler.live_channels.remove(ctx.message.channel)
 
-    @commands.command()
+    @commands.command(hidden = True)
     @commands.is_owner()
     @commands.guild_only()
     async def info(self, ctx:commands.Context):
@@ -753,7 +766,7 @@ class Main(commands.Cog):
                     str(c_handler.due_week) + "\n" +
                     str(c_handler.due_day))
 
-    @commands.command()
+    @commands.command(hidden = True)
     @commands.is_owner()
     @commands.guild_only()
     async def mode(self, ctx:commands.Context, mode:str):
@@ -773,6 +786,19 @@ class Main(commands.Cog):
     @commands.guild_only()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def stream(self, ctx:commands.Context, *args):
+        """
+        `!cd-stream ( | (-till (n-(hour|day|week|month|year)) | YYYY-MM-DD | YYYY-MM-DD-HH:MM:SS) | -all)`
+
+        Argument can be left blank for sending announcements from 2 weeks ago to now.
+
+        *Filter till due date:*
+
+        `!cd-stream -till` can be in time from now e.g.: `-till 4-hour` or all announcements after a certain date e.g.: `-till 2020-10-21`
+
+        *All announcements:*
+
+        `!cd-stream -all` returns ALL announcements.
+        """
         c_handler = self._get_canvas_handler(ctx.message.guild)
         if not isinstance(c_handler, CanvasHandler):
             return None
