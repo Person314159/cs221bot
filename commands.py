@@ -299,7 +299,7 @@ class Main(commands.Cog):
         for i in range(len(lang_list) - 1):
             translation = translator.translate(txt, src = lang_list[i], dest = lang_list[i + 1])
             txt = translation.text
-            asyncio.sleep(0)
+            await asyncio.sleep(0)
 
         if len(txt) > 2000:
             if len(txt) > 10000:
@@ -355,12 +355,15 @@ class Main(commands.Cog):
 
         **Examples:**
         `!join L1A` adds the L1A role to yourself
+
+        **Valid Roles:**
+        Looking for Partners, Study Group, L1A, L1B, L1C, L1D, L1E, L1F, L1G, L1H, L1J, L1K, L1N, L1P, L1R, L1S, L1T, He/Him/His, She/Her/Hers, They/Them/Theirs, Ze/Zir/Zirs
         """
 
         # case where role name is space separated
         name = " ".join(arg).lower()
         # make sure that you can't add roles like "prof" or "ta"
-        invalid_roles = ["Prof", "TA", "Fake TA", "CS221 bot"]
+        invalid_roles = ["Prof", "TA", "Fake TA", "Computers", "Server Booster"]
         aliases = {"he": 747925204864335935, "she": 747925268181811211, "ze": 747925349232279552, "they": 747925313748729976}
 
         for role in ctx.guild.roles:
@@ -589,6 +592,20 @@ class Main(commands.Cog):
         self.bot.reload_extension("commands")
         await ctx.send("Done")
 
+    @commands.command(hidden = True)
+    @commands.has_permissions(administrator = True)
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def shut(self, ctx):
+        for role in self.bot.get_guild(745503628479037492).roles[:-6]:
+            if role.permissions.value == 104187456:
+                change = "enabled messaging permissions"
+                await role.edit(permissions = discord.Permissions(permissions = 104189504))
+            elif role.permissions.value == 104189504:
+                change = "disabled messaging permissions"
+                await role.edit(permissions = discord.Permissions(permissions = 104187456))
+
+        await ctx.send(change)
+
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def userstats(self, ctx, *userid):
@@ -614,7 +631,7 @@ class Main(commands.Cog):
             return await ctx.send("That user does not exist", delete_after = 5)
 
         # we use both user and member objects, since some stats can only be obtained
-        # from either user or member object     
+        # from either user or member object
 
         async with ctx.channel.typing():
             most_active_channel = 0

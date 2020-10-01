@@ -11,7 +11,7 @@ from os.path import isfile, join
 import discord
 from discord.ext import commands
 
-bot = commands.Bot(command_prefix = "!", help_command = None)
+bot = commands.Bot(command_prefix = "!", help_command = None, intents = discord.Intents.all())
 
 def loadJSON(jsonfile):
 	with open(jsonfile, "r") as f:
