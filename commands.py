@@ -5,7 +5,7 @@ import mimetypes
 import os
 import random
 import re
-from datetime import datetime, timedelta
+from datetime import timedelta
 from fractions import Fraction
 from io import BytesIO
 from typing import List, Optional
@@ -27,7 +27,7 @@ CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
 
 load_dotenv()
-CANVAS_API_URL = os.getenv('CANVAS_API_URL')
+CANVAS_API_URL = "https://canvas.ubc.ca"
 CANVAS_API_KEY = os.getenv('CANVAS_API_KEY')
 
 #################### COMMANDS ####################
@@ -662,6 +662,7 @@ class Main(commands.Cog):
             await ctx.send(embed = embed)
     
     @commands.command()
+    @commands.is_owner()
     @commands.guild_only()
     async def track(self, ctx:commands.Context, *course_ids:str):
         self._add_guild(ctx.message.guild)
@@ -690,6 +691,7 @@ class Main(commands.Cog):
 
     @commands.command()
     @commands.guild_only()
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def ass(self, ctx:commands.Context, *args):
         c_handler = self._get_canvas_handler(ctx.message.guild)
         if not isinstance(c_handler, CanvasHandler):
@@ -715,6 +717,7 @@ class Main(commands.Cog):
             await ctx.send(embed=embed_var)
 
     @commands.command()
+    @commands.is_owner()
     @commands.guild_only()
     async def live(self, ctx:commands.Context):
         c_handler = self._get_canvas_handler(ctx.message.guild)
@@ -768,6 +771,7 @@ class Main(commands.Cog):
 
     @commands.command()
     @commands.guild_only()
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def stream(self, ctx:commands.Context, *args):
         c_handler = self._get_canvas_handler(ctx.message.guild)
         if not isinstance(c_handler, CanvasHandler):
