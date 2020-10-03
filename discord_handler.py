@@ -11,6 +11,7 @@ class DiscordHandler:
     canvas_handlers : `List[CanvasHandlers]`
         List for CanvasHandler for guilds
     """
+
     def __init__(self):
         self._canvas_handlers = []   # [c_handler1, ... ]
 

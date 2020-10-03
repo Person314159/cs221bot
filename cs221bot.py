@@ -17,19 +17,22 @@ CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
 
 load_dotenv()
-CS221BOT_KEY = os.getenv('CS221BOT_KEY')
 
-bot = commands.Bot(command_prefix = "!", help_command = None, intents = discord.Intents.all())
+bot = commands.Bot(command_prefix="!", help_command=None,
+                   intents=discord.Intents.all())
+
 
 def loadJSON(jsonfile):
-	with open(jsonfile, "r") as f:
-		b = json.load(f)
-		return json.loads(b)
+    with open(jsonfile, "r") as f:
+        b = json.load(f)
+        return json.loads(b)
+
 
 def writeJSON(data, jsonfile):
-	b = json.dumps(data)
-	with open(jsonfile, "w") as f:
-		json.dump(b, f)
+    b = json.dumps(data)
+    with open(jsonfile, "w") as f:
+        json.dump(b, f)
+
 
 async def status_task():
     await bot.wait_until_ready()
@@ -44,40 +47,43 @@ async def status_task():
                     if member not in online_members:
                         online_members.append(member)
 
-        play = ["with the \"help\" command", " ", "with your mind", "ƃuᴉʎɐlԀ", "...something?", "a game? Or am I?", "¯\_(ツ)_/¯", f"with {len(online_members)} people", "with image manipulation"]
-        listen = ["smart music", "... wait I can't hear anything", "rush 🅱", "C++ short course"]
-        watch = ["TV", "YouTube vids", "over you", "how to make a bot", "C++ tutorials"]
+        play = ["with the \"help\" command", " ", "with your mind", "ƃuᴉʎɐlԀ", "...something?",
+                "a game? Or am I?", "¯\_(ツ)_/¯", f"with {len(online_members)} people", "with image manipulation"]
+        listen = ["smart music", "... wait I can't hear anything",
+                  "rush 🅱", "C++ short course"]
+        watch = ["TV", "YouTube vids", "over you",
+                 "how to make a bot", "C++ tutorials", "I, Robot"]
 
         rng = random.randrange(0, 3)
 
         if rng == 0:
-            await bot.change_presence(activity = discord.Activity(type = discord.ActivityType.playing, name = random.choice(play)))
+            await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name=random.choice(play)))
         elif rng == 1:
-            await bot.change_presence(activity = discord.Activity(type = discord.ActivityType.listening, name = random.choice(listen)))
+            await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=random.choice(listen)))
         else:
-            await bot.change_presence(activity = discord.Activity(type = discord.ActivityType.watching, name = random.choice(watch)))
+            await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=random.choice(watch)))
 
         await asyncio.sleep(30)
 
+
 def startup():
     try:
-        bot.poll_dict = bot.loadJSON("poll.json")
+        bot.poll_dict = bot.loadJSON("data/poll.json")
     except FileNotFoundError:
-        bot.writeJSON({},"poll.json")
-        bot.poll_dict = bot.loadJSON("poll.json")
-    
+        bot.writeJSON({}, "data/poll.json")
+        bot.poll_dict = bot.loadJSON("data/poll.json")
 
     for channel in list(bot.poll_dict):
         if not bot.get_channel(int(channel)):
             del bot.poll_dict[channel]
-    bot.writeJSON(bot.poll_dict, "poll.json")
+    bot.writeJSON(bot.poll_dict, "data/poll.json")
 
     for guild in bot.guilds:
         for channel in guild.text_channels:
             if str(channel.id) not in bot.poll_dict:
                 bot.poll_dict.update({str(channel.id): ""})
-                bot.writeJSON(bot.poll_dict, "poll.json")
-    return
+                bot.writeJSON(bot.poll_dict, "data/poll.json")
+
 
 @bot.event
 async def on_ready():
@@ -85,41 +91,47 @@ async def on_ready():
     print("Logged in successfully")
     bot.loop.create_task(status_task())
 
+
 @bot.event
 async def on_guild_join(guild):
-	for channel in guild.text_channels:
-		bot.poll_dict.update({str(channel.id) : ""})
-		bot.writeJSON(bot.poll_dict, "poll.json")
+    for channel in guild.text_channels:
+        bot.poll_dict.update({str(channel.id): ""})
+        bot.writeJSON(bot.poll_dict, "data/poll.json")
+
 
 @bot.event
 async def on_guild_remove(guild):
-	for channel in guild.channels:
-		if str(channel.id) in bot.poll_dict:
-			del bot.poll_dict[str(channel.id)]
-			bot.writeJSON(bot.poll_dict, "poll.json")
+    for channel in guild.channels:
+        if str(channel.id) in bot.poll_dict:
+            del bot.poll_dict[str(channel.id)]
+            bot.writeJSON(bot.poll_dict, "data/poll.json")
+
 
 @bot.event
 async def on_channel_create(channel):
-	if isinstance(channel, discord.TextChannel):
-		bot.poll_dict.update({str(channel.id) : ""})
-		bot.writeJSON(bot.poll_dict, "poll.json")
+    if isinstance(channel, discord.TextChannel):
+        bot.poll_dict.update({str(channel.id): ""})
+        bot.writeJSON(bot.poll_dict, "data/poll.json")
+
 
 @bot.event
 async def on_channel_delete(channel):
-	if str(channel.id) in bot.poll_dict:
-		del bot.poll_dict[str(channel.id)]
-		bot.writeJSON(bot.poll_dict, "poll.json")
+    if str(channel.id) in bot.poll_dict:
+        del bot.poll_dict[str(channel.id)]
+        bot.writeJSON(bot.poll_dict, "data/poll.json")
+
 
 @bot.event
 async def on_message_edit(before, after):
     await bot.process_commands(after)
+
 
 @bot.event
 async def on_message(message):
     if message.author.bot:
         return
     else:
-        # debugging 
+        # debugging
         # with open("messages.txt", "a") as f:
         # 	print(f"{message.guild.name}: {message.channel.name}: {message.author.name}: \"{message.content}\" @ {str(datetime.datetime.now())} \r\n", file = f)
         # print(message.content)
@@ -145,13 +157,13 @@ async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound) or isinstance(error, discord.HTTPException) or isinstance(error, discord.NotFound):
         pass
     elif isinstance(error, commands.CommandOnCooldown):
-        await ctx.send(f"Oops! That command is on cooldown right now. Please wait **{round(error.retry_after, 3)}** seconds before trying again.", delete_after = error.retry_after)
+        await ctx.send(f"Oops! That command is on cooldown right now. Please wait **{round(error.retry_after, 3)}** seconds before trying again.", delete_after=error.retry_after)
     elif isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send(f"The required argument(s) {error.param} is/are missing.", delete_after = 5)
+        await ctx.send(f"The required argument(s) {error.param} is/are missing.", delete_after=5)
     elif isinstance(error, commands.DisabledCommand):
-        await ctx.send("This command is disabled.", delete_after = 5)
+        await ctx.send("This command is disabled.", delete_after=5)
     elif isinstance(error, commands.MissingPermissions) or isinstance(error, commands.BotMissingPermissions):
-        await ctx.send(error, delete_after = 5)
+        await ctx.send(error, delete_after=5)
     else:
         etype = type(error)
         trace = error.__traceback__
@@ -160,9 +172,10 @@ async def on_command_error(ctx, error):
         try:
             await ctx.send("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```".replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
         except Exception:
-            print("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```".replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
+            print("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```".replace(
+                "C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
 
 
-bot.loop.create_task(Main.live_tracking(bot.get_cog('Main')))
-bot.loop.create_task(Main.assignment_reminder(bot.get_cog('Main')))
-bot.run(CS221BOT_KEY)
+bot.loop.create_task(Main.stream_tracking(bot.get_cog("Main")))
+bot.loop.create_task(Main.assignment_reminder(bot.get_cog("Main")))
+bot.run(os.getenv("CS221BOT_KEY"))
