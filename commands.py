@@ -550,7 +550,7 @@ class Main(commands.Cog):
             return await ctx.send(output, files=files)
         elif question == "end":
             self.bot.poll_dict[str(ctx.channel.id)] = ""
-            self.bot.writeJSON(self.bot.poll_dict, "poll.json")
+            self.bot.writeJSON(self.bot.poll_dict, "data/poll.json")
 
             try:
                 poll_message = await ctx.channel.fetch_message(id_)
@@ -623,7 +623,7 @@ class Main(commands.Cog):
             await react_message.add_reaction(reaction)
 
         self.bot.poll_dict[str(ctx.channel.id)] = react_message.id
-        self.bot.writeJSON(self.bot.poll_dict, "poll.json")
+        self.bot.writeJSON(self.bot.poll_dict, "data/poll.json")
 
     @commands.command(hidden=True)
     @commands.is_owner()
@@ -632,6 +632,7 @@ class Main(commands.Cog):
         if not isinstance(ctx.channel, discord.DMChannel):
             await ctx.message.delete()
         self.bot.reload_extension("commands")
+        self.canvas_init(self.bot.get_cog("Main"))
         await ctx.send("Done")
 
     @commands.command(hidden=True)
@@ -720,6 +721,9 @@ class Main(commands.Cog):
 
         c_handler.track_course(course_ids)
 
+        self.bot.canvas_dict[str(ctx.message.guild.id)]["courses"] = [str(c.id) for c in c_handler.courses]
+        self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
+
         embed_var = self._get_tracking_courses(
             c_handler, CANVAS_API_URL)
         embed_var.set_footer(
@@ -737,6 +741,9 @@ class Main(commands.Cog):
         c_handler.untrack_course(course_ids)
         if not c_handler.courses:
             self.d_handler.canvas_handlers.remove(c_handler)
+        
+        self.bot.canvas_dict[str(ctx.message.guild.id)]["courses"] = [str(c.id) for c in c_handler.courses]
+        self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
 
         embed_var = self._get_tracking_courses(
             c_handler, CANVAS_API_URL)
@@ -794,6 +801,10 @@ class Main(commands.Cog):
             return await ctx.send("Canvas Handler doesn't exist.", delete_after=5)
         if ctx.message.channel not in c_handler.live_channels:
             c_handler.live_channels.append(ctx.message.channel)
+
+            self.bot.canvas_dict[str(ctx.message.guild.id)]["live_channels"] = [channel.id for channel in c_handler.live_channels]
+            self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
+
             await ctx.send("Added channel to live tracking.")
 
     @commands.command(hidden=True)
@@ -805,6 +816,10 @@ class Main(commands.Cog):
             return await ctx.send("Canvas Handler doesn't exist.", delete_after=5)
         if ctx.message.channel in c_handler.live_channels:
             c_handler.live_channels.remove(ctx.message.channel)
+            
+            self.bot.canvas_dict[str(ctx.message.guild.id)]["live_channels"] = [channel.id for channel in c_handler.live_channels]
+            self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
+
             await ctx.send("Removed channel from live tracking.")
 
     @commands.command()
@@ -846,10 +861,24 @@ class Main(commands.Cog):
             embed_var.add_field(name="Created at", value=data[5], inline=True)
             await ctx.send(embed=embed_var)
 
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    @commands.guild_only()
+    async def info(self, ctx):
+        c_handler = self._get_canvas_handler(ctx.message.guild)
+        await ctx.send(str(c_handler.courses) + "\n" +
+                   str(c_handler.guild) + "\n" + 
+                   str(c_handler.live_channels) + "\n" +
+                   str(c_handler.timings) + "\n" +
+                   str(c_handler.due_week) + "\n" +
+                   str(c_handler.due_day))
+
     def _add_guild(self, guild: discord.Guild):
         if guild not in [ch.guild for ch in self.d_handler.canvas_handlers]:
             self.d_handler.canvas_handlers.append(
-                CanvasHandler(CANVAS_API_URL, CANVAS_API_KEY, guild))
+                CanvasHandler(CANVAS_API_URL, "", guild))
+            self.bot.canvas_dict[str(guild.id)] = {"courses":[], "live_channels": [], "due_week": {}, "due_day": {}}
+            self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
 
     def _get_canvas_handler(self, guild: discord.Guild) -> Optional[CanvasHandler]:
         for ch in self.d_handler.canvas_handlers:
@@ -897,7 +926,8 @@ class Main(commands.Cog):
                         if data_list:
                             # latest announcement first
                             ch.timings[str(c.id)] = data_list[0][5]
-            await asyncio.sleep(3600)
+
+            await asyncio.sleep(10)
 
     @staticmethod
     async def assignment_reminder(self):
@@ -910,18 +940,22 @@ class Main(commands.Cog):
                             notify_role = role
                             break
                     for c in ch.courses:
-                        data_list = ch.get_assignments(
-                            "1-week", (str(c.id),), CANVAS_API_URL)
+                        data_list = ch.get_assignments("1-week", (str(c.id),), CANVAS_API_URL)
                         recorded_ass_ids = ch.due_week[str(c.id)]
                         ass_ids = await self._assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role)
                         ch.due_week[str(c.id)] = ass_ids
+                        self.bot.canvas_dict[str(ch.guild.id)]["due_week"][str(c.id)] = ass_ids
 
                         data_list = ch.get_assignments(
-                            "1-day", (str(c.id),), None, CANVAS_API_URL)
+                            "1-day", (str(c.id),), CANVAS_API_URL)
                         recorded_ass_ids = ch.due_day[str(c.id)]
                         ass_ids = await self._assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role)
                         ch.due_day[str(c.id)] = ass_ids
-            await asyncio.sleep(3600)
+                        self.bot.canvas_dict[str(ch.guild.id)]["due_day"][str(c.id)] = ass_ids
+
+                        self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
+
+            await asyncio.sleep(10)
 
     @staticmethod
     async def _assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role):
@@ -943,6 +977,22 @@ class Main(commands.Cog):
             for channel in ch.live_channels:
                 await channel.send(embed=embed_var)
         return ass_ids
+    
+    @staticmethod
+    def canvas_init(self):
+        for c_handler_guild_id in self.bot.canvas_dict:
+            guild = self.bot.guilds[[guild.id for guild in self.bot.guilds].index(int(c_handler_guild_id))]
+            if guild not in [ch.guild for ch in self.d_handler.canvas_handlers]:
+                self.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, "", guild))
+            c_handler = self._get_canvas_handler(guild)
+            c_handler.track_course(tuple(self.bot.canvas_dict[c_handler_guild_id]["courses"]))
+            live_channels_ids = self.bot.canvas_dict[c_handler_guild_id]["live_channels"]
+            live_channels = [channel for channel in guild.text_channels if channel.id in live_channels_ids]
+            c_handler.live_channels = live_channels
+            for c in self.bot.canvas_dict[c_handler_guild_id]["due_week"]:
+                c_handler.due_week[c] = self.bot.canvas_dict[c_handler_guild_id]["due_week"][c]
+            for c in self.bot.canvas_dict[c_handler_guild_id]["due_day"]:
+                c_handler.due_day[c] = self.bot.canvas_dict[c_handler_guild_id]["due_day"][c]
 
     # add more commands here with the same syntax
     # also just look up the docs lol i can't do everything

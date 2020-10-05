@@ -17,6 +17,7 @@ CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
 
 load_dotenv()
+CS221BOT_KEY = os.getenv("CS221BOT_KEY")
 
 bot = commands.Bot(command_prefix="!", help_command=None,
                    intents=discord.Intents.all())
@@ -69,9 +70,12 @@ async def status_task():
 def startup():
     try:
         bot.poll_dict = bot.loadJSON("data/poll.json")
+        bot.canvas_dict = bot.loadJSON("data/canvas.json")
     except FileNotFoundError:
         bot.writeJSON({}, "data/poll.json")
         bot.poll_dict = bot.loadJSON("data/poll.json")
+        bot.writeJSON({}, "data/canvas.json")
+        bot.canvas_dict = bot.loadJSON("data/canvas.json")
 
     for channel in list(bot.poll_dict):
         if not bot.get_channel(int(channel)):
@@ -83,6 +87,8 @@ def startup():
             if str(channel.id) not in bot.poll_dict:
                 bot.poll_dict.update({str(channel.id): ""})
                 bot.writeJSON(bot.poll_dict, "data/poll.json")
+    
+    Main.canvas_init(bot.get_cog("Main"))
 
 
 @bot.event
@@ -178,4 +184,4 @@ async def on_command_error(ctx, error):
 
 bot.loop.create_task(Main.stream_tracking(bot.get_cog("Main")))
 bot.loop.create_task(Main.assignment_reminder(bot.get_cog("Main")))
-bot.run(os.getenv("CS221BOT_KEY"))
+bot.run(CS221BOT_KEY)
