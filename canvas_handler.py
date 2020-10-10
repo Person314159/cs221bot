@@ -212,7 +212,7 @@ class CanvasHandler(Canvas):
 
                     title = "Announcement: " + item["title"]
 
-                    url = item["html_url"]
+                    url = "https://canvas.ubc.ca/conversations?#filter=type=inbox&course=course_53540"
 
                     desc = item["latest_messages"][0]["message"]
                     short_desc = "\n".join(desc.split("\n")[:4])

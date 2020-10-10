@@ -87,7 +87,7 @@ def startup():
             if str(channel.id) not in bot.poll_dict:
                 bot.poll_dict.update({str(channel.id): ""})
                 bot.writeJSON(bot.poll_dict, "data/poll.json")
-    
+
     Main.canvas_init(bot.get_cog("Main"))
 
 
