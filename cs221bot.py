@@ -90,12 +90,26 @@ def startup():
 
     Main.canvas_init(bot.get_cog("Main"))
 
-
+async def wipe_dms():
+    guild = bot.get_guild(745503628479037492)
+    while True:
+        await asyncio.sleep(300)
+        for channel in guild.channels:
+            if channel.name.startswith("221dm-"):
+                async for msg in channel.history(limit = 1):
+                    if (datetime.utcnow() - msg.created_at).total_seconds >= 86400:
+                        await channel.delete()
+                        break
+                else:
+                    await channel.delete()
+    
+    
 @bot.event
 async def on_ready():
     startup()
     print("Logged in successfully")
     bot.loop.create_task(status_task())
+    bot.loop.create_task(wipe_dms())
 
 
 @bot.event
