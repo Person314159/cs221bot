@@ -340,7 +340,8 @@ class Main(commands.Cog):
         }
         channel = await guild.create_text_channel(nam, overwrites=overwrites, category = guild.get_channel(764672304793255986)) # this id is id of group dm category
         await ctx.send("Opened channel.")
-        await channel.send("Welcome to 221 private DM. Type `!close` to exit when you are finished.")
+        users = [f"<@{usr.id}>" for usr in ctx.message.mentions]
+        await channel.send(f"<@{ctx.author.id}> {' '.join(users)}\nWelcome to 221 private DM. Type `!close` to exit when you are finished.")
         
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
