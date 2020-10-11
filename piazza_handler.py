@@ -28,7 +28,7 @@ class PiazzaHandler():
     FETCH_MIN: `int (optional)`
         Lower limit on posts fetched from Piazza. Used as the default value for functions that don't need to fetch a lot of posts
     """
-    def __init__(self, NAME, ID, EMAIL, PASSWORD, GUILD, FETCH_MAX=50, FETCH_MIN=25):
+    def __init__(self, NAME, ID, EMAIL, PASSWORD, GUILD, FETCH_MAX=60, FETCH_MIN=30):
         self.name = NAME
         self.nid = ID
         self._guild = GUILD
@@ -101,6 +101,7 @@ class PiazzaHandler():
             isinstance(int(postID),int)
             if postID == '1': raise Exception()
             post = self.network.get_post(postID)
+            if self.checkIfPrivate(post): raise Exception()
             return post
         except:
             return None
@@ -134,6 +135,8 @@ class PiazzaHandler():
         posts = self.network.iter_all_posts(limit=self.min)
         response = []
         for post in posts: 
+            if self.checkIfPrivate(post):
+                continue
             if post['bucket_name'] and post['bucket_name'] == 'Pinned':
                 response.append(post)
         return response
@@ -149,7 +152,9 @@ class PiazzaHandler():
         for post in posts:
             created_at = [int(x) for x in post['created'][:10].split('-')] # [2020,9,19] from 2020-09-19T22:41:52Z
             created_at = datetime.date(created_at[0],created_at[1],created_at[2])
-            if (date - created_at).days <= days and (date-created_at).seconds <= seconds:
+            if self.checkIfPrivate(post):
+                continue
+            elif (date - created_at).days <= days and (date-created_at).seconds <= seconds:
                 result.append(post)
         return result
 
@@ -277,6 +282,9 @@ class PiazzaHandler():
             response.append(post_details)
         return response
         
+    def checkIfPrivate(self, post) -> bool:
+        return (post['status'] == 'private' or post['change_log'][0]['v'] == 'private')
+
     @staticmethod
     def clean_response(res):
         if len(res) > 1024:
