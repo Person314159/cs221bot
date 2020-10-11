@@ -24,12 +24,16 @@ from googletrans import Translator, constants
 from canvas_handler import CanvasHandler
 from discord_handler import DiscordHandler
 
+from piazza_handler import PiazzaHandler
+
 CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
 
 load_dotenv()
 CANVAS_API_URL = "https://canvas.ubc.ca"
 CANVAS_API_KEY = os.getenv("CANVAS_API_KEY")
+PIAZZA_EMAIL = os.getenv("PIAZZA_EMAIL")
+PIAZZA_PASSWORD = os.getenv("PIAZZA_PASSWORD")
 
 #################### COMMANDS ####################
 
@@ -1073,6 +1077,189 @@ class Main(commands.Cog):
                 c_handler.due_week[c] = self.bot.canvas_dict[c_handler_guild_id]["due_week"][c]
             for c in self.bot.canvas_dict[c_handler_guild_id]["due_day"]:
                 c_handler.due_day[c] = self.bot.canvas_dict[c_handler_guild_id]["due_day"][c]
+
+    ## start of Piazza functions ##
+    # didn't want to support multiple PiazzaHandler instances because it's associated with
+    # a single account (unsafe to send sensitive information through Discord, so there's
+    # no way to login to another account without also having access to prod env variables)
+    # and the API is also rate-limited, so it's probably not a good idea to spam Piazza's server
+    # with an unlimited # of POST requests per instance everyday. One instance should be safe
+    @commands.command(hidden=True)
+    @commands.has_permissions(administrator=True)
+    async def pinit(self, ctx, name, pid):
+        """
+        `!pinit` _ `course name` _ _ `piazza id` _
+
+        **Usage:** !pinit <course name> <piazza id>
+
+        **Examples:**
+        `!pinit CPSC221 ke1ukp9g4xx6oi` creates a CPSC221 Piazza instance for the server
+
+        *Only usable by TAs and Profs
+        """
+        try:
+            self.d_handler.piazza_handler = PiazzaHandler(name,pid,PIAZZA_EMAIL,PIAZZA_PASSWORD,ctx.guild)
+            response = f'Piazza instance created!\nName: {name}\nPiazza ID: {pid}\n'
+            response += "If the above doesn't look right, please use !pstart again with the correct arguments"
+            await ctx.send(response)
+        except Exception as e:
+            await ctx.send(f'Something went wrong:\n```{e.args}```')
+
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def ptrack(self, ctx, cid=0):
+        """
+        `!ptrack` __`channel id`__
+
+        **Usage:** !ptrack <channel id | ''>
+
+        **Examples:**
+        `!ptrack 747259140908384386` adds CPSC221 server's #bot-commands channel id to the Piazza instance's list of tracked channels
+        `!ptrack` adds the current channel's id to the Piazza instance's list of channels
+
+        *Only usable by TAs and Profs
+        """
+        if cid==0: cid = int(ctx.message.channel.id)
+        try:
+            self.d_handler.piazza_handler.add_channel(cid)
+        except Exception as e: 
+            await ctx.send(f'Something went wrong:\n```{e.args}```')
+
+    @commands.command()
+    @commands.cooldown(1,5,commands.BucketType.channel)
+    async def ppinned(self, ctx):
+        """
+        `!ppinned`
+
+        **Usage:** !ppinned
+
+        **Examples:**
+        `!ppinned` sends a list of the Piazza's pinned posts to the calling channel
+
+        *to prevent hitting the rate-limit, only usable once every 5 secs channel-wide*
+        """
+        if self.d_handler.piazza_handler:
+            posts = self.d_handler.piazza_handler.get_pinned()
+            response = f'**Pinned posts for { self.d_handler.piazza_handler.course_name }:**\n'
+            for post in posts:
+                response += f'@{ post["num"] }: { post["subject"] } <{ post["url"] }>\n'
+            await ctx.send(response)
+        else: 
+            await ctx.send("Piazza hasn't been instantiated yet!")
+
+    @commands.command()
+    @commands.cooldown(1,5,commands.BucketType.user)
+    async def pread(self, ctx, postID):
+        """
+        `!pread` __`post id`__
+
+        **Usage:** !pread <post id>
+
+        **Examples:**
+        `!pread 828` returns an embed with the [post](https://piazza.com/class/ke1ukp9g4xx6oi?cid=828)'s 
+        info (question, answer, answer type, tags)
+        """
+        if not self.d_handler.piazza_handler:
+            await ctx.send("Piazza hasn't been instantiated yet!")
+            return
+        post = self.d_handler.piazza_handler.get_post(postID)
+        
+        if post: 
+            post_embed = self.create_post_embed(post)
+            await ctx.send(embed=post_embed)
+        else: await ctx.send("Sorry! That post doesn't exist.")
+
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def ptest(self, ctx):
+        """
+        `!ptest`
+
+        **Usage:** !ptest
+
+        **Examples:**
+        `!ptest` simulates a single call of `send_pupdate` to ensure the set-up was done correctly.
+        """
+        if self.d_handler.piazza_handler: 
+            posts = self.d_handler.piazza_handler.get_posts_in_range()
+            response = f'**{ self.d_handler.piazza_handler.course_name }\'s posts for { datetime.date.today() }**\n'
+            response += 'Instructor\'s Notes:\n'
+            if len(posts[0]) > 0:
+                for ipost in posts[0]:
+                    response += f'@{ipost["num"]}: {ipost["subject"]} <{ipost["url"]}>\n'
+            else:
+                response += 'None today!\n'
+            
+            response += '\nDiscussion posts: \n'
+            if len(posts[1]) < 1: response += 'None today!'
+            for post in posts[1]:
+                response += f'@{post["num"]}: {post["subject"]} <{post["url"]}>\n'
+            await self.send_at_time(self) 
+            for chnl in self.d_handler.piazza_handler.channels:
+                channel = self.bot.get_channel(chnl)
+                await channel.send(response)
+
+    def create_post_embed(self, post):
+        if post:
+            post_embed = discord.Embed(title=post['subject'],
+                                        url=post['url'],
+                                        description=post['num'])
+            post_embed.add_field(name=post['post_type'], value=post['post_body'], inline=False)
+            post_embed.add_field(name=post['ans_type'], value=post['ans_body'], inline=False)
+            if post['more_answers']:
+                post_embed.add_field(name=f'{post["num_answers"]-1} more contributions hidden',
+                                    value='Click the title above to access the rest of the post.',
+                                    inline=False)
+            post_embed.set_footer(text=f'tags: {post["tags"]}')
+            return post_embed
+        
+
+    @staticmethod
+    async def send_at_time(self, hours=7, minutes=0):
+        # default set to midnight PST (7am UTC) 
+        today = datetime.datetime.utcnow()
+        post_time = datetime.datetime(today.year, today.month, today.day, hour=hours, minute=minutes, tzinfo=today.tzinfo)
+        time_until_post = post_time - today
+        if time_until_post.total_seconds() > 0:
+            await asyncio.sleep(time_until_post.total_seconds())
+
+    @staticmethod
+    async def send_pupdate(self): 
+        while True:
+            if self.d_handler.piazza_handler: 
+                posts = self.d_handler.piazza_handler.get_posts_in_range()
+                response = f'**{ self.d_handler.piazza_handler.course_name }\'s posts for { datetime.date.today() }**\n'
+                response += 'Instructor\'s Notes:\n'
+                if len(posts[0]) > 0:
+                    for ipost in posts[0]:
+                        response += f'@{ipost["num"]}: {ipost["subject"]} <{ipost["url"]}>\n'
+                else:
+                    response += 'None today!\n'
+                
+                response += '\nDiscussion posts: \n'
+                if len(posts[1]) < 1: response += 'None today!'
+                for post in posts[1]:
+                    response += f'@{post["num"]}: {post["subject"]} <{post["url"]}>\n'
+                await self.send_at_time(self) 
+                for chnl in self.d_handler.piazza_handler.channels:
+                    channel = self.bot.get_channel(chnl)
+                    await channel.send(response)
+            await asyncio.sleep(60*60*24)
+    
+    @staticmethod
+    async def track_inotes(self):
+        while True:
+            if self.d_handler.piazza_handler:
+                posts = self.d_handler.piazza_handler.get_recent_notes()
+                if len(posts) > 1:
+                    response = 'Instructor Update:\n'
+                    for post in posts:
+                        response += f'@{post["num"]}: {post["subject"]} <{post["url"]}>\n'
+                    for chnl in self.d_handler.piazza_handler.channels:
+                        channel = self.bot.get_channel(chnl)
+                        await channel.send(response)
+            await asyncio.sleep(60*60*5)
+
 
     # add more commands here with the same syntax
     # also just look up the docs lol i can't do everything

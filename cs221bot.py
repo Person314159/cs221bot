@@ -196,7 +196,8 @@ async def on_command_error(ctx, error):
             print("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```".replace(
                 "C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
 
-
+bot.loop.create_task(Main.track_inotes(bot.get_cog("Main")))
+bot.loop.create_task(Main.send_pupdate(bot.get_cog("Main")))
 bot.loop.create_task(Main.stream_tracking(bot.get_cog("Main")))
 bot.loop.create_task(Main.assignment_reminder(bot.get_cog("Main")))
 bot.run(CS221BOT_KEY)
