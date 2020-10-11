@@ -45,9 +45,9 @@ class Main(commands.Cog):
         if not ctx.channel.name.startswith("221dm-"): return
         await ctx.send("Closing DM.")
         for role in ctx.guild.roles:
-          if role.name == ctx.channel.name:
-            await role.delete()
-            break
+            if role.name == ctx.channel.name:
+                await role.delete()
+                break
         await ctx.channel.delete()
         
     @commands.command()
@@ -319,8 +319,8 @@ class Main(commands.Cog):
         nam = f"221dm-{nam}"
         role = await ctx.guild.create_role(name=nam, colour = discord.Colour(0x2f3136)) # create custom role
         for user in ctx.message.mentions:
-          try: await user.add_roles(role)
-          except: pass # if for whatever reason one of the people doesn't exist, just ignore and keep going
+            try: await user.add_roles(role)
+            except: pass # if for whatever reason one of the people doesn't exist, just ignore and keep going
         access = discord.PermissionOverwrite(read_messages=True, send_messages=True, read_message_history=True)
         noaccess = discord.PermissionOverwrite(read_messages=False, read_message_history=False, send_messages=False)
         overwrites = {
