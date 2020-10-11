@@ -40,6 +40,16 @@ class Main(commands.Cog):
         self.add_instructor_role_counter = 0
         self.d_handler = DiscordHandler()
 
+    @commands.command(hidden=True)
+    async def close(self, ctx):
+        if not ctx.channel.name.startswith("221dm-"): return
+        await ctx.send("Closing DM.")
+        for role in ctx.guild.roles:
+          if role.name == ctx.channel.name:
+            await role.delete()
+            break
+        await ctx.channel.delete()
+        
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def colour(self, ctx):
@@ -296,6 +306,33 @@ class Main(commands.Cog):
     async def die(self, ctx):
         await self.bot.logout()
 
+    @commands.command(hidden=True)
+    async def dm(self, ctx):
+        # only works in 221 server, replace id with your own server's if using elsewhere
+        if ctx.guild.id != 745503628479037492: return
+        for role in ctx.author.roles:
+            if role.name in ["TA", "Prof"]: break
+        else: return # only TAs and Prof can use this command
+        if len(ctx.message.mentions) == 0: return await ctx.send("You need to specify a user to add!")
+        # generate customized channel name to allow customized role
+        nam = int(str((datetime.datetime.now()- datetime.datetime(1970,1,1)).total_seconds()).replace(".", ""))+ctx.author.id
+        nam = f"221dm-{nam}"
+        role = await ctx.guild.create_role(name=nam, colour = discord.Colour(0x2f3136)) # create custom role
+        for user in ctx.message.mentions:
+          try: await user.add_roles(role)
+          except: pass # if for whatever reason one of the people doesn't exist, just ignore and keep going
+        access = discord.PermissionOverwrite(read_messages=True, send_messages=True, read_message_history=True)
+        noaccess = discord.PermissionOverwrite(read_messages=False, read_message_history=False, send_messages=False)
+        overwrites = {
+            # allow Computers and the new role, deny everyone else including Fake TA
+            ctx.guild.default_role: noaccess,
+            ctx.guild.get_role(748035942945914920): access,
+            role: access
+        }
+        channel = await ctx.guild.create_text_channel(nam, overwrites=overwrites, category = ctx.guild.get_channel(764654262138437652)) # this id is id of group dm category
+        await ctx.send("Opened channel.")
+        await channel.send("Welcome to 221 private DM. Type `!close` to exit when you are finished.")
+        
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def gtcycle(self, ctx, limit, *, txt):
@@ -404,7 +441,7 @@ class Main(commands.Cog):
                    "ze": 747925349232279552, "they": 747925313748729976}
 
         for role in ctx.guild.roles:
-            if name == role.name.lower() and role.name not in invalid_roles:
+            if name == role.name.lower() and role.name not in invalid_roles and not role.name.startswith("221dm-"):
                 if role.name in invalid_roles:
                     self.add_instructor_role_counter += 1
                     if self.add_instructor_role_counter > 5:
