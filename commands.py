@@ -329,7 +329,7 @@ class Main(commands.Cog):
             ctx.guild.get_role(748035942945914920): access,
             role: access
         }
-        channel = await ctx.guild.create_text_channel(nam, overwrites=overwrites, category = ctx.guild.get_channel(764654262138437652)) # this id is id of group dm category
+        channel = await ctx.guild.create_text_channel(nam, overwrites=overwrites, category = ctx.guild.get_channel(764672304793255986)) # this id is id of group dm category
         await ctx.send("Opened channel.")
         await channel.send("Welcome to 221 private DM. Type `!close` to exit when you are finished.")
         
