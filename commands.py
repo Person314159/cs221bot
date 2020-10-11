@@ -451,7 +451,7 @@ class Main(commands.Cog):
                    "ze": 747925349232279552, "they": 747925313748729976}
 
         for role in ctx.guild.roles:
-            if name == role.name.lower() and role.name not in invalid_roles and not role.name.startswith("221dm-"):
+            if name == role.name.lower() and not role.name.startswith("221dm-"):
                 if role.name in invalid_roles:
                     self.add_instructor_role_counter += 1
                     if self.add_instructor_role_counter > 5:
