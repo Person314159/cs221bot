@@ -19,8 +19,7 @@ CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUef
 load_dotenv()
 CS221BOT_KEY = os.getenv("CS221BOT_KEY")
 
-bot = commands.Bot(command_prefix="!", help_command=None,
-                   intents=discord.Intents.all())
+bot = commands.Bot(command_prefix="!", help_command=None, intents=discord.Intents.all())
 
 
 def loadJSON(jsonfile):
@@ -193,8 +192,7 @@ async def on_command_error(ctx, error):
         try:
             await ctx.send("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```".replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
         except Exception:
-            print("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```".replace(
-                "C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
+            print("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```".replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
 
 bot.loop.create_task(Main.track_inotes(bot.get_cog("Main")))
 bot.loop.create_task(Main.send_pupdate(bot.get_cog("Main")))

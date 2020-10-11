@@ -6,7 +6,7 @@ import os
 import random
 import pytz
 import re
-from datetime import timedelta
+from datetime import timedelta, datetime
 from fractions import Fraction
 from io import BytesIO
 from typing import List, Optional
@@ -153,16 +153,14 @@ class Main(commands.Cog):
 
         def get_colour_name(requested_colour):
             try:
-                closest_name = actual_name = webcolors.rgb_to_name(
-                    requested_colour)
+                closest_name = actual_name = webcolors.rgb_to_name(requested_colour)
             except ValueError:
                 closest_name = closest_colour(requested_colour)
                 actual_name = None
 
             return actual_name, closest_name
 
-        css = {"lightsalmon": "0xFFA07A", "salmon": "0xFA8072", "darksalmon": "0xE9967A", "lightcoral": "0xF08080", "indianred": "0xCD5C5C", "crimson": "0xDC143C", "firebrick": "0xB22222", "red": "0xFF0000", "darkred": "0x8B0000", "coral": "0xFF7F50", "tomato": "0xFF6347", "orangered": "0xFF4500", "gold": "0xFFD700", "orange": "0xFFA500", "darkorange": "0xFF8C00", "lightyellow": "0xFFFFE0", "lemonchiffon": "0xFFFACD", "lightgoldenrodyellow": "0xFAFAD2", "papayawhip": "0xFFEFD5", "moccasin": "0xFFE4B5", "peachpuff": "0xFFDAB9", "palegoldenrod": "0xEEE8AA", "khaki": "0xF0E68C", "darkkhaki": "0xBDB76B", "yellow": "0xFFFF00", "lawngreen": "0x7CFC00", "chartreuse": "0x7FFF00", "limegreen": "0x32CD32", "lime": "0x00FF00", "forestgreen": "0x228B22", "green": "0x008000", "darkgreen": "0x006400", "greenyellow": "0xADFF2F", "yellowgreen": "0x9ACD32", "springgreen": "0x00FF7F", "mediumspringgreen": "0x00FA9A", "lightgreen": "0x90EE90", "palegreen": "0x98FB98", "darkseagreen": "0x8FBC8F", "mediumseagreen": "0x3CB371", "seagreen": "0x2E8B57", "olive": "0x808000", "darkolivegreen": "0x556B2F", "olivedrab": "0x6B8E23", "lightcyan": "0xE0FFFF", "cyan": "0x00FFFF", "aqua": "0x00FFFF", "aquamarine": "0x7FFFD4", "mediumaquamarine": "0x66CDAA", "paleturquoise": "0xAFEEEE", "turquoise": "0x40E0D0", "mediumturquoise": "0x48D1CC", "darkturquoise": "0x00CED1", "lightseagreen": "0x20B2AA", "cadetblue": "0x5F9EA0", "darkcyan": "0x008B8B", "teal": "0x008080", "powderblue": "0xB0E0E6", "lightblue": "0xADD8E6", "lightskyblue": "0x87CEFA", "skyblue": "0x87CEEB", "deepskyblue": "0x00BFFF", "lightsteelblue": "0xB0C4DE", "dodgerblue": "0x1E90FF", "cornflowerblue": "0x6495ED", "steelblue": "0x4682B4", "royalblue": "0x4169E1", "blue": "0x0000FF",
-               "mediumblue": "0x0000CD", "darkblue": "0x00008B", "navy": "0x000080", "midnightblue": "0x191970", "mediumslateblue": "0x7B68EE", "slateblue": "0x6A5ACD", "darkslateblue": "0x483D8B", "lavender": "0xE6E6FA", "thistle": "0xD8BFD8", "plum": "0xDDA0DD", "violet": "0xEE82EE", "orchid": "0xDA70D6", "fuchsia": "0xFF00FF", "magenta": "0xFF00FF", "mediumorchid": "0xBA55D3", "mediumpurple": "0x9370DB", "blueviolet": "0x8A2BE2", "darkviolet": "0x9400D3", "darkorchid": "0x9932CC", "darkmagenta": "0x8B008B", "purple": "0x800080", "indigo": "0x4B0082", "pink": "0xFFC0CB", "lightpink": "0xFFB6C1", "hotpink": "0xFF69B4", "deeppink": "0xFF1493", "palevioletred": "0xDB7093", "mediumvioletred": "0xC71585", "white": "0xFFFFFF", "snow": "0xFFFAFA", "honeydew": "0xF0FFF0", "mintcream": "0xF5FFFA", "azure": "0xF0FFFF", "aliceblue": "0xF0F8FF", "ghostwhite": "0xF8F8FF", "whitesmoke": "0xF5F5F5", "seashell": "0xFFF5EE", "beige": "0xF5F5DC", "oldlace": "0xFDF5E6", "floralwhite": "0xFFFAF0", "ivory": "0xFFFFF0", "antiquewhite": "0xFAEBD7", "linen": "0xFAF0E6", "lavenderblush": "0xFFF0F5", "mistyrose": "0xFFE4E1", "gainsboro": "0xDCDCDC", "lightgray": "0xD3D3D3", "silver": "0xC0C0C0", "darkgray": "0xA9A9A9", "gray": "0x808080", "dimgray": "0x696969", "lightslategray": "0x778899", "slategray": "0x708090", "darkslategray": "0x2F4F4F", "black": "0x000000", "cornsilk": "0xFFF8DC", "blanchedalmond": "0xFFEBCD", "bisque": "0xFFE4C4", "navajowhite": "0xFFDEAD", "wheat": "0xF5DEB3", "burlywood": "0xDEB887", "tan": "0xD2B48C", "rosybrown": "0xBC8F8F", "sandybrown": "0xF4A460", "goldenrod": "0xDAA520", "peru": "0xCD853F", "chocolate": "0xD2691E", "saddlebrown": "0x8B4513", "sienna": "0xA0522D", "brown": "0xA52A2A", "maroon": "0x800000"}
+        css = {"lightsalmon": "0xFFA07A", "salmon": "0xFA8072", "darksalmon": "0xE9967A", "lightcoral": "0xF08080", "indianred": "0xCD5C5C", "crimson": "0xDC143C", "firebrick": "0xB22222", "red": "0xFF0000", "darkred": "0x8B0000", "coral": "0xFF7F50", "tomato": "0xFF6347", "orangered": "0xFF4500", "gold": "0xFFD700", "orange": "0xFFA500", "darkorange": "0xFF8C00", "lightyellow": "0xFFFFE0", "lemonchiffon": "0xFFFACD", "lightgoldenrodyellow": "0xFAFAD2", "papayawhip": "0xFFEFD5", "moccasin": "0xFFE4B5", "peachpuff": "0xFFDAB9", "palegoldenrod": "0xEEE8AA", "khaki": "0xF0E68C", "darkkhaki": "0xBDB76B", "yellow": "0xFFFF00", "lawngreen": "0x7CFC00", "chartreuse": "0x7FFF00", "limegreen": "0x32CD32", "lime": "0x00FF00", "forestgreen": "0x228B22", "green": "0x008000", "darkgreen": "0x006400", "greenyellow": "0xADFF2F", "yellowgreen": "0x9ACD32", "springgreen": "0x00FF7F", "mediumspringgreen": "0x00FA9A", "lightgreen": "0x90EE90", "palegreen": "0x98FB98", "darkseagreen": "0x8FBC8F", "mediumseagreen": "0x3CB371", "seagreen": "0x2E8B57", "olive": "0x808000", "darkolivegreen": "0x556B2F", "olivedrab": "0x6B8E23", "lightcyan": "0xE0FFFF", "cyan": "0x00FFFF", "aqua": "0x00FFFF", "aquamarine": "0x7FFFD4", "mediumaquamarine": "0x66CDAA", "paleturquoise": "0xAFEEEE", "turquoise": "0x40E0D0", "mediumturquoise": "0x48D1CC", "darkturquoise": "0x00CED1", "lightseagreen": "0x20B2AA", "cadetblue": "0x5F9EA0", "darkcyan": "0x008B8B", "teal": "0x008080", "powderblue": "0xB0E0E6", "lightblue": "0xADD8E6", "lightskyblue": "0x87CEFA", "skyblue": "0x87CEEB", "deepskyblue": "0x00BFFF", "lightsteelblue": "0xB0C4DE", "dodgerblue": "0x1E90FF", "cornflowerblue": "0x6495ED", "steelblue": "0x4682B4", "royalblue": "0x4169E1", "blue": "0x0000FF", "mediumblue": "0x0000CD", "darkblue": "0x00008B", "navy": "0x000080", "midnightblue": "0x191970", "mediumslateblue": "0x7B68EE", "slateblue": "0x6A5ACD", "darkslateblue": "0x483D8B", "lavender": "0xE6E6FA", "thistle": "0xD8BFD8", "plum": "0xDDA0DD", "violet": "0xEE82EE", "orchid": "0xDA70D6", "fuchsia": "0xFF00FF", "magenta": "0xFF00FF", "mediumorchid": "0xBA55D3", "mediumpurple": "0x9370DB", "blueviolet": "0x8A2BE2", "darkviolet": "0x9400D3", "darkorchid": "0x9932CC", "darkmagenta": "0x8B008B", "purple": "0x800080", "indigo": "0x4B0082", "pink": "0xFFC0CB", "lightpink": "0xFFB6C1", "hotpink": "0xFF69B4", "deeppink": "0xFF1493", "palevioletred": "0xDB7093", "mediumvioletred": "0xC71585", "white": "0xFFFFFF", "snow": "0xFFFAFA", "honeydew": "0xF0FFF0", "mintcream": "0xF5FFFA", "azure": "0xF0FFFF", "aliceblue": "0xF0F8FF", "ghostwhite": "0xF8F8FF", "whitesmoke": "0xF5F5F5", "seashell": "0xFFF5EE", "beige": "0xF5F5DC", "oldlace": "0xFDF5E6", "floralwhite": "0xFFFAF0", "ivory": "0xFFFFF0", "antiquewhite": "0xFAEBD7", "linen": "0xFAF0E6", "lavenderblush": "0xFFF0F5", "mistyrose": "0xFFE4E1", "gainsboro": "0xDCDCDC", "lightgray": "0xD3D3D3", "silver": "0xC0C0C0", "darkgray": "0xA9A9A9", "gray": "0x808080", "dimgray": "0x696969", "lightslategray": "0x778899", "slategray": "0x708090", "darkslategray": "0x2F4F4F", "black": "0x000000", "cornsilk": "0xFFF8DC", "blanchedalmond": "0xFFEBCD", "bisque": "0xFFE4C4", "navajowhite": "0xFFDEAD", "wheat": "0xF5DEB3", "burlywood": "0xDEB887", "tan": "0xD2B48C", "rosybrown": "0xBC8F8F", "sandybrown": "0xF4A460", "goldenrod": "0xDAA520", "peru": "0xCD853F", "chocolate": "0xD2691E", "saddlebrown": "0x8B4513", "sienna": "0xA0522D", "brown": "0xA52A2A", "maroon": "0x800000"}
 
         def RGB(r, g, b, colour):
             h, s, l = RGB_to_HSL(r, g, b)
@@ -172,15 +170,13 @@ class Main(commands.Cog):
             hsl = f"hsl({round(float(h), 2)},{round(float(s), 2)}%,{round(float(l), 2)}%)"
             cmyk = f"cmyk({round(float(c), 2)}%,{round(float(m), 2)}%,{round(float(y), 2)}%,{round(float(k), 2)}%)"
             css_code = get_colour_name((r, g, b))[1]
-            embed = discord.Embed(
-                title=colour, description="", colour=int(Hex[1:], 16))
+            embed = discord.Embed(title=colour, description="", colour=int(Hex[1:], 16))
             embed.add_field(name="Hex", value=Hex, inline=True)
             embed.add_field(name="RGB", value=rgb, inline=True)
             embed.add_field(name="HSL", value=hsl, inline=True)
             embed.add_field(name="CMYK", value=cmyk, inline=True)
             embed.add_field(name="CSS", value=css_code, inline=True)
-            embed.set_thumbnail(
-                url=f"https://serux.pro/rendercolour/?rgb={r},{g},{b}")
+            embed.set_thumbnail(url=f"https://serux.pro/rendercolour/?rgb={r},{g},{b}")
             return embed
 
         def hslRGB(h, s, l, colour):
@@ -195,15 +191,13 @@ class Main(commands.Cog):
             hsl = f"hsl({round(float(h), 2)},{round(float(s), 2)}%,{round(float(l), 2)}%)"
             cmyk = f"cmyk({round(float(c), 2)}%,{round(float(m), 2)}%,{round(float(y), 2)}%,{round(float(k), 2)}%)"
             css_code = get_colour_name((r, g, b))[1]
-            embed = discord.Embed(
-                title=colour, description="", colour=int(Hex[1:], 16))
+            embed = discord.Embed(title=colour, description="", colour=int(Hex[1:], 16))
             embed.add_field(name="Hex", value=Hex, inline=True)
             embed.add_field(name="RGB", value=rgb, inline=True)
             embed.add_field(name="HSL", value=hsl, inline=True)
             embed.add_field(name="CMYK", value=cmyk, inline=True)
             embed.add_field(name="CSS", value=css_code, inline=True)
-            embed.set_thumbnail(
-                url=f"https://serux.pro/rendercolour/?rgb={r},{g},{b}")
+            embed.set_thumbnail(url=f"https://serux.pro/rendercolour/?rgb={r},{g},{b}")
             return embed
 
         def cmykRGB(c, m, y, k, colour):
@@ -217,15 +211,13 @@ class Main(commands.Cog):
             hsl = f"hsl({round(float(h), 2)},{round(float(s), 2)}%,{round(float(l), 2)}%)"
             cmyk = f"cmyk({round(float(c), 2)}%,{round(float(m), 2)}%,{round(float(y), 2)}%,{round(float(k), 2)}%)"
             css_code = get_colour_name((r, g, b))[1]
-            embed = discord.Embed(
-                title=colour, description="", colour=int(Hex[1:], 16))
+            embed = discord.Embed(title=colour, description="", colour=int(Hex[1:], 16))
             embed.add_field(name="Hex", value=Hex, inline=True)
             embed.add_field(name="RGB", value=rgb, inline=True)
             embed.add_field(name="HSL", value=hsl, inline=True)
             embed.add_field(name="CMYK", value=cmyk, inline=True)
             embed.add_field(name="CSS", value=css_code, inline=True)
-            embed.set_thumbnail(
-                url=f"https://serux.pro/rendercolour/?rgb={r},{g},{b}")
+            embed.set_thumbnail(url=f"https://serux.pro/rendercolour/?rgb={r},{g},{b}")
             return embed
 
         def cssRGB(colour):
@@ -239,15 +231,13 @@ class Main(commands.Cog):
             hsl = f"hsl({round(float(h), 2)},{round(float(s), 2)}%,{round(float(l), 2)}%)"
             cmyk = f"cmyk({round(float(c), 2)}%,{round(float(m), 2)}%,{round(float(y), 2)}%,{round(float(k), 2)}%)"
             css_code = get_colour_name((r, g, b))[1]
-            embed = discord.Embed(
-                title=colour, description="", colour=int(Hex[1:], 16))
+            embed = discord.Embed(title=colour, description="", colour=int(Hex[1:], 16))
             embed.add_field(name="Hex", value=Hex, inline=True)
             embed.add_field(name="RGB", value=rgb, inline=True)
             embed.add_field(name="HSL", value=hsl, inline=True)
             embed.add_field(name="CMYK", value=cmyk, inline=True)
             embed.add_field(name="CSS", value=css_code, inline=True)
-            embed.set_thumbnail(
-                url=f"https://serux.pro/rendercolour/?rgb={r},{g},{b}")
+            embed.set_thumbnail(url=f"https://serux.pro/rendercolour/?rgb={r},{g},{b}")
             return embed
 
         colour = ctx.message.content[len(self.bot.command_prefix) + 7:]
@@ -317,38 +307,44 @@ class Main(commands.Cog):
 
         # meant for 221 server
         guild = self.bot.get_guild(745503628479037492)
+
         if "close" in ctx.message.content.lower():
             if not ctx.channel.name.startswith("221dm-"):
                 return await ctx.send("This is not a 221DM.")
+
             await ctx.send("Closing 221DM.")
+
             for role in guild.roles:
                 if role.name == ctx.channel.name:
                     await role.delete()
                     break
+
             return await ctx.channel.delete()
+
         for role in ctx.author.roles:
             if role.name in ["TA", "Prof"]:
                 break
         else:
             # only TAs and Prof can use this command
             return await ctx.send("You do not have permission to use this command.")
+
         if len(ctx.message.mentions) == 0:
             return await ctx.send("You need to specify a user or users to add!")
+
         # generate customized channel name to allow customized role
-        nam = int(str((datetime.datetime.now()
-                       - datetime.datetime(1970, 1, 1)).total_seconds()).replace(".", "")) + ctx.author.id
+        nam = int(str((datetime.now() - datetime(1970, 1, 1)).total_seconds()).replace(".", "")) + ctx.author.id
         nam = f"221dm-{nam}"
         # create custom role
         role = await guild.create_role(name=nam, colour=discord.Colour(0x2f3136))
+
         for user in ctx.message.mentions:
             try:
                 await user.add_roles(role)
             except:
                 pass  # if for whatever reason one of the people doesn't exist, just ignore and keep going
-        access = discord.PermissionOverwrite(
-            read_messages=True, send_messages=True, read_message_history=True)
-        noaccess = discord.PermissionOverwrite(
-            read_messages=False, read_message_history=False, send_messages=False)
+
+        access = discord.PermissionOverwrite(read_messages=True, send_messages=True, read_message_history=True)
+        noaccess = discord.PermissionOverwrite(read_messages=False, read_message_history=False, send_messages=False)
         overwrites = {
             # allow Computers and the new role, deny everyone else including Fake TA
             guild.default_role: noaccess,
@@ -392,8 +388,7 @@ class Main(commands.Cog):
         translator = Translator()
 
         for i in range(len(lang_list) - 1):
-            translation = translator.translate(
-                txt, src=lang_list[i], dest=lang_list[i + 1])
+            translation = translator.translate(txt, src=lang_list[i], dest=lang_list[i + 1])
             txt = translation.text
             await asyncio.sleep(0)
 
@@ -408,6 +403,7 @@ class Main(commands.Cog):
                 await ctx.send(txt)
         else:
             await ctx.send(txt)
+
         return
 
     @commands.command()
@@ -425,15 +421,11 @@ class Main(commands.Cog):
         main = self.bot.get_cog("Main")
 
         if not arg:
-            embed = discord.Embed(title="CS221 Bot", description="Commands:", colour=random.randint(
-                0, 0xFFFFFF), timestamp=datetime.datetime.utcnow())
-            embed.add_field(
-                name=f"❗ Current Prefix: `{self.bot.command_prefix}`", value="\u200b", inline=False)
-            embed.add_field(name="Commands", value=" ".join(
-                f"`{i}`" for i in main.get_commands() if not i.hidden), inline=False)
+            embed = discord.Embed(title="CS221 Bot", description="Commands:", colour=random.randint(0, 0xFFFFFF), timestamp=datetime.utcnow())
+            embed.add_field(name=f"❗ Current Prefix: `{self.bot.command_prefix}`", value="\u200b", inline=False)
+            embed.add_field(name="Commands", value=" ".join(f"`{i}`" for i in main.get_commands() if not i.hidden), inline=False)
             embed.set_thumbnail(url=self.bot.user.avatar_url)
-            embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=str(
-                ctx.author.avatar_url))
+            embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=str(ctx.author.avatar_url))
             await ctx.send(embed=embed)
         else:
             help_command = arg[0]
@@ -463,10 +455,8 @@ class Main(commands.Cog):
         # case where role name is space separated
         name = " ".join(arg).lower()
         # make sure that you can't add roles like "prof" or "ta"
-        invalid_roles = ["Prof", "TA", "Fake TA",
-                         "Computers", "Server Booster", "C++Bot", "CS221 bot"]
-        aliases = {"he": 747925204864335935, "she": 747925268181811211,
-                   "ze": 747925349232279552, "they": 747925313748729976}
+        invalid_roles = ["Prof", "TA", "Fake TA", "Computers", "Server Booster", "C++Bot", "CS221 bot"]
+        aliases = {"he": 747925204864335935, "she": 747925268181811211, "ze": 747925349232279552, "they": 747925313748729976}
 
         for role in ctx.guild.roles:
             if name == role.name.lower() and not role.name.startswith("221dm-"):
@@ -511,12 +501,10 @@ class Main(commands.Cog):
         formula = ctx.message.content[len(self.bot.command_prefix) + 6:]
         formula = formula.replace("%", "%25").replace("&", "%26")
         body = "formula=" + formula + \
-            "&fsize=30px&fcolor=FFFFFF&mode=0&out=1&remhost=quicklatex.com&preamble=\\usepackage{amsmath}\\usepackage{amsfonts}\\usepackage{amssymb}&rnd=" + str(
-                random.random() * 100)
+            "&fsize=30px&fcolor=FFFFFF&mode=0&out=1&remhost=quicklatex.com&preamble=\\usepackage{amsmath}\\usepackage{amsfonts}\\usepackage{amssymb}&rnd=" + str(random.random() * 100)
 
         try:
-            img = requests.post(
-                "https://www.quicklatex.com/latex3.f", data=body.encode("utf-8"), timeout=10)
+            img = requests.post("https://www.quicklatex.com/latex3.f", data=body.encode("utf-8"), timeout=10)
         except Exception:
             return await ctx.send("Render timed out.", delete_after=5)
 
@@ -697,6 +685,7 @@ class Main(commands.Cog):
     async def reload(self, ctx, *modules):
         if not isinstance(ctx.channel, discord.DMChannel):
             await ctx.message.delete()
+
         self.bot.reload_extension("commands")
         self.canvas_init(self.bot.get_cog("Main"))
         await ctx.send("Done")
@@ -746,8 +735,7 @@ class Main(commands.Cog):
             most_active_channel = 0
             most_active_channel_name = None
             cum_message_count = 0
-            yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).replace(
-                tzinfo=pytz.timezone("US/Pacific")).astimezone(datetime.timezone.utc).replace(tzinfo=None)
+            yesterday = (datetime.now() - datetime.timedelta(days=1)).replace(tzinfo=pytz.timezone("US/Pacific")).astimezone(datetime.timezone.utc).replace(tzinfo=None)
 
             for channel in ctx.guild.text_channels:
                 counter = 0
@@ -761,18 +749,12 @@ class Main(commands.Cog):
                     most_active_channel = counter
                     most_active_channel_name = "#" + channel.name
 
-            embed = discord.Embed(
-                title=f"Report for user `{user.name}#{user.discriminator}` (all times in UTC)")
-            embed.add_field(name="Date Joined", value=user.joined_at.strftime(
-                "%A, %Y %B %d @ %H:%M:%S"), inline=True)
-            embed.add_field(name="Account Created", value=user.created_at.strftime(
-                "%A, %Y %B %d @ %H:%M:%S"), inline=True)
-            embed.add_field(name="Roles", value=", ".join([str(i) for i in sorted(
-                user.roles[1:], key=lambda role: role.position, reverse=True)]), inline=True)
-            embed.add_field(name="Most active text channel in last 24 h",
-                            value=f"{most_active_channel_name} ({most_active_channel} messages)", inline=True)
-            embed.add_field(name="Total messages sent in last 24 h",
-                            value=cum_message_count, inline=True)
+            embed = discord.Embed(title=f"Report for user `{user.name}#{user.discriminator}` (all times in UTC)")
+            embed.add_field(name="Date Joined", value=user.joined_at.strftime("%A, %Y %B %d @ %H:%M:%S"), inline=True)
+            embed.add_field(name="Account Created", value=user.created_at.strftime("%A, %Y %B %d @ %H:%M:%S"), inline=True)
+            embed.add_field(name="Roles", value=", ".join([str(i) for i in sorted(user.roles[1:], key=lambda role: role.position, reverse=True)]), inline=True)
+            embed.add_field(name="Most active text channel in last 24 h", value=f"{most_active_channel_name} ({most_active_channel} messages)", inline=True)
+            embed.add_field(name="Total messages sent in last 24 h", value=cum_message_count, inline=True)
 
             await ctx.send(embed=embed)
 
@@ -783,19 +765,17 @@ class Main(commands.Cog):
         self._add_guild(ctx.message.guild)
 
         c_handler = self._get_canvas_handler(ctx.message.guild)
+
         if not isinstance(c_handler, CanvasHandler):
             return await ctx.send("Canvas Handler doesn't exist.", delete_after=5)
 
         c_handler.track_course(course_ids)
 
-        self.bot.canvas_dict[str(ctx.message.guild.id)]["courses"] = [
-            str(c.id) for c in c_handler.courses]
+        self.bot.canvas_dict[str(ctx.message.guild.id)]["courses"] = [str(c.id) for c in c_handler.courses]
         self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
 
-        embed_var = self._get_tracking_courses(
-            c_handler, CANVAS_API_URL)
-        embed_var.set_footer(
-            text=f"Requested by {ctx.author.display_name}", icon_url=str(ctx.author.avatar_url))
+        embed_var = self._get_tracking_courses(c_handler, CANVAS_API_URL)
+        embed_var.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=str(ctx.author.avatar_url))
         await ctx.send(embed=embed_var)
 
     @commands.command(hidden=True)
@@ -803,21 +783,20 @@ class Main(commands.Cog):
     @commands.guild_only()
     async def untrack(self, ctx: commands.Context, *course_ids: str):
         c_handler = self._get_canvas_handler(ctx.message.guild)
+
         if not isinstance(c_handler, CanvasHandler):
             return await ctx.send("Canvas Handler doesn't exist.", delete_after=5)
 
         c_handler.untrack_course(course_ids)
+
         if not c_handler.courses:
             self.d_handler.canvas_handlers.remove(c_handler)
 
-        self.bot.canvas_dict[str(ctx.message.guild.id)]["courses"] = [
-            str(c.id) for c in c_handler.courses]
+        self.bot.canvas_dict[str(ctx.message.guild.id)]["courses"] = [str(c.id) for c in c_handler.courses]
         self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
 
-        embed_var = self._get_tracking_courses(
-            c_handler, CANVAS_API_URL)
-        embed_var.set_footer(
-            text=f"Requested by {ctx.author.display_name}", icon_url=str(ctx.author.avatar_url))
+        embed_var = self._get_tracking_courses(c_handler, CANVAS_API_URL)
+        embed_var.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=str(ctx.author.avatar_url))
         await ctx.send(embed=embed_var)
 
     @commands.command()
@@ -837,7 +816,9 @@ class Main(commands.Cog):
 
         `!asgn -all` returns ALL assignments.
         """
+
         c_handler = self._get_canvas_handler(ctx.message.guild)
+
         if not isinstance(c_handler, CanvasHandler):
             return await ctx.send("Canvas Handler doesn't exist.", delete_after=5)
 
@@ -851,21 +832,18 @@ class Main(commands.Cog):
             due = "2-week"
             course_ids = args
 
-        assignments = c_handler.get_assignments(
-            due, course_ids, CANVAS_API_URL)
+        assignments = c_handler.get_assignments(due, course_ids, CANVAS_API_URL)
 
         if not assignments:
             pattern = r'\d{4}-\d{2}-\d{2}'
             return await ctx.send(f"No assignments due by {due}{' (at 00:00)' if re.match(pattern, due) else ''}.")
 
         for data in assignments:
-            embed_var = discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR,
-                                      timestamp=datetime.datetime.strptime(data[5], "%Y-%m-%d %H:%M:%S"))
+            embed_var = discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR, timestamp=datetime.strptime(data[5], "%Y-%m-%d %H:%M:%S"))
             embed_var.set_author(name=data[0], url=data[1])
             embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
             embed_var.add_field(name="Due at", value=data[6], inline=True)
-            embed_var.set_footer(
-                text="Created at", icon_url=CANVAS_THUMBNAIL_URL)
+            embed_var.set_footer(text="Created at", icon_url=CANVAS_THUMBNAIL_URL)
             await ctx.send(embed=embed_var)
 
     @commands.command(hidden=True)
@@ -873,13 +851,14 @@ class Main(commands.Cog):
     @commands.guild_only()
     async def live(self, ctx: commands.Context):
         c_handler = self._get_canvas_handler(ctx.message.guild)
+
         if not isinstance(c_handler, CanvasHandler):
             return await ctx.send("Canvas Handler doesn't exist.", delete_after=5)
+
         if ctx.message.channel not in c_handler.live_channels:
             c_handler.live_channels.append(ctx.message.channel)
 
-            self.bot.canvas_dict[str(ctx.message.guild.id)]["live_channels"] = [
-                channel.id for channel in c_handler.live_channels]
+            self.bot.canvas_dict[str(ctx.message.guild.id)]["live_channels"] = [channel.id for channel in c_handler.live_channels]
             self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
 
             await ctx.send("Added channel to live tracking.")
@@ -889,13 +868,14 @@ class Main(commands.Cog):
     @commands.guild_only()
     async def unlive(self, ctx: commands.Context):
         c_handler = self._get_canvas_handler(ctx.message.guild)
+
         if not isinstance(c_handler, CanvasHandler):
             return await ctx.send("Canvas Handler doesn't exist.", delete_after=5)
+
         if ctx.message.channel in c_handler.live_channels:
             c_handler.live_channels.remove(ctx.message.channel)
 
-            self.bot.canvas_dict[str(ctx.message.guild.id)]["live_channels"] = [
-                channel.id for channel in c_handler.live_channels]
+            self.bot.canvas_dict[str(ctx.message.guild.id)]["live_channels"] = [channel.id for channel in c_handler.live_channels]
             self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
 
             await ctx.send("Removed channel from live tracking.")
@@ -917,7 +897,9 @@ class Main(commands.Cog):
 
         `!stream -all` returns ALL announcements.
         """
+
         c_handler = self._get_canvas_handler(ctx.message.guild)
+
         if not isinstance(c_handler, CanvasHandler):
             return await ctx.send("Canvas Handler doesn't exist.", delete_after=5)
 
@@ -932,8 +914,7 @@ class Main(commands.Cog):
             course_ids = args
 
         for data in c_handler.get_course_stream_ch(since, course_ids, CANVAS_API_URL, CANVAS_API_KEY):
-            embed_var = discord.Embed(
-                title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR)
+            embed_var = discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR)
             embed_var.set_author(name=data[0], url=data[1])
             embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
             embed_var.add_field(name="Created at", value=data[5], inline=True)
@@ -944,19 +925,17 @@ class Main(commands.Cog):
     @commands.guild_only()
     async def info(self, ctx):
         c_handler = self._get_canvas_handler(ctx.message.guild)
-        await ctx.send(str(c_handler.courses) + "\n" +
-                       str(c_handler.guild) + "\n" +
-                       str(c_handler.live_channels) + "\n" +
-                       str(c_handler.timings) + "\n" +
-                       str(c_handler.due_week) + "\n" +
-                       str(c_handler.due_day))
+        await ctx.send("\n".join(str(i) for i in [c_handler.courses, c_handler.guild, c_handler.live_channels, c_handler.timings, c_handler.due_week, c_handler.due_day]))
 
     def _add_guild(self, guild: discord.Guild):
         if guild not in [ch.guild for ch in self.d_handler.canvas_handlers]:
-            self.d_handler.canvas_handlers.append(
-                CanvasHandler(CANVAS_API_URL, "", guild))
+            self.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, "", guild))
             self.bot.canvas_dict[str(guild.id)] = {
-                "courses": [], "live_channels": [], "due_week": {}, "due_day": {}}
+                "courses": [],
+                "live_channels": [],
+                "due_week": {},
+                "due_day": {}
+            }
             self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
 
     def _get_canvas_handler(self, guild: discord.Guild) -> Optional[CanvasHandler]:
@@ -966,12 +945,12 @@ class Main(commands.Cog):
 
     def _get_tracking_courses(self, c_handler: CanvasHandler, CANVAS_API_URL) -> discord.Embed:
         course_names = c_handler.get_course_names(CANVAS_API_URL)
-        embed_var = discord.Embed(
-            title="Tracking Courses:", color=CANVAS_COLOR, timestamp=datetime.datetime.utcnow())
+        embed_var = discord.Embed(title="Tracking Courses:", color=CANVAS_COLOR, timestamp=datetime.utcnow())
         embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
+
         for c_name in course_names:
-            embed_var.add_field(
-                name=c_name[0], value=f"[Course Page]({c_name[1]})")
+            embed_var.add_field(name=c_name[0], value=f"[Course Page]({c_name[1]})")
+
         return embed_var
 
     @staticmethod
@@ -980,25 +959,26 @@ class Main(commands.Cog):
             for ch in self.d_handler.canvas_handlers:
                 if len(ch.live_channels) > 0:
                     notify_role = None
+
                     for role in ch.guild.roles:
                         if role.name.lower() == "notify":
                             notify_role = role
                             break
+
                     for c in ch.courses:
                         since = ch.timings[str(c.id)]
                         since = re.sub(r"\s", "-", since)
-                        data_list = ch.get_course_stream_ch(
-                            since, (str(c.id),), CANVAS_API_URL, CANVAS_API_KEY)
+                        data_list = ch.get_course_stream_ch(since, (str(c.id),), CANVAS_API_URL, CANVAS_API_KEY)
+
                         for data in data_list:
-                            embed_var = discord.Embed(
-                                title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR)
+                            embed_var = discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR)
                             embed_var.set_author(name=data[0], url=data[1])
-                            embed_var.set_thumbnail(
-                                url=CANVAS_THUMBNAIL_URL)
-                            embed_var.add_field(
-                                name="Created at", value=data[5], inline=True)
+                            embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
+                            embed_var.add_field(name="Created at", value=data[5], inline=True)
+
                             for channel in ch.live_channels:
                                 await channel.send(notify_role.mention if notify_role else "", embed=embed_var)
+
                         if data_list:
                             # latest announcement first
                             ch.timings[str(c.id)] = data_list[0][5]
@@ -1011,70 +991,68 @@ class Main(commands.Cog):
             for ch in self.d_handler.canvas_handlers:
                 if ch.live_channels:
                     notify_role = None
+
                     for role in ch.guild.roles:
                         if role.name == "notify":
                             notify_role = role
                             break
+
                     for c in ch.courses:
-                        data_list = ch.get_assignments(
-                            "1-week", (str(c.id),), CANVAS_API_URL)
+                        data_list = ch.get_assignments("1-week", (str(c.id),), CANVAS_API_URL)
                         recorded_ass_ids = ch.due_week[str(c.id)]
                         ass_ids = await self._assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role)
                         ch.due_week[str(c.id)] = ass_ids
-                        self.bot.canvas_dict[str(
-                            ch.guild.id)]["due_week"][str(c.id)] = ass_ids
+                        self.bot.canvas_dict[str(ch.guild.id)]["due_week"][str(c.id)] = ass_ids
 
-                        data_list = ch.get_assignments(
-                            "1-day", (str(c.id),), CANVAS_API_URL)
+                        data_list = ch.get_assignments("1-day", (str(c.id),), CANVAS_API_URL)
                         recorded_ass_ids = ch.due_day[str(c.id)]
                         ass_ids = await self._assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role)
                         ch.due_day[str(c.id)] = ass_ids
-                        self.bot.canvas_dict[str(
-                            ch.guild.id)]["due_day"][str(c.id)] = ass_ids
+                        self.bot.canvas_dict[str(ch.guild.id)]["due_day"][str(c.id)] = ass_ids
 
-                        self.bot.writeJSON(
-                            self.bot.canvas_dict, "data/canvas.json")
+                        self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
 
             await asyncio.sleep(3600)
 
     @staticmethod
     async def _assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role):
         ass_ids = [data[-1] for data in data_list]
-        not_recorded = [data_list[ass_ids.index(
-            i)] for i in ass_ids if i not in recorded_ass_ids]
+        not_recorded = [data_list[ass_ids.index(i)] for i in ass_ids if i not in recorded_ass_ids]
+
         if notify_role and not_recorded:
             for channel in ch.live_channels:
                 await channel.send(notify_role.mention)
+
         for data in not_recorded:
-            embed_var = discord.Embed(
-                title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR, timestamp=datetime.datetime.strptime(data[5], "%Y-%m-%d %H:%M:%S"))
+            embed_var = discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR, timestamp=datetime.strptime(data[5], "%Y-%m-%d %H:%M:%S"))
             embed_var.set_author(name=data[0], url=data[1])
             embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
             embed_var.add_field(name="Due at", value=data[6], inline=True)
             embed_var.set_footer()
-            embed_var.set_footer(
-                text="Created at", icon_url=CANVAS_THUMBNAIL_URL)
+            embed_var.set_footer(text="Created at", icon_url=CANVAS_THUMBNAIL_URL)
+
             for channel in ch.live_channels:
                 await channel.send(embed=embed_var)
+
         return ass_ids
 
     @staticmethod
     def canvas_init(self):
         for c_handler_guild_id in self.bot.canvas_dict:
-            guild = self.bot.guilds[[guild.id for guild in self.bot.guilds].index(
-                int(c_handler_guild_id))]
+            guild = self.bot.guilds[[guild.id for guild in self.bot.guilds].index(int(c_handler_guild_id))]
+
             if guild not in [ch.guild for ch in self.d_handler.canvas_handlers]:
-                self.d_handler.canvas_handlers.append(
-                    CanvasHandler(CANVAS_API_URL, "", guild))
+                self.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, "", guild))
+
             c_handler = self._get_canvas_handler(guild)
-            c_handler.track_course(
-                tuple(self.bot.canvas_dict[c_handler_guild_id]["courses"]))
+            c_handler.track_course(tuple(self.bot.canvas_dict[c_handler_guild_id]["courses"]))
             live_channels_ids = self.bot.canvas_dict[c_handler_guild_id]["live_channels"]
-            live_channels = [
-                channel for channel in guild.text_channels if channel.id in live_channels_ids]
+            live_channels = [channel for channel in guild.text_channels if channel.id in live_channels_ids]
             c_handler.live_channels = live_channels
+
             for c in self.bot.canvas_dict[c_handler_guild_id]["due_week"]:
                 c_handler.due_week[c] = self.bot.canvas_dict[c_handler_guild_id]["due_week"][c]
+
             for c in self.bot.canvas_dict[c_handler_guild_id]["due_day"]:
                 c_handler.due_day[c] = self.bot.canvas_dict[c_handler_guild_id]["due_day"][c]
 
@@ -1097,21 +1075,19 @@ class Main(commands.Cog):
 
         *Only usable by TAs and Profs
         """
-        try:
-            self.d_handler.piazza_handler = PiazzaHandler(name,pid,PIAZZA_EMAIL,PIAZZA_PASSWORD,ctx.guild)
-            response = f'Piazza instance created!\nName: {name}\nPiazza ID: {pid}\n'
-            response += "If the above doesn't look right, please use !pstart again with the correct arguments"
-            await ctx.send(response)
-        except Exception as e:
-            await ctx.send(f'Something went wrong:\n```{e.args}```')
+
+        self.d_handler.piazza_handler = PiazzaHandler(name, pid, PIAZZA_EMAIL, PIAZZA_PASSWORD, ctx.guild)
+        response = f"Piazza instance created!\nName: {name}\nPiazza ID: {pid}\n"
+        response += "If the above doesn't look right, please use !pstart again with the correct arguments"
+        await ctx.send(response)
 
     @commands.command()
     @commands.has_permissions(administrator=True)
-    async def ptrack(self, ctx, cid=0):
+    async def ptrack(self, ctx, *cid):
         """
         `!ptrack` __`channel id`__
 
-        **Usage:** !ptrack <channel id | ''>
+        **Usage:** !ptrack [channel id]
 
         **Examples:**
         `!ptrack 747259140908384386` adds CPSC221 server's #bot-commands channel id to the Piazza instance's list of tracked channels
@@ -1119,14 +1095,16 @@ class Main(commands.Cog):
 
         *Only usable by TAs and Profs
         """
-        if cid==0: cid = int(ctx.message.channel.id)
-        try:
-            self.d_handler.piazza_handler.add_channel(cid)
-        except Exception as e: 
-            await ctx.send(f'Something went wrong:\n```{e.args}```')
+
+        if not cid:
+            cid = ctx.message.channel.id
+        else:
+            cid = int(cid[0])
+
+        self.d_handler.piazza_handler.add_channel(cid)
 
     @commands.command()
-    @commands.cooldown(1,5,commands.BucketType.channel)
+    @commands.cooldown(1, 5, commands.BucketType.channel)
     async def ppinned(self, ctx):
         """
         `!ppinned`
@@ -1138,17 +1116,20 @@ class Main(commands.Cog):
 
         *to prevent hitting the rate-limit, only usable once every 5 secs channel-wide*
         """
+
         if self.d_handler.piazza_handler:
             posts = self.d_handler.piazza_handler.get_pinned()
-            response = f'**Pinned posts for { self.d_handler.piazza_handler.course_name }:**\n'
+            response = f"**Pinned posts for { self.d_handler.piazza_handler.course_name }:**\n"
+
             for post in posts:
-                response += f'@{ post["num"] }: { post["subject"] } <{ post["url"] }>\n'
+                response += f"@{ post['num'] }: { post['subject'] } <{ post['url'] }>\n"
+
             await ctx.send(response)
-        else: 
+        else:
             await ctx.send("Piazza hasn't been instantiated yet!")
 
     @commands.command()
-    @commands.cooldown(1,5,commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def pread(self, ctx, postID):
         """
         `!pread` __`post id`__
@@ -1156,18 +1137,20 @@ class Main(commands.Cog):
         **Usage:** !pread <post id>
 
         **Examples:**
-        `!pread 828` returns an embed with the [post](https://piazza.com/class/ke1ukp9g4xx6oi?cid=828)'s 
+        `!pread 828` returns an embed with the [post](https://piazza.com/class/ke1ukp9g4xx6oi?cid=828)'s
         info (question, answer, answer type, tags)
         """
+
         if not self.d_handler.piazza_handler:
-            await ctx.send("Piazza hasn't been instantiated yet!")
-            return
+            return await ctx.send("Piazza hasn't been instantiated yet!")
+
         post = self.d_handler.piazza_handler.get_post(postID)
-        
-        if post: 
+
+        if post:
             post_embed = self.create_post_embed(post)
             await ctx.send(embed=post_embed)
-        else: await ctx.send("Sorry! That post doesn't exist.")
+        else:
+            await ctx.send("Sorry! That post doesn't exist.")
 
     @commands.command()
     @commands.has_permissions(administrator=True)
@@ -1180,86 +1163,100 @@ class Main(commands.Cog):
         **Examples:**
         `!ptest` simulates a single call of `send_pupdate` to ensure the set-up was done correctly.
         """
-        if self.d_handler.piazza_handler: 
+
+        if self.d_handler.piazza_handler:
             posts = self.d_handler.piazza_handler.get_posts_in_range()
-            response = f'**{ self.d_handler.piazza_handler.course_name }\'s posts for { datetime.date.today() }**\n'
-            response += 'Instructor\'s Notes:\n'
-            if len(posts[0]) > 0:
+            response = f"**{self.d_handler.piazza_handler.course_name}'s posts for {datetime.date.today()}**\n"
+            response += "Instructor's Notes:\n"
+
+            if posts[0]:
                 for ipost in posts[0]:
-                    response += f'@{ipost["num"]}: {ipost["subject"]} <{ipost["url"]}>\n'
+                    response += f"@{ipost['num']}: {ipost['subject']} <{ipost['url']}>\n"
             else:
-                response += 'None today!\n'
-            
-            response += '\nDiscussion posts: \n'
-            if len(posts[1]) < 1: response += 'None today!'
+                response += "None today!\n"
+
+            response += "\nDiscussion posts: \n"
+
+            if not posts[1]:
+                response += "None today!"
+
             for post in posts[1]:
-                response += f'@{post["num"]}: {post["subject"]} <{post["url"]}>\n'
-            await self.send_at_time(self) 
+                response += f"@{post['num']}: {post['subject']} <{post['url']}>\n"
+
+            await self.send_at_time(self)
+
             for chnl in self.d_handler.piazza_handler.channels:
                 channel = self.bot.get_channel(chnl)
                 await channel.send(response)
 
     def create_post_embed(self, post):
         if post:
-            post_embed = discord.Embed(title=post['subject'],
-                                        url=post['url'],
-                                        description=post['num'])
-            post_embed.add_field(name=post['post_type'], value=post['post_body'], inline=False)
-            post_embed.add_field(name=post['ans_type'], value=post['ans_body'], inline=False)
-            if post['more_answers']:
-                post_embed.add_field(name=f'{post["num_answers"]-1} more contributions hidden',
-                                    value='Click the title above to access the rest of the post.',
-                                    inline=False)
-            post_embed.set_footer(text=f'tags: {post["tags"]}')
+            post_embed = discord.Embed(title=post["subject"], url=post["url"], description=post["num"])
+            post_embed.add_field(name=post["post_type"], value=post["post_body"], inline=False)
+            post_embed.add_field(name=post["ans_type"], value=post["ans_body"], inline=False)
+            if post["more_answers"]:
+                post_embed.add_field(name=f"{post['num_answers']-1} more contributions hidden", value="Click the title above to access the rest of the post.", inline=False)
+            post_embed.set_footer(text=f"tags: {post['tags']}")
             return post_embed
-        
 
     @staticmethod
-    async def send_at_time(self, hours=7, minutes=0):
-        # default set to midnight PST (7am UTC) 
-        today = datetime.datetime.utcnow()
-        post_time = datetime.datetime(today.year, today.month, today.day, hour=hours, minute=minutes, tzinfo=today.tzinfo)
+    async def send_at_time(self):
+        # default set to midnight PST (7/8am UTC)
+        today = datetime.utcnow()
+        hours = round((datetime.utcnow() - datetime.now()).seconds / 3600)
+        post_time = datetime(today.year, today.month, today.day, hour=hours, minute=0, tzinfo=today.tzinfo)
         time_until_post = post_time - today
-        if time_until_post.total_seconds() > 0:
+
+        if time_until_post.total_seconds():
             await asyncio.sleep(time_until_post.total_seconds())
 
     @staticmethod
-    async def send_pupdate(self): 
+    async def send_pupdate(self):
         while True:
-            if self.d_handler.piazza_handler: 
+            if self.d_handler.piazza_handler:
                 posts = self.d_handler.piazza_handler.get_posts_in_range()
-                response = f'**{ self.d_handler.piazza_handler.course_name }\'s posts for { datetime.date.today() }**\n'
-                response += 'Instructor\'s Notes:\n'
-                if len(posts[0]) > 0:
+                response = f"**{ self.d_handler.piazza_handler.course_name }'s posts for { datetime.date.today() }**\n"
+                response += "Instructor's Notes:\n"
+
+                if posts[0]:
                     for ipost in posts[0]:
-                        response += f'@{ipost["num"]}: {ipost["subject"]} <{ipost["url"]}>\n'
+                        response += f"@{ipost['num']}: {ipost['subject']} <{ipost['url']}>\n"
                 else:
-                    response += 'None today!\n'
-                
-                response += '\nDiscussion posts: \n'
-                if len(posts[1]) < 1: response += 'None today!'
+                    response += "None today!\n"
+
+                response += "\nDiscussion posts: \n"
+
+                if not posts[1]:
+                    response += "None today!"
+
                 for post in posts[1]:
-                    response += f'@{post["num"]}: {post["subject"]} <{post["url"]}>\n'
-                await self.send_at_time(self) 
+                    response += f"@{ipost['num']}: {ipost['subject']} <{ipost['url']}>\n"
+
+                await self.send_at_time(self)
+
                 for chnl in self.d_handler.piazza_handler.channels:
                     channel = self.bot.get_channel(chnl)
                     await channel.send(response)
+
             await asyncio.sleep(60*60*24)
-    
+
     @staticmethod
     async def track_inotes(self):
         while True:
             if self.d_handler.piazza_handler:
                 posts = self.d_handler.piazza_handler.get_recent_notes()
+
                 if len(posts) > 1:
-                    response = 'Instructor Update:\n'
+                    response = "Instructor Update:\n"
+
                     for post in posts:
-                        response += f'@{post["num"]}: {post["subject"]} <{post["url"]}>\n'
+                        response += f"@{post['num']}: {post['subject']} <{post['url']}>\n"
+
                     for chnl in self.d_handler.piazza_handler.channels:
                         channel = self.bot.get_channel(chnl)
                         await channel.send(response)
-            await asyncio.sleep(60*60*5)
 
+            await asyncio.sleep(60*60*5)
 
     # add more commands here with the same syntax
     # also just look up the docs lol i can't do everything
