@@ -304,9 +304,11 @@ class Main(commands.Cog):
         **Usage:** !dm <user | close> [user] [...]
 
         **Examples:**
-        `!dm @blankuser#1234` creates 221DM with TAs and blankuser"
-        `!dm @blankuser#1234 @otheruser#5678` creates 221DM with TAs, blankuser and otheruser"
-        `!dm close` closes 221DM"
+        `!dm @blankuser#1234` creates 221DM with TAs and blankuser
+        `!dm @blankuser#1234 @otheruser#5678` creates 221DM with TAs, blankuser and otheruser
+        `!dm close` closes 221DM
+        
+        *Only usable by TAs and Profs
         """
             
         # meant for 221 server
@@ -321,7 +323,7 @@ class Main(commands.Cog):
             return await ctx.channel.delete()
         for role in ctx.author.roles:
             if role.name in ["TA", "Prof"]: break
-        else: return # only TAs and Prof can use this command
+        else: return await ctx.send("You do not have permission to use this command.") # only TAs and Prof can use this command
         if len(ctx.message.mentions) == 0: return await ctx.send("You need to specify a user or users to add!")
         # generate customized channel name to allow customized role
         nam = int(str((datetime.datetime.now()- datetime.datetime(1970,1,1)).total_seconds()).replace(".", ""))+ctx.author.id
