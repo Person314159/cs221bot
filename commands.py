@@ -1086,11 +1086,11 @@ class Main(commands.Cog):
     # with an unlimited # of POST requests per instance everyday. One instance should be safe
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
-    async def pstart(self, ctx, name, pid, cid=''):
-        if cid=='': cid = ctx.message.channel.id
+    async def pstart(self, ctx, name, pid, cid=0):
+        if cid==0: cid = int(ctx.message.channel.id)
         try:
-            self.bot.d_handler.piazza_handler = PiazzaHandler(name,pid,PIAZZA_EMAIL,PIAZZA_PASSWORD,ctx.guild)
-            self.bot.d_handler.piazza_handler.add_channel(cid)
+            self.d_handler.piazza_handler = PiazzaHandler(name,pid,PIAZZA_EMAIL,PIAZZA_PASSWORD,ctx.guild)
+            self.d_handler.piazza_handler.add_channel(cid)
             await ctx.send(f'Piazza instance created!\nName: {name}\nPiazza ID: {pid}\nPosting updates in channel: {cid}')
             await ctx.send("If the above doesn't look right, please use !pstart again with the correct arguments")
         except Exception as e:
@@ -1099,9 +1099,9 @@ class Main(commands.Cog):
     @commands.command()
     @commands.cooldown(1,5,commands.BucketType.channel)
     async def ppinned(self, ctx):
-        if self.bot.d_handler.piazza_handler:
-            posts = self.bot.d_handler.piazza_handler.get_pinned()
-            response = f'Pinned posts for { self.bot.d_handler.piazza_handler.course_name }:\n'
+        if self.d_handler.piazza_handler:
+            posts = self.d_handler.piazza_handler.get_pinned()
+            response = f'Pinned posts for { self.d_handler.piazza_handler.course_name }:\n'
             for post in posts:
                 response += f'@{ post["num"] }: { post["subject"] } <{ post["url"] }>\n'
             await ctx.send(response)
@@ -1148,9 +1148,9 @@ class Main(commands.Cog):
 
     def create_post_embed(self, post):
         if post:
-            post_embed = discord.Embed(title=post['title'],
+            post_embed = discord.Embed(title=post['subject'],
                                         url=post['url'],
-                                        description=post['id'])
+                                        description=post['num'])
             post_embed.add_field(name=post['post_type'], value=post['post_body'], inline=False)
             post_embed.add_field(name=post['ans_type'], value=post['ans_body'], inline=False)
             if post['more_answers']:
@@ -1162,7 +1162,7 @@ class Main(commands.Cog):
         
 
     @staticmethod
-    async def send_at_time(self, hours=7, minutes=0):
+    async def send_at_time(self, hours=7, minutes=5):
         # default set to midnight PST (7am UTC) 
         today = datetime.datetime.utcnow()
         post_time = datetime.datetime(today.year, today.month, today.day, hour=hours, minute=minutes, tzinfo=today.tzinfo)
@@ -1187,9 +1187,11 @@ class Main(commands.Cog):
                 response += '\nDiscussion posts: \n'
                 for j in range(instr_length, len(posts)):
                     response += f'@{posts[j]["num"]}: {posts[j]["subject"]} {posts[j]["url"]}\n'
-                await self.send_at_time()
-                # TODO: send to channel
-                await asyncio.sleep(60*60*24)
+                #await self.send_at_time() 
+                for chnl in self.d_handler.piazza_handler.channels:
+                    channel = self.bot.get_channel(chnl)
+                    await channel.send(response)
+            await asyncio.sleep(60*60*24)
     
     @staticmethod
     async def track_inotes(self):
@@ -1201,13 +1203,17 @@ class Main(commands.Cog):
                     for post in posts:
                         response += f'@{post["num"]}: {post["subject"]} {post["url"]}\n'
                     for chnl in self.d_handler.piazza_handler.channels:
-                        chnl.send(response)
-                await asyncio.sleep(60*60)
+                        channel = self.bot.get_channel(chnl)
+                        print('inside loop')
+                        await channel.send(response)
+            await asyncio.sleep(60*60*5)
 
     # TODO: 
     # test all commands
-    # tested: pread, ptest
+    # tested: pread, ptest, ppinned, pstart
     # write docstrings
+    # change function for track_inotes so that it grabs the posts starting at offset=FETCH_MIN up to MIN+MAX and 
+    # checks for posts that are less than 5 hrs old
 
     # add more commands here with the same syntax
     # also just look up the docs lol i can't do everything

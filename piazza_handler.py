@@ -28,7 +28,7 @@ class PiazzaHandler():
     FETCH_MIN: `int (optional)`
         Lower limit on posts fetched from Piazza. Used as the default value for functions that don't need to fetch a lot of posts
     """
-    def __init__(self, NAME, ID, EMAIL, PASSWORD, GUILD, FETCH_MAX=50, FETCH_MIN=15):
+    def __init__(self, NAME, ID, EMAIL, PASSWORD, GUILD, FETCH_MAX=50, FETCH_MIN=25):
         self.name = NAME
         self.nid = ID
         self._guild = GUILD
@@ -74,16 +74,17 @@ class PiazzaHandler():
 
     @property
     def channels(self):
-        return self.channels
+        return self._channels
 
     @channels.setter
     def channels(self, channels):
-        self.channels = channels
+        self._channels = channels
 
     def add_channel(self, channel):
         try:
             isinstance(channel, int)
-            self.channels.append(channel)
+            if channel not in self._channels:
+                self._channels.append(channel)
         except:
             print('ERR: cannot append a string value as channel id')
 
