@@ -39,7 +39,7 @@ class Main(commands.Cog):
         self.bot = bot
         self.add_instructor_role_counter = 0
         self.d_handler = DiscordHandler()
-        
+
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def colour(self, ctx):
@@ -298,7 +298,7 @@ class Main(commands.Cog):
 
     @commands.command()
     async def dm(self, ctx):
-         """
+        """
         `!dm` __`221DM Generator`__
 
         **Usage:** !dm <user | close> [user] [...]
@@ -307,14 +307,15 @@ class Main(commands.Cog):
         `!dm @blankuser#1234` creates 221DM with TAs and blankuser
         `!dm @blankuser#1234 @otheruser#5678` creates 221DM with TAs, blankuser and otheruser
         `!dm close` closes 221DM
-        
+
         *Only usable by TAs and Profs
         """
-            
+
         # meant for 221 server
         guild = self.bot.get_guild(745503628479037492)
         if "close" in ctx.message.content.lower():
-            if not ctx.channel.name.startswith("221dm-"): return await ctx.send("This is not a 221DM.")
+            if not ctx.channel.name.startswith("221dm-"):
+                return await ctx.send("This is not a 221DM.")
             await ctx.send("Closing 221DM.")
             for role in guild.roles:
                 if role.name == ctx.channel.name:
@@ -322,29 +323,40 @@ class Main(commands.Cog):
                     break
             return await ctx.channel.delete()
         for role in ctx.author.roles:
-            if role.name in ["TA", "Prof"]: break
-        else: return await ctx.send("You do not have permission to use this command.") # only TAs and Prof can use this command
-        if len(ctx.message.mentions) == 0: return await ctx.send("You need to specify a user or users to add!")
+            if role.name in ["TA", "Prof"]:
+                break
+        else:
+            # only TAs and Prof can use this command
+            return await ctx.send("You do not have permission to use this command.")
+        if len(ctx.message.mentions) == 0:
+            return await ctx.send("You need to specify a user or users to add!")
         # generate customized channel name to allow customized role
-        nam = int(str((datetime.datetime.now()- datetime.datetime(1970,1,1)).total_seconds()).replace(".", ""))+ctx.author.id
+        nam = int(str((datetime.datetime.now()
+                       - datetime.datetime(1970, 1, 1)).total_seconds()).replace(".", "")) + ctx.author.id
         nam = f"221dm-{nam}"
-        role = await guild.create_role(name=nam, colour = discord.Colour(0x2f3136)) # create custom role
+        # create custom role
+        role = await guild.create_role(name=nam, colour=discord.Colour(0x2f3136))
         for user in ctx.message.mentions:
-            try: await user.add_roles(role)
-            except: pass # if for whatever reason one of the people doesn't exist, just ignore and keep going
-        access = discord.PermissionOverwrite(read_messages=True, send_messages=True, read_message_history=True)
-        noaccess = discord.PermissionOverwrite(read_messages=False, read_message_history=False, send_messages=False)
+            try:
+                await user.add_roles(role)
+            except:
+                pass  # if for whatever reason one of the people doesn't exist, just ignore and keep going
+        access = discord.PermissionOverwrite(
+            read_messages=True, send_messages=True, read_message_history=True)
+        noaccess = discord.PermissionOverwrite(
+            read_messages=False, read_message_history=False, send_messages=False)
         overwrites = {
             # allow Computers and the new role, deny everyone else including Fake TA
             guild.default_role: noaccess,
             guild.get_role(748035942945914920): access,
             role: access
         }
-        channel = await guild.create_text_channel(nam, overwrites=overwrites, category = guild.get_channel(764672304793255986)) # this id is id of group dm category
+        # this id is id of group dm category
+        channel = await guild.create_text_channel(nam, overwrites=overwrites, category=guild.get_channel(764672304793255986))
         await ctx.send("Opened channel.")
         users = [f"<@{usr.id}>" for usr in ctx.message.mentions]
         await channel.send(f"<@{ctx.author.id}> {' '.join(users)}\nWelcome to 221 private DM. Type `!close` to exit when you are finished.")
-        
+
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def gtcycle(self, ctx, limit, *, txt):
