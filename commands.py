@@ -304,9 +304,9 @@ class Main(commands.Cog):
         **Usage:** !dm <user | close> [user] [...]
 
         **Examples:**
-        `!dm @blankuser#1234` creates 221DM with TAs and blankuser"
-        `!dm @blankuser#1234 @otheruser#5678` creates 221DM with TAs, blankuser and otheruser"
-        `!dm close` closes 221DM"
+        `!dm @blankuser#1234` creates 221DM with TAs and blankuser
+        `!dm @blankuser#1234 @otheruser#5678` creates 221DM with TAs, blankuser and otheruser
+        `!dm close` closes 221DM
         
         *Only usable by TAs and Profs
         """
