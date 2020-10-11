@@ -1086,22 +1086,61 @@ class Main(commands.Cog):
     # with an unlimited # of POST requests per instance everyday. One instance should be safe
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
-    async def pstart(self, ctx, name, pid, cid=0):
-        if cid==0: cid = int(ctx.message.channel.id)
+    async def pinit(self, ctx, name, pid):
+        """
+        `!pinit` _ `course name` _ _ `piazza id` _
+
+        **Usage:** !pinit <course name> <piazza id>
+
+        **Examples:**
+        `!pinit CPSC221 ke1ukp9g4xx6oi` creates a CPSC221 Piazza instance for the server
+
+        *Only usable by TAs and Profs
+        """
         try:
             self.d_handler.piazza_handler = PiazzaHandler(name,pid,PIAZZA_EMAIL,PIAZZA_PASSWORD,ctx.guild)
-            self.d_handler.piazza_handler.add_channel(cid)
-            await ctx.send(f'Piazza instance created!\nName: {name}\nPiazza ID: {pid}\nPosting updates in channel: {cid}')
-            await ctx.send("If the above doesn't look right, please use !pstart again with the correct arguments")
+            response = f'Piazza instance created!\nName: {name}\nPiazza ID: {pid}\n'
+            response += "If the above doesn't look right, please use !pstart again with the correct arguments"
+            await ctx.send(response)
         except Exception as e:
-            await ctx.send(f'Something went wrong:\n{e.args}')
-        
+            await ctx.send(f'Something went wrong:\n```{e.args}```')
+
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def ptrack(self, ctx, cid=0):
+        """
+        `!ptrack` __`channel id`__
+
+        **Usage:** !ptrack <channel id | ''>
+
+        **Examples:**
+        `!ptrack 747259140908384386` adds CPSC221 server's #bot-commands channel id to the Piazza instance's list of tracked channels
+        `!ptrack` adds the current channel's id to the Piazza instance's list of channels
+
+        *Only usable by TAs and Profs
+        """
+        if cid==0: cid = int(ctx.message.channel.id)
+        try:
+            self.d_handler.piazza_handler.add_channel(cid)
+        except Exception as e: 
+            await ctx.send(f'Something went wrong:\n```{e.args}```')
+
     @commands.command()
     @commands.cooldown(1,5,commands.BucketType.channel)
     async def ppinned(self, ctx):
+        """
+        `!ppinned`
+
+        **Usage:** !ppinned
+
+        **Examples:**
+        `!ppinned` sends a list of the Piazza's pinned posts to the calling channel
+
+        *to prevent hitting the rate-limit, only usable once every 5 secs channel-wide*
+        """
         if self.d_handler.piazza_handler:
             posts = self.d_handler.piazza_handler.get_pinned()
-            response = f'Pinned posts for { self.d_handler.piazza_handler.course_name }:\n'
+            response = f'**Pinned posts for { self.d_handler.piazza_handler.course_name }:**\n'
             for post in posts:
                 response += f'@{ post["num"] }: { post["subject"] } <{ post["url"] }>\n'
             await ctx.send(response)
@@ -1110,12 +1149,16 @@ class Main(commands.Cog):
 
     @commands.command()
     @commands.cooldown(1,5,commands.BucketType.user)
-    async def pread(self, ctx):
+    async def pread(self, ctx, postID):
         """
-        !pread __`postID`__
+        `!pread` __`post id`__
+
+        **Usage:** !pread <post id>
+
+        **Examples:**
+        `!pread 828` returns an embed with the [post](https://piazza.com/class/ke1ukp9g4xx6oi?cid=828)'s 
+        info (question, answer, answer type, tags)
         """
-        postID = ctx.message.content[len(self.bot.command_prefix) + 6:]
-        
         if not self.d_handler.piazza_handler:
             await ctx.send("Piazza hasn't been instantiated yet!")
             return
@@ -1127,24 +1170,34 @@ class Main(commands.Cog):
         else: await ctx.send("Sorry! That post doesn't exist.")
 
     @commands.command()
-    @commands.is_owner()
+    @commands.has_permissions(administrator=True)
     async def ptest(self, ctx):
-        if self.d_handler.piazza_handler:
+        """
+        `!ptest`
+
+        **Usage:** !ptest
+
+        **Examples:**
+        `!ptest` simulates a single call of `send_pupdate` to ensure the set-up was done correctly.
+        """
+        if self.d_handler.piazza_handler: 
             posts = self.d_handler.piazza_handler.get_posts_in_range()
             response = f'**{ self.d_handler.piazza_handler.course_name }\'s posts for { datetime.date.today() }**\n'
             response += 'Instructor\'s Notes:\n'
             if len(posts[0]) > 0:
-                for i in range(len(posts[0])):
-                    response += f'@{posts[0][i]["num"]}: {posts[0][i]["subject"]} <{posts[0][i]["url"]}>\n'
+                for ipost in posts[0]:
+                    response += f'@{ipost["num"]}: {ipost["subject"]} <{ipost["url"]}>\n'
             else:
-                response += 'None today!'
+                response += 'None today!\n'
             
             response += '\nDiscussion posts: \n'
-            for j in range(len(posts[1])):
-                response += f'@{posts[1][j]["num"]}: {posts[1][j]["subject"]} <{posts[1][j]["url"]}>\n'
-            await ctx.send(response)
-        else:
-            await ctx.send("Piazza hasn't been instantiated yet")
+            if len(posts[1]) < 1: response += 'None today!'
+            for post in posts[1]:
+                response += f'@{post["num"]}: {post["subject"]} <{post["url"]}>\n'
+            await self.send_at_time(self) 
+            for chnl in self.d_handler.piazza_handler.channels:
+                channel = self.bot.get_channel(chnl)
+                await channel.send(response)
 
     def create_post_embed(self, post):
         if post:
@@ -1162,7 +1215,7 @@ class Main(commands.Cog):
         
 
     @staticmethod
-    async def send_at_time(self, hours=7, minutes=5):
+    async def send_at_time(self, hours=7, minutes=0):
         # default set to midnight PST (7am UTC) 
         today = datetime.datetime.utcnow()
         post_time = datetime.datetime(today.year, today.month, today.day, hour=hours, minute=minutes, tzinfo=today.tzinfo)
@@ -1175,19 +1228,19 @@ class Main(commands.Cog):
         while True:
             if self.d_handler.piazza_handler: 
                 posts = self.d_handler.piazza_handler.get_posts_in_range()
-                instr_length = posts.pop()
                 response = f'**{ self.d_handler.piazza_handler.course_name }\'s posts for { datetime.date.today() }**\n'
                 response += 'Instructor\'s Notes:\n'
-                if instr_length > 0:
-                    for i in range(instr_length):
-                        response += f'@{posts[i]["num"]}: {posts[i]["subject"]} {posts[i]["url"]}\n'
+                if len(posts[0]) > 0:
+                    for ipost in posts[0]:
+                        response += f'@{ipost["num"]}: {ipost["subject"]} <{ipost["url"]}>\n'
                 else:
-                    response += 'None today!'
+                    response += 'None today!\n'
                 
                 response += '\nDiscussion posts: \n'
-                for j in range(instr_length, len(posts)):
-                    response += f'@{posts[j]["num"]}: {posts[j]["subject"]} {posts[j]["url"]}\n'
-                #await self.send_at_time() 
+                if len(posts[1]) < 1: response += 'None today!'
+                for post in posts[1]:
+                    response += f'@{post["num"]}: {post["subject"]} <{post["url"]}>\n'
+                await self.send_at_time(self) 
                 for chnl in self.d_handler.piazza_handler.channels:
                     channel = self.bot.get_channel(chnl)
                     await channel.send(response)
@@ -1201,19 +1254,12 @@ class Main(commands.Cog):
                 if len(posts) > 1:
                     response = 'Instructor Update:\n'
                     for post in posts:
-                        response += f'@{post["num"]}: {post["subject"]} {post["url"]}\n'
+                        response += f'@{post["num"]}: {post["subject"]} <{post["url"]}>\n'
                     for chnl in self.d_handler.piazza_handler.channels:
                         channel = self.bot.get_channel(chnl)
-                        print('inside loop')
                         await channel.send(response)
             await asyncio.sleep(60*60*5)
 
-    # TODO: 
-    # test all commands
-    # tested: pread, ptest, ppinned, pstart
-    # write docstrings
-    # change function for track_inotes so that it grabs the posts starting at offset=FETCH_MIN up to MIN+MAX and 
-    # checks for posts that are less than 5 hrs old
 
     # add more commands here with the same syntax
     # also just look up the docs lol i can't do everything

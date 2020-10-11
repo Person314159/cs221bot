@@ -114,7 +114,7 @@ class PiazzaHandler():
         lim : `int (optional)`
             Upper limit on posts fetched. Must be in range [FETCH_MIN, FETCH_MAX] (inclusive)
         """
-        posts = self.fetch_posts_in_range(days=1, lim=lim)
+        posts = self.fetch_posts_in_range(seconds=60*60*5, lim=lim)
         response = []
         for post in posts:
             if post['tags'][0] == 'instructor-note' or post['bucket_name'] == 'Pinned':
@@ -138,7 +138,7 @@ class PiazzaHandler():
                 response.append(post)
         return response
 
-    def fetch_posts_in_range(self, days=1, lim=100) -> List[dict]:
+    def fetch_posts_in_range(self, days=1, seconds=0, lim=100) -> List[dict]:
         """
         Returns up to `lim` JSON objects that represent a Piazza post posted today
         """
@@ -149,7 +149,7 @@ class PiazzaHandler():
         for post in posts:
             created_at = [int(x) for x in post['created'][:10].split('-')] # [2020,9,19] from 2020-09-19T22:41:52Z
             created_at = datetime.date(created_at[0],created_at[1],created_at[2])
-            if (date - created_at).days <= days:
+            if (date - created_at).days <= days and (date-created_at).seconds <= seconds:
                 result.append(post)
         return result
 
@@ -223,9 +223,9 @@ class PiazzaHandler():
         else:
             return None
 
-    def get_posts_in_range(self, showLimit=10, days=1) -> List[List[dict]]:
+    def get_posts_in_range(self, showLimit=10, days=1, seconds=0) -> List[List[dict]]:
         if showLimit < 1: raise Exception(f"Invalid showLimit for get_posts_in_range(): {showLimit}")
-        posts = self.fetch_posts_in_range(days=days, lim=self.max)
+        posts = self.fetch_posts_in_range(days=days, seconds=seconds, lim=self.max)
         instr, stud = [], []
         response = []
 
@@ -233,7 +233,7 @@ class PiazzaHandler():
             post_details = {
                 'type': tag,
                 'num': post['nr'],
-                'subject' : post['history'][0]['subject'],
+                'subject' : self.clean_response(post['history'][0]['subject']),
                 'url' : f'{self.url}?cid={post["nr"]}'
             }
             return post_details
@@ -259,7 +259,6 @@ class PiazzaHandler():
 
         response.append(instr)
         response.append(stud)
-        #response.append(len(instr))
         return response        
         
     def get_recent_notes(self) -> List[dict]:
@@ -272,7 +271,7 @@ class PiazzaHandler():
         for post in posts:
             post_details = {
                 'num': post['nr'],
-                'subject': post['history'][0]['subject'],
+                'subject': self.clean_response(post['history'][0]['subject']),
                 'url': f'{self.url}?cid={self.nid}'
             }
             response.append(post_details)
