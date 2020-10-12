@@ -142,7 +142,7 @@ class CanvasHandler(Canvas):
 
         for c in course_ids_str:
             if c not in self.timings:
-                self.timings[c] = (datetime.utcnow() - timedelta(hours=7)).strftime("%Y-%m-%d %H:%M:%S")
+                self.timings[c] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             if c not in self.due_week:
                 self.due_week[c] = []
@@ -232,13 +232,13 @@ class CanvasHandler(Canvas):
                     short_desc = "\n".join(desc.split("\n")[:4])
 
                     ctime_iso = item["created_at"]
-                    time_shift = datetime.utcnow() - datetime.now()
+                    time_shift = datetime.now() - datetime.utcnow()
 
                     if ctime_iso is None:
                         ctime_text = "No info"
                     else:
-                        ctime_iso_parsed = dateutil.parser.isoparse(ctime_iso) + time_shift
-                        ctime_timedelta = ctime_iso_parsed - (datetime.utcnow().replace(tzinfo=pytz.utc) + time_shift)
+                        ctime_iso_parsed = (dateutil.parser.isoparse(ctime_iso) + time_shift).replace(tzinfo=None)
+                        ctime_timedelta = ctime_iso_parsed - datetime.now()
 
                         if since is not None:
                             if ctime_timedelta < -till_timedelta:
@@ -331,18 +331,18 @@ class CanvasHandler(Canvas):
                 ctime_iso = assignment.__getattribute__("created_at")
                 dtime_iso = assignment.__getattribute__("due_at")
 
-                time_shift = datetime.utcnow() - datetime.now()
+                time_shift = datetime.now() - datetime.utcnow()
 
                 if ctime_iso is None:
                     ctime_text = "No info"
                 else:
-                    ctime_text = (dateutil.parser.isoparse(ctime_iso)+time_shift).strftime("%Y-%m-%d %H:%M:%S")
+                    ctime_text = (dateutil.parser.isoparse(ctime_iso) + time_shift).strftime("%Y-%m-%d %H:%M:%S")
 
                 if dtime_iso is None:
                     dtime_text = "No info"
                 else:
-                    dtime_iso_parsed = (dateutil.parser.isoparse(dtime_iso)+time_shift)
-                    dtime_timedelta = dtime_iso_parsed - (datetime.utcnow().replace(tzinfo=pytz.utc)+time_shift)
+                    dtime_iso_parsed = (dateutil.parser.isoparse(dtime_iso) + time_shift).replace(tzinfo=None)
+                    dtime_timedelta = dtime_iso_parsed - datetime.now()
 
                     if dtime_timedelta < timedelta(0):
                         continue
@@ -389,7 +389,7 @@ class CanvasHandler(Canvas):
             year = int(till[0])
             month = int(till[1])
             day = int(till[2])
-            return abs(datetime(year, month, day) - (datetime.utcnow() - timedelta(hours=7)))
+            return abs(datetime(year, month, day) - datetime.now())
         else:
             year = int(till[0])
             month = int(till[1])
@@ -397,7 +397,7 @@ class CanvasHandler(Canvas):
             hour = int(till[3])
             minute = int(till[4])
             second = int(till[5])
-            return abs(datetime(year, month, day, hour, minute, second) - (datetime.utcnow() - timedelta(hours=7)))
+            return abs(datetime(year, month, day, hour, minute, second) - datetime.now())
 
     def get_course_names(self, url) -> List[List[str]]:
         """Gives a list of tracked courses and their urls

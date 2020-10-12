@@ -280,7 +280,7 @@ class PiazzaHandler():
             for p in posts:
                 filter_tag(p, stud, "student")
         else:
-            for i in range(showLimit+1):
+            for i in range(showLimit + 1):
                 filter_tag(posts[i], stud, "student")
 
         response.append(instr)

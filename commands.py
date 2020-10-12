@@ -1000,13 +1000,13 @@ class Main(commands.Cog):
                     for c in ch.courses:
                         data_list = ch.get_assignments("1-week", (str(c.id),), CANVAS_API_URL)
                         recorded_ass_ids = ch.due_week[str(c.id)]
-                        ass_ids = await self._assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role)
+                        ass_ids = await self._assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role, "week")
                         ch.due_week[str(c.id)] = ass_ids
                         self.bot.canvas_dict[str(ch.guild.id)]["due_week"][str(c.id)] = ass_ids
 
                         data_list = ch.get_assignments("1-day", (str(c.id),), CANVAS_API_URL)
                         recorded_ass_ids = ch.due_day[str(c.id)]
-                        ass_ids = await self._assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role)
+                        ass_ids = await self._assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role, "day")
                         ch.due_day[str(c.id)] = ass_ids
                         self.bot.canvas_dict[str(ch.guild.id)]["due_day"][str(c.id)] = ass_ids
 
@@ -1015,7 +1015,7 @@ class Main(commands.Cog):
             await asyncio.sleep(3600)
 
     @staticmethod
-    async def _assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role):
+    async def _assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role, time):
         ass_ids = [data[-1] for data in data_list]
         not_recorded = [data_list[ass_ids.index(i)] for i in ass_ids if i not in recorded_ass_ids]
 
@@ -1024,7 +1024,7 @@ class Main(commands.Cog):
                 await channel.send(notify_role.mention)
 
         for data in not_recorded:
-            embed_var = discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR, timestamp=datetime.strptime(data[5], "%Y-%m-%d %H:%M:%S"))
+            embed_var = discord.Embed(title=f"Due in one {time}: {data[2]}", url=data[3], description=data[4], color=CANVAS_COLOR, timestamp=datetime.strptime(data[5], "%Y-%m-%d %H:%M:%S"))
             embed_var.set_author(name=data[0], url=data[1])
             embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
             embed_var.add_field(name="Due at", value=data[6], inline=True)
@@ -1119,10 +1119,10 @@ class Main(commands.Cog):
 
         if self.d_handler.piazza_handler:
             posts = self.d_handler.piazza_handler.get_pinned()
-            response = f"**Pinned posts for { self.d_handler.piazza_handler.course_name }:**\n"
+            response = f"**Pinned posts for {self.d_handler.piazza_handler.course_name}:**\n"
 
             for post in posts:
-                response += f"@{ post['num'] }: { post['subject'] } <{ post['url'] }>\n"
+                response += f"@{post['num']}: {post['subject']} <{post['url']}>\n"
 
             await ctx.send(response)
         else:
@@ -1215,7 +1215,7 @@ class Main(commands.Cog):
         while True:
             if self.d_handler.piazza_handler:
                 posts = self.d_handler.piazza_handler.get_posts_in_range()
-                response = f"**{ self.d_handler.piazza_handler.course_name }'s posts for { datetime.date.today() }**\n"
+                response = f"**{self.d_handler.piazza_handler.course_name}'s posts for {datetime.date.today()}**\n"
                 response += "Instructor's Notes:\n"
 
                 if posts[0]:
