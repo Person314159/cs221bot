@@ -126,7 +126,7 @@ class PiazzaHandler():
 
         return response
 
-    def fetch_pinned(self) -> List[dict]:
+    def fetch_pinned(self, lim: int = 0) -> List[dict]:
         """
         Returns up to `lim` JSON objects representing pinned posts\n
         Since pinned posts are always the first notes shown in a Piazza, lim can be a small value.
@@ -136,6 +136,7 @@ class PiazzaHandler():
         lim : `int`
             Upper limit on posts fetched. Must be in range [FETCH_MIN, FETCH_MAX] (inclusive)
         """
+        lim = lim if lim else self.min
         posts = self.network.iter_all_posts(limit=self.min)
         response = []
 

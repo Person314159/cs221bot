@@ -404,7 +404,7 @@ class CanvasHandler(Canvas):
 
         Parameters
         ----------
-        base_url : `str`
+        url : `str`
             Base URL of the Canvas instance's API
 
         Returns
