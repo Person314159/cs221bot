@@ -212,9 +212,6 @@ class CanvasHandler(Canvas):
             else:
                 course_stream_list.append(get_course_stream(c.id, base_url, access_token))
 
-        if since is not None:
-            till_timedelta = self._make_timedelta(since)
-
         data_list = []
 
         for course_stream in course_stream_list:
@@ -242,7 +239,7 @@ class CanvasHandler(Canvas):
                         ctime_timedelta = ctime_iso_parsed - datetime.now()
 
                         if since is not None:
-                            if ctime_timedelta < -till_timedelta:
+                            if ctime_timedelta < -self._make_timedelta(since):
                                 # since announcements are in order
                                 break
 
@@ -304,9 +301,6 @@ class CanvasHandler(Canvas):
             List of assignment data to be formatted and sent as embeds
         """
 
-        if due is not None:
-            till_timedelta = self._make_timedelta(due)
-
         data_list = []
 
         for course_assignments in courses_assignments:
@@ -349,7 +343,7 @@ class CanvasHandler(Canvas):
                         continue
 
                     if due is not None:
-                        if dtime_timedelta > till_timedelta:
+                        if dtime_timedelta > self._make_timedelta(due):
                             # since assignments are not in order
                             continue
 

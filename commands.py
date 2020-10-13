@@ -694,6 +694,7 @@ class Main(commands.Cog):
     @commands.has_permissions(administrator=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def shut(self, ctx):
+        change = None
         for role in self.bot.get_guild(745503628479037492).roles[:-6]:
             if role.permissions.value == 104187456:
                 change = "enabled messaging permissions"
@@ -702,7 +703,10 @@ class Main(commands.Cog):
                 change = "disabled messaging permissions"
                 await role.edit(permissions=discord.Permissions(permissions=104187456))
 
-        await ctx.send(change)
+        if change:
+            await ctx.send(change)
+        else:
+            await ctx.send("No messaging permissions changed")
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
