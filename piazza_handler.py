@@ -136,8 +136,7 @@ class PiazzaHandler():
         lim : `int`
             Upper limit on posts fetched. Must be in range [FETCH_MIN, FETCH_MAX] (inclusive)
         """
-        lim = lim if lim else self.min
-        posts = self.network.iter_all_posts(limit=self.min)
+        posts = self.network.iter_all_posts(limit=lim or self.min)
         response = []
 
         for post in posts:
