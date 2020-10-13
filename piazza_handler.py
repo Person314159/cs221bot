@@ -1,4 +1,6 @@
 import datetime
+import typing
+
 import regex
 import html
 from typing import List
@@ -188,7 +190,7 @@ class PiazzaHandler:
 
         return response
 
-    def get_post(self, postID) -> dict:
+    def get_post(self, postID) -> typing.Union[dict, None]:
         """
         Returns a dict that contains post information to be formatted and returned as an embed
 

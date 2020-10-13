@@ -97,7 +97,7 @@ async def wipe_dms():
         for channel in guild.channels:
             if channel.name.startswith("221dm-"):
                 async for msg in channel.history(limit=1):
-                    if (datetime.utcnow() - msg.created_at).total_seconds >= 86400:
+                    if (datetime.utcnow() - msg.created_at).total_seconds() >= 86400:
                         await channel.delete()
                         break
                 else:
