@@ -5,7 +5,7 @@ from typing import List
 from piazza_api import Piazza
 
 
-class PiazzaHandler():
+class PiazzaHandler:
     """Handles requests to a specific Piazza network. Requires an e-mail and password, but if none are
     provided, then they will be asked for in the console (doesn't work for Heroku deploys). API is rate-limited
     (limit is still unknown) so it's recommended to be conservative with FETCH_MAX, FETCH_MIN and only change them if necessary.
@@ -220,15 +220,12 @@ class PiazzaHandler():
                 answer = answers[0]
 
                 if answer["type"] == "followup":
-                    try:
-                        if answers[1]["type"] == "followup":
-                            raise Exception()
-
-                        answerHeading = "Instructor Answer" if answer["type"] == "i_answer" else "Student Answer"
-                        answerBody = self.clean_response(self.get_body(answers[1]))
-                    except:
+                    if answers[1]["type"] == "followup":
                         answerHeading = "Follow-up Post"
                         answerBody = answer["subject"]
+                    else:
+                        answerHeading = "Instructor Answer" if answer["type"] == "i_answer" else "Student Answer"
+                        answerBody = self.clean_response(self.get_body(answers[1]))
                 else:
                     answerHeading = "Instructor Answer" if answer["type"] == "i_answer" else "Student Answer"
                     answerBody = self.clean_response(self.get_body(answer))

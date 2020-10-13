@@ -340,7 +340,7 @@ class Main(commands.Cog):
         for user in ctx.message.mentions:
             try:
                 await user.add_roles(role)
-            except:
+            except (discord.Forbidden, discord.HTTPException):
                 pass  # if for whatever reason one of the people doesn't exist, just ignore and keep going
 
         access = discord.PermissionOverwrite(read_messages=True, send_messages=True, read_message_history=True)
@@ -505,7 +505,7 @@ class Main(commands.Cog):
 
         try:
             img = requests.post("https://www.quicklatex.com/latex3.f", data=body.encode("utf-8"), timeout=10)
-        except Exception:
+        except (requests.ConnectionError, requests.HTTPError, requests.TooManyRedirects, requests.Timeout):
             return await ctx.send("Render timed out.", delete_after=5)
 
         if img.status_code == 200:
