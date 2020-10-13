@@ -38,17 +38,11 @@ async def status_task():
     await bot.wait_until_ready()
 
     while not bot.is_closed():
-        num_guilds = len(bot.guilds)
-        online_members = []
-
-        for guild in bot.guilds:
-            for member in guild.members:
-                if not member.bot and member.status != discord.Status.offline:
-                    if member not in online_members:
-                        online_members.append(member)
+        online_members = {member for guild in bot.guilds for member in guild.members
+                          if not member.bot and member.status != discord.Status.offline}
 
         play = ["with the \"help\" command", " ", "with your mind", "ƃuᴉʎɐlԀ", "...something?",
-                "a game? Or am I?", "¯\_(ツ)_/¯", f"with {len(online_members)} people", "with image manipulation"]
+                "a game? Or am I?", r"¯\_(ツ)_/¯", f"with {len(online_members)} people", "with image manipulation"]
         listen = ["smart music", "... wait I can't hear anything",
                   "rush 🅱", "C++ short course"]
         watch = ["TV", "YouTube vids", "over you",

@@ -91,7 +91,7 @@ class CanvasHandler(Canvas):
 
     @due_week.setter
     def due_week(self, due_week):
-        self._due_week = {}
+        self._due_week = due_week
 
     @property
     def due_day(self):
@@ -99,7 +99,7 @@ class CanvasHandler(Canvas):
 
     @due_day.setter
     def due_day(self, due_day):
-        self._due_day = {}
+        self._due_day = due_day
 
     @staticmethod
     def _ids_converter(ids: Tuple[str, ...]) -> List[int]:

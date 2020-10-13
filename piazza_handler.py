@@ -216,7 +216,6 @@ class PiazzaHandler:
             }
 
             answers = post["children"]
-            answerHeading, answerBody = "", ""
 
             if answers:
                 answer = answers[0]

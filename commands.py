@@ -1005,13 +1005,13 @@ class Main(commands.Cog):
                     for c in ch.courses:
                         data_list = ch.get_assignments("1-week", (str(c.id),), CANVAS_API_URL)
                         recorded_ass_ids = ch.due_week[str(c.id)]
-                        ass_ids = await self._assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role, "week")
+                        ass_ids = await self._assignment_sender(ch, data_list, recorded_ass_ids, notify_role, "week")
                         ch.due_week[str(c.id)] = ass_ids
                         self.bot.canvas_dict[str(ch.guild.id)]["due_week"][str(c.id)] = ass_ids
 
                         data_list = ch.get_assignments("1-day", (str(c.id),), CANVAS_API_URL)
                         recorded_ass_ids = ch.due_day[str(c.id)]
-                        ass_ids = await self._assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role, "day")
+                        ass_ids = await self._assignment_sender(ch, data_list, recorded_ass_ids, notify_role, "day")
                         ch.due_day[str(c.id)] = ass_ids
                         self.bot.canvas_dict[str(ch.guild.id)]["due_day"][str(c.id)] = ass_ids
 
@@ -1020,7 +1020,7 @@ class Main(commands.Cog):
             await asyncio.sleep(3600)
 
     @staticmethod
-    async def _assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role, time):
+    async def _assignment_sender(ch, data_list, recorded_ass_ids, notify_role, time):
         ass_ids = [data[-1] for data in data_list]
         not_recorded = [data_list[ass_ids.index(i)] for i in ass_ids if i not in recorded_ass_ids]
 
@@ -1188,7 +1188,7 @@ class Main(commands.Cog):
             for post in posts[1]:
                 response += f"@{post['num']}: {post['subject']} <{post['url']}>\n"
 
-            await self.send_at_time(self)
+            await self.send_at_time()
 
             for chnl in self.d_handler.piazza_handler.channels:
                 channel = self.bot.get_channel(chnl)
@@ -1206,7 +1206,7 @@ class Main(commands.Cog):
             return post_embed
 
     @staticmethod
-    async def send_at_time(self):
+    async def send_at_time():
         # default set to midnight PST (7/8am UTC)
         today = datetime.utcnow()
         hours = round((datetime.utcnow() - datetime.now()).seconds / 3600)
@@ -1238,7 +1238,7 @@ class Main(commands.Cog):
                 for post in posts[1]:
                     response += f"@{post['num']}: {post['subject']} <{post['url']}>\n"
 
-                await self.send_at_time(self)
+                await self.send_at_time()
 
                 for chnl in self.d_handler.piazza_handler.channels:
                     channel = self.bot.get_channel(chnl)
