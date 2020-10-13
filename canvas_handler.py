@@ -372,7 +372,7 @@ class CanvasHandler(Canvas):
             Time delta between till and now
         """
 
-        till = re.split(r"-|:", till_str)
+        till = re.split(r"[-:]", till_str)
 
         if till[1] in ["hour", "day", "week", "month", "year"]:
             num = float(till[0])
