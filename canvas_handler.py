@@ -101,7 +101,8 @@ class CanvasHandler(Canvas):
     def due_day(self, due_day):
         self._due_day = {}
 
-    def _ids_converter(self, ids: Tuple[str, ...]) -> List[int]:
+    @staticmethod
+    def _ids_converter(ids: Tuple[str, ...]) -> List[int]:
         """Converts list of string to list of int, removes duplicates
 
         Parameters
@@ -358,7 +359,8 @@ class CanvasHandler(Canvas):
 
         return data_list
 
-    def _make_timedelta(self, till_str: str) -> timedelta:
+    @staticmethod
+    def _make_timedelta(till_str: str) -> timedelta:
         """Makes a datetime.timedelta
 
         Parameters

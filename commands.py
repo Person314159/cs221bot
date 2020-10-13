@@ -943,7 +943,8 @@ class Main(commands.Cog):
             if ch.guild == guild:
                 return ch
 
-    def _get_tracking_courses(self, c_handler: CanvasHandler, CANVAS_API_URL) -> discord.Embed:
+    @staticmethod
+    def _get_tracking_courses(c_handler: CanvasHandler, CANVAS_API_URL) -> discord.Embed:
         course_names = c_handler.get_course_names(CANVAS_API_URL)
         embed_var = discord.Embed(title="Tracking Courses:", color=CANVAS_COLOR, timestamp=datetime.utcnow())
         embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
@@ -1189,7 +1190,8 @@ class Main(commands.Cog):
                 channel = self.bot.get_channel(chnl)
                 await channel.send(response)
 
-    def create_post_embed(self, post):
+    @staticmethod
+    def create_post_embed(post):
         if post:
             post_embed = discord.Embed(title=post["subject"], url=post["url"], description=post["num"])
             post_embed.add_field(name=post["post_type"], value=post["post_body"], inline=False)
