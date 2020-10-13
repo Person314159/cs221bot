@@ -1081,7 +1081,7 @@ class Main(commands.Cog):
         response += "If the above doesn't look right, please use !pstart again with the correct arguments"
         await ctx.send(response)
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
     async def ptrack(self, ctx, *cid):
         """
@@ -1152,7 +1152,7 @@ class Main(commands.Cog):
         else:
             await ctx.send("Sorry! That post doesn't exist.")
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
     async def ptest(self, ctx):
         """
@@ -1230,7 +1230,7 @@ class Main(commands.Cog):
                     response += "None today!"
 
                 for post in posts[1]:
-                    response += f"@{ipost['num']}: {ipost['subject']} <{ipost['url']}>\n"
+                    response += f"@{post['num']}: {post['subject']} <{post['url']}>\n"
 
                 await self.send_at_time(self)
 
