@@ -69,8 +69,8 @@ class PiazzaHandler():
         return self.nid
 
     @piazza_id.setter
-    def piazza_id(self):
-        return self.nid
+    def piazza_id(self, nid):
+        self.nid = nid
 
     @property
     def guild(self):
