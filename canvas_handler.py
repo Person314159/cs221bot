@@ -91,7 +91,7 @@ class CanvasHandler(Canvas):
 
     @due_week.setter
     def due_week(self, due_week):
-        self._due_week = {}
+        self._due_week = due_week
 
     @property
     def due_day(self):
@@ -99,9 +99,10 @@ class CanvasHandler(Canvas):
 
     @due_day.setter
     def due_day(self, due_day):
-        self._due_day = {}
+        self._due_day = due_day
 
-    def _ids_converter(self, ids: Tuple[str, ...]) -> List[int]:
+    @staticmethod
+    def _ids_converter(ids: Tuple[str, ...]) -> List[int]:
         """Converts list of string to list of int, removes duplicates
 
         Parameters
@@ -211,9 +212,6 @@ class CanvasHandler(Canvas):
             else:
                 course_stream_list.append(get_course_stream(c.id, base_url, access_token))
 
-        if since is not None:
-            till_timedelta = self._make_timedelta(since)
-
         data_list = []
 
         for course_stream in course_stream_list:
@@ -241,7 +239,7 @@ class CanvasHandler(Canvas):
                         ctime_timedelta = ctime_iso_parsed - datetime.now()
 
                         if since is not None:
-                            if ctime_timedelta < -till_timedelta:
+                            if ctime_timedelta < -self._make_timedelta(since):
                                 # since announcements are in order
                                 break
 
@@ -303,9 +301,6 @@ class CanvasHandler(Canvas):
             List of assignment data to be formatted and sent as embeds
         """
 
-        if due is not None:
-            till_timedelta = self._make_timedelta(due)
-
         data_list = []
 
         for course_assignments in courses_assignments:
@@ -348,7 +343,7 @@ class CanvasHandler(Canvas):
                         continue
 
                     if due is not None:
-                        if dtime_timedelta > till_timedelta:
+                        if dtime_timedelta > self._make_timedelta(due):
                             # since assignments are not in order
                             continue
 
@@ -358,7 +353,8 @@ class CanvasHandler(Canvas):
 
         return data_list
 
-    def _make_timedelta(self, till_str: str) -> timedelta:
+    @staticmethod
+    def _make_timedelta(till_str: str) -> timedelta:
         """Makes a datetime.timedelta
 
         Parameters
@@ -372,7 +368,7 @@ class CanvasHandler(Canvas):
             Time delta between till and now
         """
 
-        till = re.split(r"-|:", till_str)
+        till = re.split(r"[-:]", till_str)
 
         if till[1] in ["hour", "day", "week", "month", "year"]:
             num = float(till[0])
@@ -404,7 +400,7 @@ class CanvasHandler(Canvas):
 
         Parameters
         ----------
-        base_url : `str`
+        url : `str`
             Base URL of the Canvas instance's API
 
         Returns

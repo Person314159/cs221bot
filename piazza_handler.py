@@ -1,11 +1,13 @@
 import datetime
+import typing
+
 import regex
 import html
 from typing import List
 from piazza_api import Piazza
 
 
-class PiazzaHandler():
+class PiazzaHandler:
     """Handles requests to a specific Piazza network. Requires an e-mail and password, but if none are
     provided, then they will be asked for in the console (doesn't work for Heroku deploys). API is rate-limited
     (limit is still unknown) so it's recommended to be conservative with FETCH_MAX, FETCH_MIN and only change them if necessary.
@@ -69,8 +71,8 @@ class PiazzaHandler():
         return self.nid
 
     @piazza_id.setter
-    def piazza_id(self):
-        return self.nid
+    def piazza_id(self, nid):
+        self.nid = nid
 
     @property
     def guild(self):
@@ -126,7 +128,7 @@ class PiazzaHandler():
 
         return response
 
-    def fetch_pinned(self) -> List[dict]:
+    def fetch_pinned(self, lim: int = 0) -> List[dict]:
         """
         Returns up to `lim` JSON objects representing pinned posts\n
         Since pinned posts are always the first notes shown in a Piazza, lim can be a small value.
@@ -136,7 +138,7 @@ class PiazzaHandler():
         lim : `int`
             Upper limit on posts fetched. Must be in range [FETCH_MIN, FETCH_MAX] (inclusive)
         """
-        posts = self.network.iter_all_posts(limit=self.min)
+        posts = self.network.iter_all_posts(limit=lim or self.min)
         response = []
 
         for post in posts:
@@ -188,7 +190,7 @@ class PiazzaHandler():
 
         return response
 
-    def get_post(self, postID) -> dict:
+    def get_post(self, postID) -> typing.Union[dict, None]:
         """
         Returns a dict that contains post information to be formatted and returned as an embed
 
@@ -214,21 +216,17 @@ class PiazzaHandler():
             }
 
             answers = post["children"]
-            answerHeading, answerBody = "", ""
 
             if answers:
                 answer = answers[0]
 
                 if answer["type"] == "followup":
-                    try:
-                        if answers[1]["type"] == "followup":
-                            raise Exception()
-
-                        answerHeading = "Instructor Answer" if answer["type"] == "i_answer" else "Student Answer"
-                        answerBody = self.clean_response(self.get_body(answers[1]))
-                    except:
+                    if answers[1]["type"] == "followup":
                         answerHeading = "Follow-up Post"
                         answerBody = answer["subject"]
+                    else:
+                        answerHeading = "Instructor Answer" if answer["type"] == "i_answer" else "Student Answer"
+                        answerBody = self.clean_response(self.get_body(answers[1]))
                 else:
                     answerHeading = "Instructor Answer" if answer["type"] == "i_answer" else "Student Answer"
                     answerBody = self.clean_response(self.get_body(answer))
@@ -305,8 +303,9 @@ class PiazzaHandler():
 
         return response
 
-    def checkIfPrivate(self, post) -> bool:
-        return (post["status"] == "private" or post["change_log"][0]["v"] == "private")
+    @staticmethod
+    def checkIfPrivate(post) -> bool:
+        return post["status"] == "private" or post["change_log"][0]["v"] == "private"
 
     @staticmethod
     def clean_response(res):

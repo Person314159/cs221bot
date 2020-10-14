@@ -38,17 +38,11 @@ async def status_task():
     await bot.wait_until_ready()
 
     while not bot.is_closed():
-        num_guilds = len(bot.guilds)
-        online_members = []
-
-        for guild in bot.guilds:
-            for member in guild.members:
-                if not member.bot and member.status != discord.Status.offline:
-                    if member not in online_members:
-                        online_members.append(member)
+        online_members = {member for guild in bot.guilds for member in guild.members
+                          if not member.bot and member.status != discord.Status.offline}
 
         play = ["with the \"help\" command", " ", "with your mind", "ƃuᴉʎɐlԀ", "...something?",
-                "a game? Or am I?", "¯\_(ツ)_/¯", f"with {len(online_members)} people", "with image manipulation"]
+                "a game? Or am I?", r"¯\_(ツ)_/¯", f"with {len(online_members)} people", "with image manipulation"]
         listen = ["smart music", "... wait I can't hear anything",
                   "rush 🅱", "C++ short course"]
         watch = ["TV", "YouTube vids", "over you",
@@ -97,7 +91,7 @@ async def wipe_dms():
         for channel in guild.channels:
             if channel.name.startswith("221dm-"):
                 async for msg in channel.history(limit=1):
-                    if (datetime.utcnow() - msg.created_at).total_seconds >= 86400:
+                    if (datetime.utcnow() - msg.created_at).total_seconds() >= 86400:
                         await channel.delete()
                         break
                 else:
@@ -191,7 +185,7 @@ async def on_command_error(ctx, error):
         # prints full traceback
         try:
             await ctx.send("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```".replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
-        except Exception:
+        except (discord.HTTPException, discord.Forbidden, discord.InvalidArgument):
             print("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```".replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
 
 bot.loop.create_task(Main.track_inotes(bot.get_cog("Main")))

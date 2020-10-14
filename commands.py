@@ -340,7 +340,7 @@ class Main(commands.Cog):
         for user in ctx.message.mentions:
             try:
                 await user.add_roles(role)
-            except:
+            except (discord.Forbidden, discord.HTTPException):
                 pass  # if for whatever reason one of the people doesn't exist, just ignore and keep going
 
         access = discord.PermissionOverwrite(read_messages=True, send_messages=True, read_message_history=True)
@@ -505,7 +505,7 @@ class Main(commands.Cog):
 
         try:
             img = requests.post("https://www.quicklatex.com/latex3.f", data=body.encode("utf-8"), timeout=10)
-        except Exception:
+        except (requests.ConnectionError, requests.HTTPError, requests.TooManyRedirects, requests.Timeout):
             return await ctx.send("Render timed out.", delete_after=5)
 
         if img.status_code == 200:
@@ -694,6 +694,7 @@ class Main(commands.Cog):
     @commands.has_permissions(administrator=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def shut(self, ctx):
+        change = None
         for role in self.bot.get_guild(745503628479037492).roles[:-6]:
             if role.permissions.value == 104187456:
                 change = "enabled messaging permissions"
@@ -702,7 +703,10 @@ class Main(commands.Cog):
                 change = "disabled messaging permissions"
                 await role.edit(permissions=discord.Permissions(permissions=104187456))
 
-        await ctx.send(change)
+        if change:
+            await ctx.send(change)
+        else:
+            await ctx.send("No messaging permissions changed")
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -943,7 +947,8 @@ class Main(commands.Cog):
             if ch.guild == guild:
                 return ch
 
-    def _get_tracking_courses(self, c_handler: CanvasHandler, CANVAS_API_URL) -> discord.Embed:
+    @staticmethod
+    def _get_tracking_courses(c_handler: CanvasHandler, CANVAS_API_URL) -> discord.Embed:
         course_names = c_handler.get_course_names(CANVAS_API_URL)
         embed_var = discord.Embed(title="Tracking Courses:", color=CANVAS_COLOR, timestamp=datetime.utcnow())
         embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
@@ -1000,13 +1005,13 @@ class Main(commands.Cog):
                     for c in ch.courses:
                         data_list = ch.get_assignments("1-week", (str(c.id),), CANVAS_API_URL)
                         recorded_ass_ids = ch.due_week[str(c.id)]
-                        ass_ids = await self._assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role, "week")
+                        ass_ids = await self._assignment_sender(ch, data_list, recorded_ass_ids, notify_role, "week")
                         ch.due_week[str(c.id)] = ass_ids
                         self.bot.canvas_dict[str(ch.guild.id)]["due_week"][str(c.id)] = ass_ids
 
                         data_list = ch.get_assignments("1-day", (str(c.id),), CANVAS_API_URL)
                         recorded_ass_ids = ch.due_day[str(c.id)]
-                        ass_ids = await self._assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role, "day")
+                        ass_ids = await self._assignment_sender(ch, data_list, recorded_ass_ids, notify_role, "day")
                         ch.due_day[str(c.id)] = ass_ids
                         self.bot.canvas_dict[str(ch.guild.id)]["due_day"][str(c.id)] = ass_ids
 
@@ -1015,7 +1020,7 @@ class Main(commands.Cog):
             await asyncio.sleep(3600)
 
     @staticmethod
-    async def _assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role, time):
+    async def _assignment_sender(ch, data_list, recorded_ass_ids, notify_role, time):
         ass_ids = [data[-1] for data in data_list]
         not_recorded = [data_list[ass_ids.index(i)] for i in ass_ids if i not in recorded_ass_ids]
 
@@ -1183,13 +1188,14 @@ class Main(commands.Cog):
             for post in posts[1]:
                 response += f"@{post['num']}: {post['subject']} <{post['url']}>\n"
 
-            await self.send_at_time(self)
+            await self.send_at_time()
 
             for chnl in self.d_handler.piazza_handler.channels:
                 channel = self.bot.get_channel(chnl)
                 await channel.send(response)
 
-    def create_post_embed(self, post):
+    @staticmethod
+    def create_post_embed(post):
         if post:
             post_embed = discord.Embed(title=post["subject"], url=post["url"], description=post["num"])
             post_embed.add_field(name=post["post_type"], value=post["post_body"], inline=False)
@@ -1200,7 +1206,7 @@ class Main(commands.Cog):
             return post_embed
 
     @staticmethod
-    async def send_at_time(self):
+    async def send_at_time():
         # default set to midnight PST (7/8am UTC)
         today = datetime.utcnow()
         hours = round((datetime.utcnow() - datetime.now()).seconds / 3600)
@@ -1232,7 +1238,7 @@ class Main(commands.Cog):
                 for post in posts[1]:
                     response += f"@{post['num']}: {post['subject']} <{post['url']}>\n"
 
-                await self.send_at_time(self)
+                await self.send_at_time()
 
                 for chnl in self.d_handler.piazza_handler.channels:
                     channel = self.bot.get_channel(chnl)
