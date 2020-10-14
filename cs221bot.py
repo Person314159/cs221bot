@@ -3,10 +3,8 @@ import json
 import os
 import random
 import re
-import time
 import traceback
 from datetime import datetime
-from os.path import isfile, join
 
 import discord
 from discord.ext import commands

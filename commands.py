@@ -5,18 +5,15 @@ import mimetypes
 import os
 import random
 import re
-from datetime import datetime, timedelta
+from datetime import datetime
 from fractions import Fraction
 from io import BytesIO
-from typing import List, Optional
+from typing import Optional
 
-import dateutil.parser.isoparser
 import discord
 import pytz
 import requests
 import webcolors
-from bs4 import BeautifulSoup
-from canvasapi import Canvas
 from discord.ext import commands
 from dotenv import load_dotenv
 from googletrans import Translator, constants
