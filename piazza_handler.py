@@ -11,7 +11,7 @@ class PiazzaHandler:
     """
     Handles requests to a specific Piazza network. Requires an e-mail and password, but if none are
     provided, then they will be asked for in the console (doesn't work for Heroku deploys). API is rate-limited
-    (limit is still unknown) so it's recommended to be conservative with FETCH_MAX, FETCH_MIN and only change them if necessary.
+    (max is 55 posts in about 2 minutes?) so it's recommended to be conservative with FETCH_MAX, FETCH_MIN and only change them if necessary.
 
     All `fetch_*` functions return JSON directly from Piazza's API and all `get_*` functions parse that JSON.
 
@@ -39,7 +39,7 @@ class PiazzaHandler:
         Lower limit on posts fetched from Piazza. Used as the default value for functions that don't need to fetch a lot of posts
     """
 
-    def __init__(self, NAME, ID, EMAIL, PASSWORD, GUILD, FETCH_MAX=60, FETCH_MIN=30):
+    def __init__(self, NAME, ID, EMAIL, PASSWORD, GUILD, FETCH_MAX=55, FETCH_MIN=30):
         self.name = NAME
         self.nid = ID
         self._guild = GUILD
@@ -95,6 +95,10 @@ class PiazzaHandler:
         if channel not in self._channels:
             self._channels.append(channel)
 
+    def remove_channel(self, channel):
+        if channel in self._channels:
+            self._channels.remove(channel)
+
     def fetch_post_instance(self, postID) -> dict:
         """
         Returns a JSON object representing a Piazza post with ID `postID`, or returns None if post doesn't exist
@@ -112,7 +116,7 @@ class PiazzaHandler:
 
         return post
 
-    def fetch_recent_notes(self, lim=100) -> List[dict]:
+    def fetch_recent_notes(self, lim=55) -> List[dict]:
         """
         Returns up to `lim` JSON objects representing instructor's notes that were posted today
 
@@ -154,7 +158,7 @@ class PiazzaHandler:
 
         return response
 
-    def fetch_posts_in_range(self, days=1, seconds=0, lim=100) -> List[dict]:
+    def fetch_posts_in_range(self, days=1, seconds=0, lim=55) -> List[dict]:
         """
         Returns up to `lim` JSON objects that represent a Piazza post posted today
         """
