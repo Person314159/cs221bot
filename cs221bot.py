@@ -3,10 +3,8 @@ import json
 import os
 import random
 import re
-import time
 import traceback
 from datetime import datetime
-from os.path import isfile, join
 
 import discord
 from discord.ext import commands
@@ -190,9 +188,9 @@ async def on_command_error(ctx, error):
 
         # prints full traceback
         try:
-            await ctx.send("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```".replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
+            await ctx.send(("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```").replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
         except:
-            print("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```".replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
+            print(("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```").replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
 
 bot.loop.create_task(Main.track_inotes(bot.get_cog("Main")))
 bot.loop.create_task(Main.send_pupdate(bot.get_cog("Main")))

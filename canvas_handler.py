@@ -1,12 +1,10 @@
 import re
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
 import dateutil.parser.isoparser
 import discord
-import pytz
 from bs4 import BeautifulSoup
-from canvasapi.assignment import Assignment
 from canvasapi.canvas import Canvas
 from canvasapi.course import Course
 from canvasapi.paginated_list import PaginatedList
