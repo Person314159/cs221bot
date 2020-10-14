@@ -64,11 +64,14 @@ def startup():
     try:
         bot.poll_dict = bot.loadJSON("data/poll.json")
         bot.canvas_dict = bot.loadJSON("data/canvas.json")
+        bot.piazza_dict = bot.loadJSON("data/piazza.json")
     except FileNotFoundError:
         bot.writeJSON({}, "data/poll.json")
         bot.poll_dict = bot.loadJSON("data/poll.json")
         bot.writeJSON({}, "data/canvas.json")
         bot.canvas_dict = bot.loadJSON("data/canvas.json")
+        bot.writeJSON({}, "data/piazza.json")
+        bot.piazza_dict = bot.loadJSON("data/piazza.json")
 
     for channel in list(bot.poll_dict):
         if not bot.get_channel(int(channel)):
@@ -82,6 +85,7 @@ def startup():
     bot.writeJSON(bot.poll_dict, "data/poll.json")
 
     Main.canvas_init(bot.get_cog("Main"))
+    Main.piazza_start(bot.get_cog("Main"))
 
 
 async def wipe_dms():

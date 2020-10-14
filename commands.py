@@ -1079,8 +1079,12 @@ class Main(commands.Cog):
         """
 
         self.d_handler.piazza_handler = PiazzaHandler(name, pid, PIAZZA_EMAIL, PIAZZA_PASSWORD, ctx.guild)
+        self.bot.piazza_dict["course_name"] = name
+        self.bot.piazza_dict["piazza_id"] = pid
+        self.bot.piazza_dict["guild_id"] = ctx.guild.id
+        self.bot.writeJSON(self.bot.piazza_dict, "data/piazza.json")
         response = f"Piazza instance created!\nName: {name}\nPiazza ID: {pid}\n"
-        response += "If the above doesn't look right, please use `!pstart` again with the correct arguments"
+        response += "If the above doesn't look right, please use `!pinit` again with the correct arguments"
         await ctx.send(response)
 
     @commands.command(hidden=True)
@@ -1095,6 +1099,8 @@ class Main(commands.Cog):
         `!ptrack 747259140908384386` adds CPSC221 server's #bot-commands channel id to the Piazza instance's list of tracked channels
         `!ptrack` adds the current channel's id to the Piazza instance's list of channels
 
+        The channels added through `!ptrack` are where send_pupdate and track_inotes send their responses.
+
         *Only usable by TAs and Profs
         """
 
@@ -1104,7 +1110,36 @@ class Main(commands.Cog):
             cid = int(cid[0])
 
         self.d_handler.piazza_handler.add_channel(cid)
+        self.bot.piazza_dict["channels"] = [channel for channel in self.d_handler.piazza_handler.channels]
+        self.bot.writeJSON(self.bot.piazza_dict, "data/piazza.json")
         await ctx.send("Channel added to tracking!")
+
+    @commands.command(hidden=True)
+    @commands.has_permissions(administrator=True)
+    async def puntrack(self, ctx, *cid):
+        """
+        `!puntrack` __`channel id`__
+
+        **Usage:** !ptrack [channel id]
+
+        **Examples:**
+        `!puntrack 747259140908384386` removes CPSC221 server's #bot-commands channel id to the Piazza instance's list of tracked channels
+        `!puntrack` removes the current channel's id to the Piazza instance's list of channels
+
+        The channels removed through `!puntrack` are where send_pupdate and track_inotes send their responses.
+
+        *Only usable by TAs and Profs
+        """
+        if not cid:
+            cid = ctx.message.channel.id
+        else:
+            cid = int(cid[0])
+        
+        self.d_handler.piazza_handler.remove_channel(cid)
+        self.bot.piazza_dict["channels"] = [channel for channel in self.d_handler.piazza_handler.channels]
+        self.bot.writeJSON(self.bot.piazza_dict, "data/piazza.json")
+        await ctx.send("Channel removed from tracking!")
+
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
@@ -1169,7 +1204,7 @@ class Main(commands.Cog):
 
         if self.d_handler.piazza_handler:
             posts = self.d_handler.piazza_handler.get_posts_in_range()
-            response = f"**{self.d_handler.piazza_handler.course_name}'s posts for {datetime.date.today()}**\n"
+            response = f"**{self.d_handler.piazza_handler.course_name}'s posts for {datetime.today().strftime('%a. %B %d, %Y')}**\n"
             response += "Instructor's Notes:\n"
 
             if posts[0]:
@@ -1186,7 +1221,7 @@ class Main(commands.Cog):
             for post in posts[1]:
                 response += f"@{post['num']}: {post['subject']} <{post['url']}>\n"
 
-            await self.send_at_time()
+            #await self.send_at_time()
 
             for chnl in self.d_handler.piazza_handler.channels:
                 channel = self.bot.get_channel(chnl)
@@ -1221,7 +1256,7 @@ class Main(commands.Cog):
         while True:
             if self.d_handler.piazza_handler:
                 posts = self.d_handler.piazza_handler.get_posts_in_range()
-                response = f"**{self.d_handler.piazza_handler.course_name}'s posts for {datetime.date.today()}**\n"
+                response = f"**{self.d_handler.piazza_handler.course_name}'s posts for {datetime.today().strftime('%a. %B %d, %Y')}**\n"
                 response += "Instructor's Notes:\n"
 
                 if posts[0]:
@@ -1263,6 +1298,15 @@ class Main(commands.Cog):
                         await channel.send(response)
 
             await asyncio.sleep(60*60*5)
+
+    @staticmethod
+    def piazza_start(self):
+        if all (field in self.bot.piazza_dict for field in ("course_name", "piazza_id", "guild_id")):
+            self.d_handler.piazza_handler = PiazzaHandler(self.bot.piazza_dict["course_name"], self.bot.piazza_dict["piazza_id"], PIAZZA_EMAIL, PIAZZA_PASSWORD, self.bot.piazza_dict["guild_id"])
+
+        if "channels" in self.bot.piazza_dict:
+            for ch in self.bot.piazza_dict["channels"]:
+                self.d_handler.piazza_handler.add_channel(int(ch))
 
     # add more commands here with the same syntax
     # also just look up the docs lol i can't do everything
