@@ -1,11 +1,10 @@
 import ast
 import asyncio
-import datetime
 import mimetypes
 import os
 import random
 import re
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from fractions import Fraction
 from io import BytesIO
 from typing import Optional
@@ -733,7 +732,7 @@ class Main(commands.Cog):
             most_active_channel = 0
             most_active_channel_name = None
             cum_message_count = 0
-            yesterday = (datetime.now() - datetime.timedelta(days=1)).replace(tzinfo=pytz.timezone("US/Pacific")).astimezone(datetime.timezone.utc).replace(tzinfo=None)
+            yesterday = (datetime.now() - timedelta(days=1)).replace(tzinfo=pytz.timezone("US/Pacific")).astimezone(timezone.utc).replace(tzinfo=None)
 
             for channel in ctx.guild.text_channels:
                 counter = 0
@@ -1131,12 +1130,11 @@ class Main(commands.Cog):
             cid = ctx.message.channel.id
         else:
             cid = int(cid[0])
-        
+
         self.d_handler.piazza_handler.remove_channel(cid)
         self.bot.piazza_dict["channels"] = [channel for channel in self.d_handler.piazza_handler.channels]
         self.bot.writeJSON(self.bot.piazza_dict, "data/piazza.json")
         await ctx.send("Channel removed from tracking!")
-
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
@@ -1218,7 +1216,7 @@ class Main(commands.Cog):
             for post in posts[1]:
                 response += f"@{post['num']}: {post['subject']} <{post['url']}>\n"
 
-            #await self.send_at_time()
+            # await self.send_at_time()
 
             for chnl in self.d_handler.piazza_handler.channels:
                 channel = self.bot.get_channel(chnl)
@@ -1298,7 +1296,7 @@ class Main(commands.Cog):
 
     @staticmethod
     def piazza_start(self):
-        if all (field in self.bot.piazza_dict for field in ("course_name", "piazza_id", "guild_id")):
+        if all(field in self.bot.piazza_dict for field in ("course_name", "piazza_id", "guild_id")):
             self.d_handler.piazza_handler = PiazzaHandler(self.bot.piazza_dict["course_name"], self.bot.piazza_dict["piazza_id"], PIAZZA_EMAIL, PIAZZA_PASSWORD, self.bot.piazza_dict["guild_id"])
 
         if "channels" in self.bot.piazza_dict:

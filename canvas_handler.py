@@ -7,7 +7,6 @@ import discord
 from bs4 import BeautifulSoup
 from canvasapi.canvas import Canvas
 from canvasapi.course import Course
-from canvasapi.paginated_list import PaginatedList
 
 from extra_func import get_course_stream, get_course_url
 
