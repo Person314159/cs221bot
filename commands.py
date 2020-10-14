@@ -4,15 +4,15 @@ import datetime
 import mimetypes
 import os
 import random
-import pytz
 import re
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 from fractions import Fraction
 from io import BytesIO
 from typing import List, Optional
 
 import dateutil.parser.isoparser
 import discord
+import pytz
 import requests
 import webcolors
 from bs4 import BeautifulSoup
@@ -23,7 +23,6 @@ from googletrans import Translator, constants
 
 from canvas_handler import CanvasHandler
 from discord_handler import DiscordHandler
-
 from piazza_handler import PiazzaHandler
 
 CANVAS_COLOR = 0xe13f2b
@@ -694,7 +693,8 @@ class Main(commands.Cog):
     @commands.has_permissions(administrator=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def shut(self, ctx):
-        change = None
+        change = ""
+
         for role in self.bot.get_guild(745503628479037492).roles[:-6]:
             if role.permissions.value == 104187456:
                 change = "enabled messaging permissions"
@@ -703,10 +703,7 @@ class Main(commands.Cog):
                 change = "disabled messaging permissions"
                 await role.edit(permissions=discord.Permissions(permissions=104187456))
 
-        if change:
-            await ctx.send(change)
-        else:
-            await ctx.send("No messaging permissions changed")
+        await ctx.send(change)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -1083,7 +1080,7 @@ class Main(commands.Cog):
 
         self.d_handler.piazza_handler = PiazzaHandler(name, pid, PIAZZA_EMAIL, PIAZZA_PASSWORD, ctx.guild)
         response = f"Piazza instance created!\nName: {name}\nPiazza ID: {pid}\n"
-        response += "If the above doesn't look right, please use !pstart again with the correct arguments"
+        response += "If the above doesn't look right, please use `!pstart` again with the correct arguments"
         await ctx.send(response)
 
     @commands.command(hidden=True)
@@ -1107,6 +1104,7 @@ class Main(commands.Cog):
             cid = int(cid[0])
 
         self.d_handler.piazza_handler.add_channel(cid)
+        await ctx.send("Channel added to tracking!")
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
@@ -1200,8 +1198,10 @@ class Main(commands.Cog):
             post_embed = discord.Embed(title=post["subject"], url=post["url"], description=post["num"])
             post_embed.add_field(name=post["post_type"], value=post["post_body"], inline=False)
             post_embed.add_field(name=post["ans_type"], value=post["ans_body"], inline=False)
+
             if post["more_answers"]:
                 post_embed.add_field(name=f"{post['num_answers']-1} more contributions hidden", value="Click the title above to access the rest of the post.", inline=False)
+
             post_embed.set_footer(text=f"tags: {post['tags']}")
             return post_embed
 

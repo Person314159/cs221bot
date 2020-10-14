@@ -1,14 +1,15 @@
 import datetime
-import typing
-
-import regex
 import html
+import re
+import typing
 from typing import List
+
 from piazza_api import Piazza
 
 
 class PiazzaHandler:
-    """Handles requests to a specific Piazza network. Requires an e-mail and password, but if none are
+    """
+    Handles requests to a specific Piazza network. Requires an e-mail and password, but if none are
     provided, then they will be asked for in the console (doesn't work for Heroku deploys). API is rate-limited
     (limit is still unknown) so it's recommended to be conservative with FETCH_MAX, FETCH_MIN and only change them if necessary.
 
@@ -103,6 +104,7 @@ class PiazzaHandler:
         postID : `int`
             requested post ID
         """
+
         post = self.network.get_post(postID)
 
         if self.checkIfPrivate(post):
@@ -119,6 +121,7 @@ class PiazzaHandler:
         lim : `int (optional)`
             Upper limit on posts fetched. Must be in range [FETCH_MIN, FETCH_MAX] (inclusive)
         """
+
         posts = self.fetch_posts_in_range(seconds=60*60*5, lim=lim)
         response = []
 
@@ -138,6 +141,7 @@ class PiazzaHandler:
         lim : `int`
             Upper limit on posts fetched. Must be in range [FETCH_MIN, FETCH_MAX] (inclusive)
         """
+
         posts = self.network.iter_all_posts(limit=lim or self.min)
         response = []
 
@@ -154,6 +158,7 @@ class PiazzaHandler:
         """
         Returns up to `lim` JSON objects that represent a Piazza post posted today
         """
+
         if lim < 0:
             raise Exception(f"Invalid lim for fetch_posts_in_days(): {lim}")
 
@@ -177,6 +182,7 @@ class PiazzaHandler:
         """
         Returns an array of `self.min` objects containing a pinned post's post id, title, and url.
         """
+
         posts = self.fetch_pinned()
         response = []
 
@@ -199,6 +205,7 @@ class PiazzaHandler:
         postID : `int`
             int associated with a Piazza post ID
         """
+
         post = self.fetch_post_instance(postID)
 
         if post:
@@ -290,6 +297,7 @@ class PiazzaHandler:
         Fetches `FETCH_MIN` posts, filters out non-important (not instructor notes or pinned) posts and
         returns an array of corresponding post details
         """
+
         posts = self.fetch_recent_notes(lim=self.min)
         response = []
 
@@ -313,8 +321,8 @@ class PiazzaHandler:
             res = res[:1000]
             res += "...\n\n *(Read more)*"
 
-        tagRegex = regex.compile("<.*?>")
-        res = html.unescape(regex.sub(tagRegex, "", res))
+        tagRegex = re.compile("<.*?>")
+        res = html.unescape(re.sub(tagRegex, "", res))
 
         if len(res) < 1:
             res += "An image or video was posted in response."

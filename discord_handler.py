@@ -5,7 +5,8 @@ from piazza_handler import PiazzaHandler
 
 
 class DiscordHandler:
-    """Class for Discord bot to maintain list of active CanvasHandlers
+    """
+    Class for Discord bot to maintain list of active CanvasHandlers
 
     Attributes
     ----------

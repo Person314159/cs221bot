@@ -15,7 +15,8 @@ from extra_func import get_course_stream, get_course_url
 
 
 class CanvasHandler(Canvas):
-    """Represents a handler for Canvas information for a guild
+    """
+    Represents a handler for Canvas information for a guild
 
     Attributes
     ----------
@@ -103,7 +104,8 @@ class CanvasHandler(Canvas):
 
     @staticmethod
     def _ids_converter(ids: Tuple[str, ...]) -> List[int]:
-        """Converts list of string to list of int, removes duplicates
+        """
+        Converts list of string to list of int, removes duplicates
 
         Parameters
         ----------
@@ -125,7 +127,8 @@ class CanvasHandler(Canvas):
         return temp
 
     def track_course(self, course_ids_str: Tuple[str, ...]):
-        """Adds course(s) to track
+        """
+        Adds course(s) to track
 
         Parameters
         ----------
@@ -152,7 +155,8 @@ class CanvasHandler(Canvas):
                 self.due_day[c] = []
 
     def untrack_course(self, course_ids_str: Tuple[str, ...]):
-        """Untracks course(s)
+        """
+        Untracks course(s)
 
         Parameters
         ----------
@@ -179,7 +183,8 @@ class CanvasHandler(Canvas):
                 self.due_day.pop(c)
 
     def get_course_stream_ch(self, since: Optional[str], course_ids_str: Tuple[str, ...], base_url, access_token) -> List[List[str]]:
-        """Gets announcements for course(s)
+        """
+        Gets announcements for course(s)
 
         Parameters
         ----------
@@ -250,7 +255,8 @@ class CanvasHandler(Canvas):
         return data_list
 
     def get_assignments(self, due: Optional[str], course_ids_str: Tuple[str, ...], base_url) -> List[List[str]]:
-        """Gets assignments for course(s)
+        """
+        Gets assignments for course(s)
 
         Parameters
         ----------
@@ -282,7 +288,8 @@ class CanvasHandler(Canvas):
         return self._get_assignment_data(due, courses_assignments, base_url)
 
     def _get_assignment_data(self, due: Optional[str], courses_assignments, base_url: str) -> List[List[str]]:
-        """Formats all courses assignments as separate assignments"
+        """
+        Formats all courses assignments as separate assignments"
 
         Parameters
         ----------
@@ -320,6 +327,7 @@ class CanvasHandler(Canvas):
 
                 if desc_html is None:
                     desc_html = "No description"
+
                 desc_soup = BeautifulSoup(desc_html, "html.parser")
                 short_desc = "\n".join(desc_soup.get_text().split("\n")[:4])
 
@@ -355,7 +363,8 @@ class CanvasHandler(Canvas):
 
     @staticmethod
     def _make_timedelta(till_str: str) -> timedelta:
-        """Makes a datetime.timedelta
+        """
+        Makes a datetime.timedelta
 
         Parameters
         ----------
@@ -396,7 +405,8 @@ class CanvasHandler(Canvas):
             return abs(datetime(year, month, day, hour, minute, second) - datetime.now())
 
     def get_course_names(self, url) -> List[List[str]]:
-        """Gives a list of tracked courses and their urls
+        """
+        Gives a list of tracked courses and their urls
 
         Parameters
         ----------

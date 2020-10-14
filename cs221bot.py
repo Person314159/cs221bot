@@ -11,6 +11,7 @@ from os.path import isfile, join
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
+
 from commands import Main
 
 CANVAS_COLOR = 0xe13f2b
@@ -38,11 +39,10 @@ async def status_task():
     await bot.wait_until_ready()
 
     while not bot.is_closed():
-        online_members = {member for guild in bot.guilds for member in guild.members
-                          if not member.bot and member.status != discord.Status.offline}
+        online_members = {member for guild in bot.guilds for member in guild.members if not member.bot and member.status != discord.Status.offline}
 
         play = ["with the \"help\" command", " ", "with your mind", "ƃuᴉʎɐlԀ", "...something?",
-                "a game? Or am I?", r"¯\_(ツ)_/¯", f"with {len(online_members)} people", "with image manipulation"]
+                "a game? Or am I?", "¯\_(ツ)_/¯", f"with {len(online_members)} people", "with image manipulation"]
         listen = ["smart music", "... wait I can't hear anything",
                   "rush 🅱", "C++ short course"]
         watch = ["TV", "YouTube vids", "over you",
@@ -73,21 +73,23 @@ def startup():
     for channel in list(bot.poll_dict):
         if not bot.get_channel(int(channel)):
             del bot.poll_dict[channel]
-    bot.writeJSON(bot.poll_dict, "data/poll.json")
 
     for guild in bot.guilds:
         for channel in guild.text_channels:
             if str(channel.id) not in bot.poll_dict:
                 bot.poll_dict.update({str(channel.id): ""})
-                bot.writeJSON(bot.poll_dict, "data/poll.json")
+
+    bot.writeJSON(bot.poll_dict, "data/poll.json")
 
     Main.canvas_init(bot.get_cog("Main"))
 
 
 async def wipe_dms():
     guild = bot.get_guild(745503628479037492)
+
     while True:
         await asyncio.sleep(300)
+
         for channel in guild.channels:
             if channel.name.startswith("221dm-"):
                 async for msg in channel.history(limit=1):
@@ -185,7 +187,7 @@ async def on_command_error(ctx, error):
         # prints full traceback
         try:
             await ctx.send("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```".replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
-        except (discord.HTTPException, discord.Forbidden, discord.InvalidArgument):
+        except:
             print("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```".replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
 
 bot.loop.create_task(Main.track_inotes(bot.get_cog("Main")))
