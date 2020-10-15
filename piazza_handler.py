@@ -227,14 +227,14 @@ class PiazzaHandler:
             }
 
             answers = post["children"]
-
+        
             if answers:
                 answer = answers[0]
 
                 if answer["type"] == "followup":
-                    if answers[1]["type"] == "followup":
+                    if len(answers) == 1 or answers[1]["type"] == "followup":
                         answerHeading = "Follow-up Post"
-                        answerBody = answer["subject"]
+                        answerBody = self.clean_response(answer["subject"])
                     else:
                         answerHeading = "Instructor Answer" if answer["type"] == "i_answer" else "Student Answer"
                         answerBody = self.clean_response(self.get_body(answers[1]))

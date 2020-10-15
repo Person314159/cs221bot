@@ -23,6 +23,7 @@ from piazza_handler import PiazzaHandler
 
 CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
+PIAZZA_THUMBNAIL_URL = "https://store-images.s-microsoft.com/image/apps.25584.554ac7a6-231b-46e2-9960-a059f3147dbe.727eba5c-763a-473f-981d-ffba9c91adab.4e76ea6a-bd74-487f-bf57-3612e43ca795.png"
 
 load_dotenv()
 CANVAS_API_URL = "https://canvas.ubc.ca"
@@ -683,6 +684,7 @@ class Main(commands.Cog):
 
         self.bot.reload_extension("commands")
         self.canvas_init(self.bot.get_cog("Main"))
+        self.piazza_start(self.bot.get_cog("Main"))
         await ctx.send("Done")
 
     @commands.command(hidden=True)
@@ -1075,6 +1077,11 @@ class Main(commands.Cog):
         """
 
         self.d_handler.piazza_handler = PiazzaHandler(name, pid, PIAZZA_EMAIL, PIAZZA_PASSWORD, ctx.guild)
+        
+        if "channels" in self.bot.piazza_dict:
+            for channel in self.bot.piazza_dict["channels"]:
+                self.d_handler.piazza_handler.add_channel(channel)
+        
         self.bot.piazza_dict["course_name"] = name
         self.bot.piazza_dict["piazza_id"] = pid
         self.bot.piazza_dict["guild_id"] = ctx.guild.id
@@ -1228,6 +1235,7 @@ class Main(commands.Cog):
             post_embed = discord.Embed(title=post["subject"], url=post["url"], description=post["num"])
             post_embed.add_field(name=post["post_type"], value=post["post_body"], inline=False)
             post_embed.add_field(name=post["ans_type"], value=post["ans_body"], inline=False)
+            post_embed.set_thumbnail(url=PIAZZA_THUMBNAIL_URL)
 
             if post["more_answers"]:
                 post_embed.add_field(name=f"{post['num_answers']-1} more contributions hidden", value="Click the title above to access the rest of the post.", inline=False)
