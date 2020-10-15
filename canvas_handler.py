@@ -365,7 +365,7 @@ class CanvasHandler(Canvas):
 
         Parameters
         ----------
-        till : `str`
+        till_str : `str`
             Date/Time from due date of assignments
 
         Returns
