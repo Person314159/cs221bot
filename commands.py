@@ -990,7 +990,6 @@ class Main(commands.Cog):
             embed_var.set_author(name=data[0], url=data[1])
             embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
             embed_var.add_field(name="Due at", value=data[6], inline=True)
-            embed_var.set_footer()
             embed_var.set_footer(text="Created at", icon_url=CANVAS_THUMBNAIL_URL)
 
             for channel in ch.live_channels:
@@ -1121,12 +1120,14 @@ class Main(commands.Cog):
 
         if self.d_handler.piazza_handler:
             posts = self.d_handler.piazza_handler.get_pinned()
-            response = f"**Pinned posts for {self.d_handler.piazza_handler.course_name}:**\n"
+            embed = discord.Embed(title=f"**Pinned posts for {self.d_handler.piazza_handler.course_name}:**", colour=0x497aaa)
 
             for post in posts:
-                response += f"@{post['num']}: {post['subject']} <{post['url']}>\n"
+                embed.add_field(name=f"@{post['num']}", value=f"[{post['subject']}]({post['url']})", inline=False)
 
-            await ctx.send(response)
+            embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=str(ctx.author.avatar_url))
+
+            await ctx.send(embed=embed)
         else:
             await ctx.send("Piazza hasn't been instantiated yet!")
 
