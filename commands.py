@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from fractions import Fraction
 from io import BytesIO
 from typing import Optional
+import urllib3
 
 import discord
 import pytz
@@ -434,7 +435,7 @@ class Main(commands.Cog):
 
     @commands.command()
     @commands.cooldown(1, 10, commands.BucketType.user)
-    async def latex(self, ctx):
+    async def latex(self, ctx, *args):
         """
         `!latex` __`LaTeX equation render`__
 
@@ -444,13 +445,23 @@ class Main(commands.Cog):
         `!latex \\frac{a}{b}` [img]
         """
 
-        formula = ctx.message.content[len(self.bot.command_prefix) + 6:]
-        formula = formula.replace("%", "%25").replace("&", "%26")
-        body = "formula=" + formula + \
-            "&fsize=30px&fcolor=FFFFFF&mode=0&out=1&remhost=quicklatex.com&preamble=\\usepackage{amsmath}\\usepackage{amsfonts}\\usepackage{amssymb}&rnd=" + str(random.random() * 100)
+        formula = " ".join(*args).strip("`")
+        if (sm := formula.splitlines()[0].lower) in ("latex", "tex"):
+            formula = formula[3 if sm == "tex" else 5:]
+
+        body = {
+            "formula": formula,
+            "fsize": r"30px",
+            "fcolor": r"FFFFFF",
+            "mode": r"0",
+            "out": r"1",
+            "remhost": r"quicklatex.com",
+            "preamble": r"\usepackage{amsmath}\usepackage{amsfonts}\usepackage{amssymb}",
+            "rnd": str(random.random() * 100)
+        }
 
         try:
-            img = requests.post("https://www.quicklatex.com/latex3.f", data=body.encode("utf-8"), timeout=10)
+            img = requests.post("https://www.quicklatex.com/latex3.f", data=body, timeout=10)
         except (requests.ConnectionError, requests.HTTPError, requests.TooManyRedirects, requests.Timeout):
             return await ctx.send("Render timed out.", delete_after=5)
 
