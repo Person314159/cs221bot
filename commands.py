@@ -487,6 +487,8 @@ class Main(commands.Cog):
 
         # case where role name is space separated
         name = " ".join(arg).lower()
+        if not name:
+            return await ctx.send(ctx.command.help)
 
         for role in ctx.guild.roles:
             if name == role.name.lower():
@@ -513,19 +515,19 @@ class Main(commands.Cog):
         `!poll end` ends current poll in channel and returns results
         """
 
-        poll_list = ctx.message.content[6:].split(" | ")
+        poll_list = tuple(map(str.strip, ctx.message.content[6:].split("|")))
         question = poll_list[0]
         options = poll_list[1:]
 
         id_ = self.bot.poll_dict[str(ctx.channel.id)]
 
-        if question == "end" or question == "check":
-            if not id_:
-                return await ctx.send("No active poll found.", delete_after=5)
-
-            if question == "end":
+        if question in ("check", "end"):
+            if end := (question == "end"):
                 self.bot.poll_dict[str(ctx.channel.id)] = ""
                 self.bot.writeJSON(self.bot.poll_dict, "data/poll.json")
+
+            if not id_:
+                return await ctx.send("No active poll found.", delete_after=5)
 
             try:
                 poll_message = await ctx.channel.fetch_message(id_)
@@ -548,10 +550,17 @@ class Main(commands.Cog):
                         if reactor.id != self.bot.user.id:
                             tally[reaction.emoji] += 1
 
-            output = f"{'Current' if question == 'check' else 'Final'} results of the poll **\"{embed.title}\"**\nLink: {poll_message.jump_url}\n```"
+            output = f"{'Final' if end else 'Current'} results of the poll **\"{embed.title}\"**\nLink: {poll_message.jump_url}\n```"
 
-            for key in tally.keys():
-                output += f"{options_dict[key]}: {'▓' * tally[key] if tally[key] == max(tally.values()) else '░' * tally[key]} ({tally[key]} votes, {round(tally[key] / sum(tally.values()) * 100 if sum(tally.values()) else 0, 2)}%)\n\n"
+            max_len = max(map(len, tally.values()))
+            # Dicts act like sets of their keys without .values() or something similar. So .keys() is rarely needed.
+            for key in tally:
+                if tally[key]:
+                    output += f"{options_dict[key].ljust(max_len)}: " +\
+                              f"{('👑' * tally[key]).replace('👑', '▓', tally[key] - 2) if tally[key] == max(tally.values()) else '░' * tally[key]}".rjust(max(tally.values())).replace('👑👑', '👑') +\
+                              f" ({tally[key]} votes, {round(tally[key] / sum(tally.values()) * 100 if sum(tally.values()) else 0, 2)}%)\n\n"
+                else:
+                    output += f"{options_dict[key].ljust(max_len)}: 0\n\n"
 
             output += "```"
 
@@ -564,39 +573,38 @@ class Main(commands.Cog):
 
             return await ctx.send(output, files=files)
 
+        if id_:
+            return await ctx.send("There's an active poll in this channel already.")
+
+        if len(options) <= 1:
+            await ctx.send("Please enter more than one option to poll.", delete_after=5)
+            return await ctx.send(ctx.command.help)
+        elif len(options) > 20:
+            return await ctx.send("Please limit to 10 options.", delete_after=5)
+        elif len(options) == 2 and options[0] == "yes" and options[1] == "no":
+            reactions = ["✅", "❌"]
         else:
-            if id_:
-                return await ctx.send("There's an active poll in this channel already.")
+            reactions = tuple(chr(127462 + i) for i in range(26))
 
-            if len(options) <= 1:
-                await ctx.send("Please enter more than one option to poll.", delete_after=5)
-                return await ctx.send(ctx.command.help)
-            elif len(options) > 20:
-                return await ctx.send("Please limit to 10 options.", delete_after=5)
-            elif len(options) == 2 and options[0] == "yes" and options[1] == "no":
-                reactions = ["✅", "❌"]
-            else:
-                reactions = [chr(127462 + i) for i in range(26)]
+        description = []
 
-            description = []
+        for x, option in enumerate(options):
+            description += f"\n {reactions[x]}: {option}"
 
-            for x, option in enumerate(options):
-                description += f"\n {reactions[x]}: {option}"
+        embed = discord.Embed(title=question, description="".join(description))
+        files = []
+        for url in options:
+            if mimetypes.guess_type(url)[0] and mimetypes.guess_type(url)[0].startswith("image"):
+                filex = BytesIO(requests.get(url).content)
+                filex.seek(0)
+                files.append(discord.File(filex, filename=url))
+        react_message = await ctx.send(embed=embed, files=files)
 
-            embed = discord.Embed(title=question, description="".join(description))
-            files = []
-            for url in options:
-                if mimetypes.guess_type(url)[0] and mimetypes.guess_type(url)[0].startswith("image"):
-                    filex = BytesIO(requests.get(url).content)
-                    filex.seek(0)
-                    files.append(discord.File(filex, filename=url))
-            react_message = await ctx.send(embed=embed, files=files)
+        for reaction in reactions[:len(options)]:
+            await react_message.add_reaction(reaction)
 
-            for reaction in reactions[:len(options)]:
-                await react_message.add_reaction(reaction)
-
-            self.bot.poll_dict[str(ctx.channel.id)] = react_message.id
-            self.bot.writeJSON(self.bot.poll_dict, "data/poll.json")
+        self.bot.poll_dict[str(ctx.channel.id)] = react_message.id
+        self.bot.writeJSON(self.bot.poll_dict, "data/poll.json")
 
     @commands.command(hidden=True)
     @commands.is_owner()
