@@ -321,22 +321,18 @@ class Main(commands.Cog):
         lang_list = list(constants.LANGUAGES)
         random.shuffle(lang_list)
 
-        if limit != "all":
-            try:
-                limit = int(limit)
-
-                if limit < 1 or limit > len(constants.LANGUAGES):
-                    raise ValueError
-            except ValueError:
-                return await ctx.send(f"Please send a positive integer number of languages less than {len(constants.LANGUAGES)} to cycle.", delete_after=5)
-        else:
+        if limit == "all":
             limit = len(lang_list)
+        elif not (limit.isdecimal() and 1 < (limit := int(limit)) < len(constants.LANGUAGES)):
+            return await ctx.send(
+                f"Please send a positive integer number of languages less than {len(constants.LANGUAGES)} to cycle.",
+                delete_after=5)
 
         lang_list = ["en"] + lang_list[:limit] + ["en"]
         translator = Translator()
 
-        for i in range(len(lang_list) - 1):
-            translation = translator.translate(txt, src=lang_list[i], dest=lang_list[i + 1])
+        for i, j in zip(lang_list[:-1], lang_list[:1]):
+            translation = translator.translate(txt, src=i, dest=j)
             txt = translation.text
             await asyncio.sleep(0)
 
@@ -402,6 +398,8 @@ class Main(commands.Cog):
 
         # case where role name is space separated
         name = " ".join(arg).lower()
+        if not name:
+            return await ctx.send(ctx.command.help)
         # make sure that you can't add roles like "prof" or "ta"
         valid_roles = ["Looking for Partners", "Study Group", "L1A", "L1B", "L1C", "L1D", "L1E", "L1F", "L1G", "L1H", "L1J", "L1K", "L1N", "L1P", "L1R", "L1S", "L1T", "He/Him/His", "She/Her/Hers", "They/Them/Theirs", "Ze/Zir/Zirs", "notify"]
         aliases = {"he": 747925204864335935, "she": 747925268181811211, "ze": 747925349232279552, "they": 747925313748729976}
