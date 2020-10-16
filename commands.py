@@ -23,7 +23,6 @@ from piazza_handler import PiazzaHandler
 
 CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
-PIAZZA_THUMBNAIL_URL = "https://store-images.s-microsoft.com/image/apps.25584.554ac7a6-231b-46e2-9960-a059f3147dbe.727eba5c-763a-473f-981d-ffba9c91adab.4e76ea6a-bd74-487f-bf57-3612e43ca795.png"
 
 load_dotenv()
 CANVAS_API_URL = "https://canvas.ubc.ca"
@@ -160,9 +159,7 @@ class Main(commands.Cog):
 
         css = {"lightsalmon": "0xFFA07A", "salmon": "0xFA8072", "darksalmon": "0xE9967A", "lightcoral": "0xF08080", "indianred": "0xCD5C5C", "crimson": "0xDC143C", "firebrick": "0xB22222", "red": "0xFF0000", "darkred": "0x8B0000", "coral": "0xFF7F50", "tomato": "0xFF6347", "orangered": "0xFF4500", "gold": "0xFFD700", "orange": "0xFFA500", "darkorange": "0xFF8C00", "lightyellow": "0xFFFFE0", "lemonchiffon": "0xFFFACD", "lightgoldenrodyellow": "0xFAFAD2", "papayawhip": "0xFFEFD5", "moccasin": "0xFFE4B5", "peachpuff": "0xFFDAB9", "palegoldenrod": "0xEEE8AA", "khaki": "0xF0E68C", "darkkhaki": "0xBDB76B", "yellow": "0xFFFF00", "lawngreen": "0x7CFC00", "chartreuse": "0x7FFF00", "limegreen": "0x32CD32", "lime": "0x00FF00", "forestgreen": "0x228B22", "green": "0x008000", "darkgreen": "0x006400", "greenyellow": "0xADFF2F", "yellowgreen": "0x9ACD32", "springgreen": "0x00FF7F", "mediumspringgreen": "0x00FA9A", "lightgreen": "0x90EE90", "palegreen": "0x98FB98", "darkseagreen": "0x8FBC8F", "mediumseagreen": "0x3CB371", "seagreen": "0x2E8B57", "olive": "0x808000", "darkolivegreen": "0x556B2F", "olivedrab": "0x6B8E23", "lightcyan": "0xE0FFFF", "cyan": "0x00FFFF", "aqua": "0x00FFFF", "aquamarine": "0x7FFFD4", "mediumaquamarine": "0x66CDAA", "paleturquoise": "0xAFEEEE", "turquoise": "0x40E0D0", "mediumturquoise": "0x48D1CC", "darkturquoise": "0x00CED1", "lightseagreen": "0x20B2AA", "cadetblue": "0x5F9EA0", "darkcyan": "0x008B8B", "teal": "0x008080", "powderblue": "0xB0E0E6", "lightblue": "0xADD8E6", "lightskyblue": "0x87CEFA", "skyblue": "0x87CEEB", "deepskyblue": "0x00BFFF", "lightsteelblue": "0xB0C4DE", "dodgerblue": "0x1E90FF", "cornflowerblue": "0x6495ED", "steelblue": "0x4682B4", "royalblue": "0x4169E1", "blue": "0x0000FF", "mediumblue": "0x0000CD", "darkblue": "0x00008B", "navy": "0x000080", "midnightblue": "0x191970", "mediumslateblue": "0x7B68EE", "slateblue": "0x6A5ACD", "darkslateblue": "0x483D8B", "lavender": "0xE6E6FA", "thistle": "0xD8BFD8", "plum": "0xDDA0DD", "violet": "0xEE82EE", "orchid": "0xDA70D6", "fuchsia": "0xFF00FF", "magenta": "0xFF00FF", "mediumorchid": "0xBA55D3", "mediumpurple": "0x9370DB", "blueviolet": "0x8A2BE2", "darkviolet": "0x9400D3", "darkorchid": "0x9932CC", "darkmagenta": "0x8B008B", "purple": "0x800080", "indigo": "0x4B0082", "pink": "0xFFC0CB", "lightpink": "0xFFB6C1", "hotpink": "0xFF69B4", "deeppink": "0xFF1493", "palevioletred": "0xDB7093", "mediumvioletred": "0xC71585", "white": "0xFFFFFF", "snow": "0xFFFAFA", "honeydew": "0xF0FFF0", "mintcream": "0xF5FFFA", "azure": "0xF0FFFF", "aliceblue": "0xF0F8FF", "ghostwhite": "0xF8F8FF", "whitesmoke": "0xF5F5F5", "seashell": "0xFFF5EE", "beige": "0xF5F5DC", "oldlace": "0xFDF5E6", "floralwhite": "0xFFFAF0", "ivory": "0xFFFFF0", "antiquewhite": "0xFAEBD7", "linen": "0xFAF0E6", "lavenderblush": "0xFFF0F5", "mistyrose": "0xFFE4E1", "gainsboro": "0xDCDCDC", "lightgray": "0xD3D3D3", "silver": "0xC0C0C0", "darkgray": "0xA9A9A9", "gray": "0x808080", "dimgray": "0x696969", "lightslategray": "0x778899", "slategray": "0x708090", "darkslategray": "0x2F4F4F", "black": "0x000000", "cornsilk": "0xFFF8DC", "blanchedalmond": "0xFFEBCD", "bisque": "0xFFE4C4", "navajowhite": "0xFFDEAD", "wheat": "0xF5DEB3", "burlywood": "0xDEB887", "tan": "0xD2B48C", "rosybrown": "0xBC8F8F", "sandybrown": "0xF4A460", "goldenrod": "0xDAA520", "peru": "0xCD853F", "chocolate": "0xD2691E", "saddlebrown": "0x8B4513", "sienna": "0xA0522D", "brown": "0xA52A2A", "maroon": "0x800000"}
 
-        def RGB(r, g, b, colour):
-            h, s, l = RGB_to_HSL(r, g, b)
-            c, m, y, k = RGB_to_CMYK(r, g, b)
+        def color_embed(colour, r, b, g, c, m, y, k, h, s, l):
             Hex = f"#{RGB_to_HEX(r, g, b)}"
             rgb = f"rgb({r},{g},{b})"
             hsl = f"hsl({round(float(h), 2)},{round(float(s), 2)}%,{round(float(l), 2)}%)"
@@ -176,6 +173,11 @@ class Main(commands.Cog):
             embed.add_field(name="CSS", value=css_code, inline=True)
             embed.set_thumbnail(url=f"https://serux.pro/rendercolour/?rgb={r},{g},{b}")
             return embed
+
+        def RGB(r, g, b, colour):
+            h, s, l = RGB_to_HSL(r, g, b)
+            c, m, y, k = RGB_to_CMYK(r, g, b)
+            return color_embed(colour, r, b, g, c, m, y, k, h, s, l)
 
         def hslRGB(h, s, l, colour):
             h -= (h // 360) * 360
@@ -184,19 +186,7 @@ class Main(commands.Cog):
             r = round(r)
             g = round(g)
             b = round(b)
-            Hex = f"#{RGB_to_HEX(r, g, b)}"
-            rgb = f"rgb({r},{g},{b})"
-            hsl = f"hsl({round(float(h), 2)},{round(float(s), 2)}%,{round(float(l), 2)}%)"
-            cmyk = f"cmyk({round(float(c), 2)}%,{round(float(m), 2)}%,{round(float(y), 2)}%,{round(float(k), 2)}%)"
-            css_code = get_colour_name((r, g, b))[1]
-            embed = discord.Embed(title=colour, description="", colour=int(Hex[1:], 16))
-            embed.add_field(name="Hex", value=Hex, inline=True)
-            embed.add_field(name="RGB", value=rgb, inline=True)
-            embed.add_field(name="HSL", value=hsl, inline=True)
-            embed.add_field(name="CMYK", value=cmyk, inline=True)
-            embed.add_field(name="CSS", value=css_code, inline=True)
-            embed.set_thumbnail(url=f"https://serux.pro/rendercolour/?rgb={r},{g},{b}")
-            return embed
+            return color_embed(colour, r, b, g, c, m, y, k, h, s, l)
 
         def cmykRGB(c, m, y, k, colour):
             r, g, b = CMYK_to_RGB(c, m, y, k)
@@ -204,19 +194,7 @@ class Main(commands.Cog):
             r = round(r)
             g = round(g)
             b = round(b)
-            Hex = f"#{RGB_to_HEX(r, g, b)}"
-            rgb = f"rgb({r},{g},{b})"
-            hsl = f"hsl({round(float(h), 2)},{round(float(s), 2)}%,{round(float(l), 2)}%)"
-            cmyk = f"cmyk({round(float(c), 2)}%,{round(float(m), 2)}%,{round(float(y), 2)}%,{round(float(k), 2)}%)"
-            css_code = get_colour_name((r, g, b))[1]
-            embed = discord.Embed(title=colour, description="", colour=int(Hex[1:], 16))
-            embed.add_field(name="Hex", value=Hex, inline=True)
-            embed.add_field(name="RGB", value=rgb, inline=True)
-            embed.add_field(name="HSL", value=hsl, inline=True)
-            embed.add_field(name="CMYK", value=cmyk, inline=True)
-            embed.add_field(name="CSS", value=css_code, inline=True)
-            embed.set_thumbnail(url=f"https://serux.pro/rendercolour/?rgb={r},{g},{b}")
-            return embed
+            return color_embed(colour, r, b, g, c, m, y, k, h, s, l)
 
         def cssRGB(colour):
             r = int(css[colour][2:4], 16)
@@ -224,64 +202,43 @@ class Main(commands.Cog):
             b = int(css[colour][6:], 16)
             h, s, l = RGB_to_HSL(r, g, b)
             c, m, y, k = RGB_to_CMYK(r, g, b)
-            Hex = f"#{RGB_to_HEX(r, g, b)}"
-            rgb = f"rgb({r},{g},{b})"
-            hsl = f"hsl({round(float(h), 2)},{round(float(s), 2)}%,{round(float(l), 2)}%)"
-            cmyk = f"cmyk({round(float(c), 2)}%,{round(float(m), 2)}%,{round(float(y), 2)}%,{round(float(k), 2)}%)"
-            css_code = get_colour_name((r, g, b))[1]
-            embed = discord.Embed(title=colour, description="", colour=int(Hex[1:], 16))
-            embed.add_field(name="Hex", value=Hex, inline=True)
-            embed.add_field(name="RGB", value=rgb, inline=True)
-            embed.add_field(name="HSL", value=hsl, inline=True)
-            embed.add_field(name="CMYK", value=cmyk, inline=True)
-            embed.add_field(name="CSS", value=css_code, inline=True)
-            embed.set_thumbnail(url=f"https://serux.pro/rendercolour/?rgb={r},{g},{b}")
-            return embed
+            return color_embed(colour, r, b, g, c, m, y, k, h, s, l)
 
         colour = ctx.message.content[len(self.bot.command_prefix) + 7:]
 
         if not colour:
             await ctx.send(embed=RGB(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), "Random Colour"))
-        elif re.fullmatch(r"#([0-9A-Fa-f]{3}){1,2}", colour):
-            if len(colour) == 7:
-                await ctx.send(embed=RGB(int(colour[1:3], 16), int(colour[3:5], 16), int(colour[5:], 16), colour))
-            elif len(colour) == 4:
-                await ctx.send(embed=RGB(int(colour[1] * 2, 16), int(colour[2] * 2, 16), int(colour[3] * 2, 16), colour))
-        elif re.fullmatch(r"([0-9A-Fa-f]{3}){1,2}", colour):
-            if len(colour) == 6:
-                await ctx.send(embed=RGB(int(colour[:2], 16), int(colour[2:4], 16), int(colour[4:], 16), colour))
-            elif len(colour) == 3:
-                await ctx.send(embed=RGB(int(colour[0] * 2, 16), int(colour[1] * 2, 16), int(colour[2] * 2, 16), colour))
-        elif re.fullmatch(r"rgb\((\d{1,3}, *){2}\d{1,3}\)", colour):
-            content = ast.literal_eval(colour[3:])
-            await ctx.send(embed=RGB(content[0], content[1], content[2], colour))
-        elif re.fullmatch(r"hsl\(\d{1,3}(\.\d*)?, *\d{1,3}(\.\d*)?%?, *\d{1,3}(\.\d*)?%?\)", colour):
-            content = colour
-            colour = colour[4:].split(")")[0].split(",")
-            h = Fraction(colour[0])
-            s = Fraction(colour[1].replace("%", ""))
-            l = Fraction(colour[2].replace("%", ""))
-
-            if h > 360 or s > 100 or l > 100:
-                return await ctx.send("Please input 0 <= h <= 360, 0 <= s, l <= 100.")
-
-            await ctx.send(embed=hslRGB(h, s, l, content))
-        elif re.fullmatch(r"cmyk\((\d{1,3}(\.\d*)?%?, *){3}\d{1,3}(\.\d*)?%?\)", colour):
-            content = colour
-            colour = colour[5:].split(")")[0].split(",")
-            c = Fraction(colour[0].replace("%", ""))
-            m = Fraction(colour[1].replace("%", ""))
-            y = Fraction(colour[2].replace("%", ""))
-            k = Fraction(colour[3].replace("%", ""))
-
-            if c > 100 or m > 100 or y > 100 or k > 100:
-                return await ctx.send("Please input 0 <= c, m, y, k <= 100.")
-
-            await ctx.send(embed=cmykRGB(c, m, y, k, content))
-        elif colour.lower() in css.keys():
+        elif c_str := re.search(r"#([0-9A-Fa-f]{3}){1,2}", colour):
+            c_str = c_str.group()
+            if len(c_str) == 7:
+                await ctx.send(embed=RGB(int(c_str[1:3], 16), int(c_str[3:5], 16), int(c_str[5:], 16), c_str))
+            elif len(c_str) == 4:
+                await ctx.send(embed=RGB(int(c_str[1] * 2, 16), int(c_str[2] * 2, 16), int(c_str[3] * 2, 16), c_str))
+        elif c_str := re.search(r"([0-9A-Fa-f]{3}){1,2}", colour):
+            c_str = c_str.group()
+            if len(c_str) == 6:
+                await ctx.send(embed=RGB(int(c_str[:2], 16), int(c_str[2:4], 16), int(c_str[4:], 16), c_str))
+            elif len(c_str) == 3:
+                await ctx.send(embed=RGB(int(c_str[0] * 2, 16), int(c_str[1] * 2, 16), int(c_str[2] * 2, 16), c_str))
+        elif c_str := re.search(r"rgb\((\d{1,3}), *(\d{1,3}), *(\d{1,3})\)", colour):
+            r, b, g = map(int, c_str.group(1, 2, 3))
+            if max(r, g, b) > 255 or min(r, g, b) < 0:
+                return await ctx.send("You inputted an invalid colour. Please try again.", delete_after=5)
+            await ctx.send(embed=RGB(r, b, g, c_str))
+        elif c_str := re.search(r"hsl\((\d{1,3}(?:\.\d*)?), *(\d{1,3}(?:\.\d*)?)%?, *(\d{1,3}(?:\.\d*)?)%?\)", colour):
+            h, s, l = map(Fraction, c_str.group(1, 2, 3))
+            if h > 360 or max(s, l) > 100 or min(h, s, l) < 0:
+                return await ctx.send("You inputted an invalid colour. Please try again.", delete_after=5)
+            await ctx.send(embed=hslRGB(h, s, l, c_str))
+        elif c_str := re.search(r"cmyk\((\d{1,3}(\.\d*)?)%?, *(\d{1,3}(\.\d*)?)%?, *(\d{1,3}(\.\d*)?)%?, *(\d{1,3}(\.\d*)?)%?\)", colour):
+            c, m, y, k = map(Fraction, c_str.group(1, 2, 3, 4))
+            if max(c, m, y, k) > 100 or min(c, m, y, k) < 0:
+                return await ctx.send("You inputted an invalid colour. Please try again.", delete_after=5)
+            await ctx.send(embed=cmykRGB(c, m, y, k, c_str))
+        elif colour.lower() in css:
             await ctx.send(embed=cssRGB(colour.lower()))
         else:
-            return await ctx.send("You inputted an invalid colour. Please try again.", delete_after=5)
+            await ctx.send("You inputted an invalid colour. Please try again.", delete_after=5)
 
     @commands.command(hidden=True)
     @commands.is_owner()
@@ -311,22 +268,14 @@ class Main(commands.Cog):
                 return await ctx.send("This is not a 221DM.")
 
             await ctx.send("Closing 221DM.")
-
-            for role in guild.roles:
-                if role.name == ctx.channel.name:
-                    await role.delete()
-                    break
-
+            await next(i for i in guild.roles if i.name == ctx.channel.name).delete()
             return await ctx.channel.delete()
 
-        for role in ctx.author.roles:
-            if role.name in ["TA", "Prof"]:
-                break
-        else:
+        if all(i.name not in ("TA", "Prof") for i in ctx.author.roles):
             # only TAs and Prof can use this command
             return await ctx.send("You do not have permission to use this command.")
 
-        if len(ctx.message.mentions) == 0:
+        if not ctx.message.mentions:
             return await ctx.send("You need to specify a user or users to add!")
 
         # generate customized channel name to allow customized role
@@ -352,8 +301,9 @@ class Main(commands.Cog):
         # this id is id of group dm category
         channel = await guild.create_text_channel(nam, overwrites=overwrites, category=guild.get_channel(764672304793255986))
         await ctx.send("Opened channel.")
-        users = [f"<@{usr.id}>" for usr in ctx.message.mentions]
-        await channel.send(f"<@{ctx.author.id}> {' '.join(users)}\nWelcome to 221 private DM. Type `!close` to exit when you are finished.")
+        users = (f"<@{usr.id}>" for usr in ctx.message.mentions)
+        await channel.send(f"<@{ctx.author.id}> {' '.join(users)}\n" +
+                           f"Welcome to 221 private DM. Type `!close` to exit when you are finished.")
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
