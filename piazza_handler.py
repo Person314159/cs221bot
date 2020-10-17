@@ -317,7 +317,7 @@ class PiazzaHandler:
 
     @staticmethod
     def checkIfPrivate(post) -> bool:
-        return post["status"] == "private" or post["change_log"][0]["v"] == "private"
+        return post["status"] == "private"
 
     @staticmethod
     def clean_response(res):
