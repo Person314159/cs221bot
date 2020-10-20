@@ -1152,7 +1152,7 @@ class Main(commands.Cog):
         try:
             post = self.d_handler.piazza_handler.get_post(postID)
         except:
-            await ctx.send("Post not found.")
+            return await ctx.send("Post not found.")
 
         if post:
             post_embed = self.create_post_embed(post)
@@ -1200,7 +1200,7 @@ class Main(commands.Cog):
         if post:
             post_embed = discord.Embed(title=post["subject"], url=post["url"], description=post["num"])
             post_embed.add_field(name=post["post_type"], value=post["post_body"], inline=False)
-            
+
             if post["post_type"] != "Note":
                 post_embed.add_field(name=post["ans_type"], value=post["ans_body"], inline=False)
 

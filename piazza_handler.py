@@ -6,6 +6,7 @@ from typing import List
 
 from piazza_api import Piazza
 
+
 class PiazzaHandler:
     """
     Handles requests to a specific Piazza network. Requires an e-mail and password, but if none are
@@ -125,7 +126,7 @@ class PiazzaHandler:
             Upper limit on posts fetched. Must be in range [FETCH_MIN, FETCH_MAX] (inclusive)
         """
 
-        posts = self.fetch_posts_in_range(days=0, seconds=60*60*5, lim=lim)
+        posts = self.fetch_posts_in_range(days=0, seconds=60 * 60 * 5, lim=lim)
         response = []
 
         for post in posts:
@@ -176,7 +177,7 @@ class PiazzaHandler:
 
             if self.checkIfPrivate(post):
                 continue
-            elif (date - created_at).days <= days and (date-created_at).seconds <= seconds:
+            elif (date - created_at).days <= days and (date - created_at).seconds <= seconds:
                 result.append(post)
 
         return result
@@ -191,9 +192,9 @@ class PiazzaHandler:
 
         for post in posts:
             post_details = {
-                "num": post["nr"],
+                "num"    : post["nr"],
                 "subject": post["history"][0]["subject"],
-                "url": f"{self.url}?cid={post['nr']}",
+                "url"    : f"{self.url}?cid={post['nr']}",
             }
             response.append(post_details)
 
@@ -214,19 +215,19 @@ class PiazzaHandler:
         if post:
             postType = "Note" if post["type"] == "note" else "Question"
             response = {
-                "subject": self.clean_response(post["history"][0]["subject"]),
-                "num": f"@{postID}",
-                "url": f"{self.url}?cid={postID}",
-                "post_type": postType,
-                "post_body": self.clean_response(self.get_body(post)),
-                "ans_type": "",
-                "ans_body": "",
+                "subject"     : self.clean_response(post["history"][0]["subject"]),
+                "num"         : f"@{postID}",
+                "url"         : f"{self.url}?cid={postID}",
+                "post_type"   : postType,
+                "post_body"   : self.clean_response(self.get_body(post)),
+                "ans_type"    : "",
+                "ans_body"    : "",
                 "more_answers": False,
-                "num_answers": 0
+                "num_answers" : 0
             }
 
             answers = post["children"]
-        
+
             if answers:
                 answer = answers[0]
 
@@ -265,10 +266,10 @@ class PiazzaHandler:
 
         def create_post_dict(post, tag) -> dict:
             return {
-                "type": tag,
-                "num": post["nr"],
+                "type"   : tag,
+                "num"    : post["nr"],
                 "subject": self.clean_response(post["history"][0]["subject"]),
-                "url": f"{self.url}?cid={post['nr']}"
+                "url"    : f"{self.url}?cid={post['nr']}"
             }
 
         def filter_tag(post, arr, tagged):
@@ -306,9 +307,9 @@ class PiazzaHandler:
 
         for post in posts:
             post_details = {
-                "num": post["nr"],
+                "num"    : post["nr"],
                 "subject": self.clean_response(post["history"][0]["subject"]),
-                "url": f"{self.url}?cid={post['nr']}"
+                "url"    : f"{self.url}?cid={post['nr']}"
             }
             response.append(post_details)
 
