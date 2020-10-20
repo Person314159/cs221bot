@@ -1,6 +1,7 @@
 import ast
 import asyncio
 import mimetypes
+import operator
 import os
 import random
 import re
@@ -8,7 +9,6 @@ from datetime import datetime, timedelta, timezone
 from fractions import Fraction
 from io import BytesIO
 from typing import Optional
-import operator
 
 import discord
 import pytz
@@ -24,6 +24,7 @@ from piazza_handler import PiazzaHandler
 
 CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
+PIAZZA_THUMBNAIL_URL = "https://store-images.s-microsoft.com/image/apps.25584.554ac7a6-231b-46e2-9960-a059f3147dbe.727eba5c-763a-473f-981d-ffba9c91adab.4e76ea6a-bd74-487f-bf57-3612e43ca795.png"
 
 load_dotenv()
 CANVAS_API_URL = "https://canvas.ubc.ca"
@@ -706,6 +707,7 @@ class Main(commands.Cog):
     async def send_canvas_track_msg(self, c_handler, ctx):
         self.bot.canvas_dict[str(ctx.message.guild.id)]["courses"] = [str(c.id) for c in c_handler.courses]
         self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
+
         embed_var = self._get_tracking_courses(c_handler, CANVAS_API_URL)
         embed_var.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=str(ctx.author.avatar_url))
         await ctx.send(embed=embed_var)
@@ -1230,7 +1232,7 @@ class Main(commands.Cog):
     # add more commands here with the same syntax
     # also just look up the docs lol i can't do everything
 
-#################### END COMMANDS ####################
+# ################### END COMMANDS ################### #
 
 
 def setup(bot):
