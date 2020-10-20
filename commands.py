@@ -404,11 +404,22 @@ class Main(commands.Cog):
             return await ctx.send(ctx.command.help)
         # make sure that you can't add roles like "prof" or "ta"
         valid_roles = ["Looking for Partners", "Study Group", "L1A", "L1B", "L1C", "L1D", "L1E", "L1F", "L1G", "L1H", "L1J", "L1K", "L1N", "L1P", "L1R", "L1S", "L1T", "He/Him/His", "She/Her/Hers", "They/Them/Theirs", "Ze/Zir/Zirs", "notify"]
-        aliases = {"he": 747925204864335935, "she": 747925268181811211, "ze": 747925349232279552, "they": 747925313748729976}
+        aliases = {"he": "He/Him/His", "she": "She/Her/Hers", "ze": "Ze/Zir/Zirs", "they": "They/Them/Theirs"}
+
+        if name in aliases:
+            name = aliases[name].lower()
+
+        if name.startswith("l1") and any(role.name.startswith("L1") for role in ctx.author.roles):
+            return await ctx.send("you already have a lab role!", delete_after=5)
 
         for role in ctx.guild.roles:
-            if name == role.name.lower() and not role.name.startswith("221dm-"):
-                if role.name not in valid_roles:
+            if name == role.name.lower():
+                if role in ctx.author.roles:
+                    return await ctx.send("you already have that role!", delete_after=5)
+                if role.name in valid_roles:
+                    await ctx.author.add_roles(role)
+                    return await ctx.send("role added!", delete_after=5)
+                else:
                     self.add_instructor_role_counter += 1
                     if self.add_instructor_role_counter > 5:
                         if self.add_instructor_role_counter == 42:
@@ -420,19 +431,9 @@ class Main(commands.Cog):
                         return await ctx.send("You can't add that role, but if you try again, maybe something different will happen on the 42nd attempt", delete_after=5)
                     else:
                         return await ctx.send("you cannot add an instructor/invalid role!", delete_after=5)
-                elif name.startswith("l1") and any(role.name.startswith("L1") for role in ctx.author.roles):
-                    return await ctx.send("you already have a lab role!", delete_after=5)
-                elif role in ctx.author.roles:
-                    return await ctx.send("you already have that role!", delete_after=5)
-                else:
-                    await ctx.author.add_roles(role)
-                    return await ctx.send("role added!", delete_after=5)
-            elif name in aliases:
-                await ctx.author.add_roles(ctx.guild.get_role(aliases[name]))
-                return await ctx.send("role added!", delete_after=5)
-        else:
-            await ctx.send("you can't add that role!", delete_after=5)
-            return await ctx.send(ctx.command.help)
+
+        await ctx.send("you can't add that role!", delete_after=5)
+        return await ctx.send(ctx.command.help)
 
     @commands.command()
     @commands.cooldown(1, 10, commands.BucketType.user)
