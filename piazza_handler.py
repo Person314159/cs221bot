@@ -6,7 +6,6 @@ from typing import List
 
 from piazza_api import Piazza
 
-
 class PiazzaHandler:
     """
     Handles requests to a specific Piazza network. Requires an e-mail and password, but if none are
@@ -126,7 +125,7 @@ class PiazzaHandler:
             Upper limit on posts fetched. Must be in range [FETCH_MIN, FETCH_MAX] (inclusive)
         """
 
-        posts = self.fetch_posts_in_range(seconds=60*60*5, lim=lim)
+        posts = self.fetch_posts_in_range(days=0, seconds=60*60*5, lim=lim)
         response = []
 
         for post in posts:
@@ -215,7 +214,7 @@ class PiazzaHandler:
         if post:
             postType = "Note" if post["type"] == "note" else "Question"
             response = {
-                "subject": post["history"][0]["subject"],
+                "subject": self.clean_response(post["history"][0]["subject"]),
                 "num": f"@{postID}",
                 "url": f"{self.url}?cid={postID}",
                 "post_type": postType,
@@ -309,7 +308,7 @@ class PiazzaHandler:
             post_details = {
                 "num": post["nr"],
                 "subject": self.clean_response(post["history"][0]["subject"]),
-                "url": f"{self.url}?cid={self.nid}"
+                "url": f"{self.url}?cid={post['nr']}"
             }
             response.append(post_details)
 
@@ -317,7 +316,7 @@ class PiazzaHandler:
 
     @staticmethod
     def checkIfPrivate(post) -> bool:
-        return post["status"] == "private" or post["change_log"][0]["v"] == "private"
+        return post["status"] == "private"
 
     @staticmethod
     def clean_response(res):
