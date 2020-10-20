@@ -49,9 +49,6 @@ class PiazzaHandler:
         self.network = self.p.network(self.nid)
         self.max = FETCH_MAX
         self.min = FETCH_MIN
-        self.cache = []
-        self.pins = []
-        self.post_start = 0
 
     @property
     def piazza_url(self):
