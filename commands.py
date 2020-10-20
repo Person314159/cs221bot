@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from fractions import Fraction
 from io import BytesIO
 from typing import Optional
-import urllib3
+import operator
 
 import discord
 import pytz
@@ -701,9 +701,11 @@ class Main(commands.Cog):
 
         c_handler.track_course(course_ids)
 
+        await self.send_canvas_track_msg(c_handler, ctx)
+
+    async def send_canvas_track_msg(self, c_handler, ctx):
         self.bot.canvas_dict[str(ctx.message.guild.id)]["courses"] = [str(c.id) for c in c_handler.courses]
         self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
-
         embed_var = self._get_tracking_courses(c_handler, CANVAS_API_URL)
         embed_var.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=str(ctx.author.avatar_url))
         await ctx.send(embed=embed_var)
@@ -722,12 +724,7 @@ class Main(commands.Cog):
         if not c_handler.courses:
             self.d_handler.canvas_handlers.remove(c_handler)
 
-        self.bot.canvas_dict[str(ctx.message.guild.id)]["courses"] = [str(c.id) for c in c_handler.courses]
-        self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
-
-        embed_var = self._get_tracking_courses(c_handler, CANVAS_API_URL)
-        embed_var.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=str(ctx.author.avatar_url))
-        await ctx.send(embed=embed_var)
+        await self.send_canvas_track_msg(c_handler, ctx)
 
     @commands.command()
     @commands.guild_only()
@@ -792,6 +789,8 @@ class Main(commands.Cog):
             self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
 
             await ctx.send("Added channel to live tracking.")
+        else:
+            await ctx.send("Channel already live tracking.")
 
     @commands.command(hidden=True)
     @commands.is_owner()
@@ -809,6 +808,8 @@ class Main(commands.Cog):
             self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
 
             await ctx.send("Removed channel from live tracking.")
+        else:
+            await ctx.send("Channel was not live tracking.")
 
     @commands.command()
     @commands.guild_only()
@@ -858,7 +859,7 @@ class Main(commands.Cog):
         await ctx.send("\n".join(str(i) for i in [c_handler.courses, c_handler.guild, c_handler.live_channels, c_handler.timings, c_handler.due_week, c_handler.due_day]))
 
     def _add_guild(self, guild: discord.Guild):
-        if guild not in [ch.guild for ch in self.d_handler.canvas_handlers]:
+        if guild not in (ch.guild for ch in self.d_handler.canvas_handlers):
             self.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, "", guild))
             self.bot.canvas_dict[str(guild.id)] = {
                 "courses": [],
@@ -869,9 +870,7 @@ class Main(commands.Cog):
             self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
 
     def _get_canvas_handler(self, guild: discord.Guild) -> Optional[CanvasHandler]:
-        for ch in self.d_handler.canvas_handlers:
-            if ch.guild == guild:
-                return ch
+        return next((ch for ch in self.d_handler.canvas_handlers if ch.guild == guild), None)
 
     @staticmethod
     def _get_tracking_courses(c_handler: CanvasHandler, CANVAS_API_URL) -> discord.Embed:
@@ -887,68 +886,51 @@ class Main(commands.Cog):
     @staticmethod
     async def stream_tracking(self):
         while True:
-            for ch in self.d_handler.canvas_handlers:
-                if len(ch.live_channels) > 0:
-                    notify_role = None
+            for ch in filter(operator.attrgetter("live_channels"), self.d_handler.canvas_handlers):
+                notify_role = next((r for r in ch.guild.roles if r.name.lower() == "notify"), None)
 
-                    for role in ch.guild.roles:
-                        if role.name.lower() == "notify":
-                            notify_role = role
-                            break
+                for c in ch.courses:
+                    since = ch.timings[str(c.id)]
+                    since = re.sub(r"\s", "-", since)
+                    data_list = ch.get_course_stream_ch(since, (str(c.id),), CANVAS_API_URL, CANVAS_API_KEY)
 
-                    for c in ch.courses:
-                        since = ch.timings[str(c.id)]
-                        since = re.sub(r"\s", "-", since)
-                        data_list = ch.get_course_stream_ch(since, (str(c.id),), CANVAS_API_URL, CANVAS_API_KEY)
+                    for data in data_list:
+                        embed_var = discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR)
+                        embed_var.set_author(name=data[0], url=data[1])
+                        embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
+                        embed_var.add_field(name="Created at", value=data[5], inline=True)
 
-                        for data in data_list:
-                            embed_var = discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR)
-                            embed_var.set_author(name=data[0], url=data[1])
-                            embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
-                            embed_var.add_field(name="Created at", value=data[5], inline=True)
+                        for channel in ch.live_channels:
+                            await channel.send(notify_role.mention if notify_role else "", embed=embed_var)
 
-                            for channel in ch.live_channels:
-                                await channel.send(notify_role.mention if notify_role else "", embed=embed_var)
-
-                        if data_list:
-                            # latest announcement first
-                            ch.timings[str(c.id)] = data_list[0][5]
+                    if data_list:
+                        # latest announcement first
+                        ch.timings[str(c.id)] = data_list[0][5]
 
             await asyncio.sleep(3600)
 
     @staticmethod
     async def assignment_reminder(self):
         while True:
-            for ch in self.d_handler.canvas_handlers:
-                if ch.live_channels:
-                    notify_role = None
+            for ch in filter(operator.attrgetter("live_channels"), self.d_handler.canvas_handlers):
+                notify_role = next((r for r in ch.guild.roles if r.name.lower() == "notify"), None)
 
-                    for role in ch.guild.roles:
-                        if role.name == "notify":
-                            notify_role = role
-                            break
-
-                    for c in ch.courses:
-                        data_list = ch.get_assignments("1-week", (str(c.id),), CANVAS_API_URL)
+                for c in ch.courses:
+                    for time in ("week", "day"):
+                        data_list = ch.get_assignments(f"1-{time}", (str(c.id),), CANVAS_API_URL)
                         recorded_ass_ids = ch.due_week[str(c.id)]
-                        ass_ids = await self._assignment_sender(ch, data_list, recorded_ass_ids, notify_role, "week")
+                        ass_ids = await self._assignment_sender(ch, data_list, recorded_ass_ids, notify_role, time)
                         ch.due_week[str(c.id)] = ass_ids
-                        self.bot.canvas_dict[str(ch.guild.id)]["due_week"][str(c.id)] = ass_ids
+                        self.bot.canvas_dict[str(ch.guild.id)][f"due_{time}"][str(c.id)] = ass_ids
 
-                        data_list = ch.get_assignments("1-day", (str(c.id),), CANVAS_API_URL)
-                        recorded_ass_ids = ch.due_day[str(c.id)]
-                        ass_ids = await self._assignment_sender(ch, data_list, recorded_ass_ids, notify_role, "day")
-                        ch.due_day[str(c.id)] = ass_ids
-                        self.bot.canvas_dict[str(ch.guild.id)]["due_day"][str(c.id)] = ass_ids
-
-                        self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
+                    self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
 
             await asyncio.sleep(3600)
 
     @staticmethod
     async def _assignment_sender(ch, data_list, recorded_ass_ids, notify_role, time):
         ass_ids = [data[-1] for data in data_list]
-        not_recorded = [data_list[ass_ids.index(i)] for i in ass_ids if i not in recorded_ass_ids]
+        not_recorded = tuple(data_list[i] for i, j in enumerate(ass_ids) if j not in recorded_ass_ids)
 
         if notify_role and not_recorded:
             for channel in ch.live_channels:
@@ -971,7 +953,7 @@ class Main(commands.Cog):
         for c_handler_guild_id in self.bot.canvas_dict:
             guild = self.bot.guilds[[guild.id for guild in self.bot.guilds].index(int(c_handler_guild_id))]
 
-            if guild not in [ch.guild for ch in self.d_handler.canvas_handlers]:
+            if guild not in (ch.guild for ch in self.d_handler.canvas_handlers):
                 self.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, "", guild))
 
             c_handler = self._get_canvas_handler(guild)
@@ -980,13 +962,11 @@ class Main(commands.Cog):
             live_channels = [channel for channel in guild.text_channels if channel.id in live_channels_ids]
             c_handler.live_channels = live_channels
 
-            for c in self.bot.canvas_dict[c_handler_guild_id]["due_week"]:
-                c_handler.due_week[c] = self.bot.canvas_dict[c_handler_guild_id]["due_week"][c]
+            for due in ("due_week", "due_day"):
+                for c in self.bot.canvas_dict[c_handler_guild_id][due]:
+                    c_handler.due_week[c] = self.bot.canvas_dict[c_handler_guild_id][due][c]
 
-            for c in self.bot.canvas_dict[c_handler_guild_id]["due_day"]:
-                c_handler.due_day[c] = self.bot.canvas_dict[c_handler_guild_id]["due_day"][c]
-
-    ## start of Piazza functions ##
+    # # start of Piazza functions # #
     # didn't want to support multiple PiazzaHandler instances because it's associated with
     # a single account (unsafe to send sensitive information through Discord, so there's
     # no way to login to another account without also having access to prod env variables)
