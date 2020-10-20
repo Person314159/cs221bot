@@ -55,6 +55,8 @@ class Main(commands.Cog):
         `!colour hsl(0, 100%, 50%)` returns info of colour red
         `!colour cmyk(100%, 0%, 0%, 0%)` returns info of colour cyan
         `!colour blue` returns info of colour blue
+
+        percent signs are optional
         """
 
         def RGB_to_HSL(r, g, b):
@@ -253,27 +255,27 @@ class Main(commands.Cog):
         elif re.fullmatch(r"rgb\((\d{1,3}, *){2}\d{1,3}\)", colour):
             content = ast.literal_eval(colour[3:])
             await ctx.send(embed=RGB(content[0], content[1], content[2], colour))
-        elif re.fullmatch(r"hsl\(\d{1,3}(\.\d*)?, *\d{1,3}(\.\d*)?%, *\d{1,3}(\.\d*)?%\)", colour):
+        elif re.fullmatch(r"hsl\(\d{1,3}(\.\d*)?, *\d{1,3}(\.\d*)?%?, *\d{1,3}(\.\d*)?%?\)", colour):
             content = colour
             colour = colour[4:].split(")")[0].split(",")
             h = Fraction(colour[0])
-            s = Fraction(colour[1][:-1])
-            l = Fraction(colour[2][:-1])
+            s = Fraction(colour[1].replace("%", ""))
+            l = Fraction(colour[2].replace("%", ""))
 
             if h > 360 or s > 100 or l > 100:
-                raise ValueError
+                return await ctx.send("Please input 0 <= h <= 360, 0 <= s, l <= 100.")
 
             await ctx.send(embed=hslRGB(h, s, l, content))
-        elif re.fullmatch(r"cmyk\((\d{1,3}(\.\d*)?%, *){3}\d{1,3}(\.\d*)?%\)", colour):
+        elif re.fullmatch(r"cmyk\((\d{1,3}(\.\d*)?%?, *){3}\d{1,3}(\.\d*)?%?\)", colour):
             content = colour
             colour = colour[5:].split(")")[0].split(",")
-            c = Fraction(colour[0].split("%")[0])
-            m = Fraction(colour[1].split("%")[0])
-            y = Fraction(colour[2].split("%")[0])
-            k = Fraction(colour[3].split("%")[0])
+            c = Fraction(colour[0].replace("%", ""))
+            m = Fraction(colour[1].replace("%", ""))
+            y = Fraction(colour[2].replace("%", ""))
+            k = Fraction(colour[3].replace("%", ""))
 
             if c > 100 or m > 100 or y > 100 or k > 100:
-                raise ValueError
+                return await ctx.send("Please input 0 <= c, m, y, k <= 100.")
 
             await ctx.send(embed=cmykRGB(c, m, y, k, content))
         elif colour.lower() in css.keys():
@@ -451,12 +453,12 @@ class Main(commands.Cog):
         # case where role name is space separated
         name = " ".join(arg).lower()
         # make sure that you can't add roles like "prof" or "ta"
-        invalid_roles = ["Prof", "TA", "Fake TA", "Computers", "Server Booster", "C++Bot", "CS221 bot"]
+        valid_roles = ["Looking for Partners", "Study Group", "L1A", "L1B", "L1C", "L1D", "L1E", "L1F", "L1G", "L1H", "L1J", "L1K", "L1N", "L1P", "L1R", "L1S", "L1T", "He/Him/His", "She/Her/Hers", "They/Them/Theirs", "Ze/Zir/Zirs", "notify"]
         aliases = {"he": 747925204864335935, "she": 747925268181811211, "ze": 747925349232279552, "they": 747925313748729976}
 
         for role in ctx.guild.roles:
             if name == role.name.lower() and not role.name.startswith("221dm-"):
-                if role.name in invalid_roles:
+                if role.name not in valid_roles:
                     self.add_instructor_role_counter += 1
                     if self.add_instructor_role_counter > 5:
                         if self.add_instructor_role_counter == 42:
@@ -467,7 +469,7 @@ class Main(commands.Cog):
                                 return await ctx.send("nice.", delete_after=5)
                         return await ctx.send("You can't add that role, but if you try again, maybe something different will happen on the 42nd attempt", delete_after=5)
                     else:
-                        return await ctx.send("you cannot add an instructor role!", delete_after=5)
+                        return await ctx.send("you cannot add an instructor/invalid role!", delete_after=5)
                 elif name.startswith("l1") and any(role.name.startswith("L1") for role in ctx.author.roles):
                     return await ctx.send("you already have a lab role!", delete_after=5)
                 elif role in ctx.author.roles:
