@@ -7,6 +7,11 @@ from typing import List
 from piazza_api import Piazza
 
 
+# Exception for when a post ID is invalid or the post is private etc.
+class InvalidPostID(Exception):
+    pass
+
+
 class PiazzaHandler:
     """
     Handles requests to a specific Piazza network. Requires an e-mail and password, but if none are
@@ -111,8 +116,12 @@ class PiazzaHandler:
 
         post = self.network.get_post(postID)
 
+        # TODO: Find actual exceptions
+        #  I know it could be InvalidPostID since I added that but that's only when the post is private. It should
+        #  also be thrown when the ID itself does not lead to any post but I have not figured out what to catch in
+        #  order to rethrow as InvalidPostID
         if self.checkIfPrivate(post):
-            raise Exception("Post not found.")
+            raise InvalidPostID("Post not found.")
 
         return post
 
@@ -251,7 +260,7 @@ class PiazzaHandler:
 
             response.update({"ans_type": answerHeading})
             response.update({"ans_body": answerBody})
-            response.update({"tags": ", ".join(post["tags"] if post["tags"] else "None")})
+            response.update({"tags": ", ".join(post["tags"] or "None")})
             return response
         else:
             return None

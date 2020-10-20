@@ -20,7 +20,7 @@ from googletrans import Translator, constants
 
 from canvas_handler import CanvasHandler
 from discord_handler import DiscordHandler
-from piazza_handler import PiazzaHandler
+from piazza_handler import PiazzaHandler, InvalidPostID
 
 CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
@@ -1110,7 +1110,7 @@ class Main(commands.Cog):
 
         try:
             post = self.d_handler.piazza_handler.get_post(postID)
-        except:
+        except InvalidPostID:
             return await ctx.send("Post not found.")
 
         if post:
