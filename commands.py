@@ -400,40 +400,49 @@ class Main(commands.Cog):
 
         # case where role name is space separated
         name = " ".join(arg).lower()
+        # Display help if given no argument
         if not name:
             return await ctx.send(ctx.command.help)
         # make sure that you can't add roles like "prof" or "ta"
         valid_roles = ["Looking for Partners", "Study Group", "L1A", "L1B", "L1C", "L1D", "L1E", "L1F", "L1G", "L1H", "L1J", "L1K", "L1N", "L1P", "L1R", "L1S", "L1T", "He/Him/His", "She/Her/Hers", "They/Them/Theirs", "Ze/Zir/Zirs", "notify"]
         aliases = {"he": "He/Him/His", "she": "She/Her/Hers", "ze": "Ze/Zir/Zirs", "they": "They/Them/Theirs"}
 
+        # Convert alias to proper name
         if name in aliases:
             name = aliases[name].lower()
 
+        # Ensure that people only add one lab role
         if name.startswith("l1") and any(role.name.startswith("L1") for role in ctx.author.roles):
-            return await ctx.send("you already have a lab role!", delete_after=5)
+            return await ctx.send("You already have a lab role!", delete_after=5)
 
-        for role in ctx.guild.roles:
-            if name == role.name.lower():
-                if role in ctx.author.roles:
-                    return await ctx.send("you already have that role!", delete_after=5)
-                if role.name in valid_roles:
-                    await ctx.author.add_roles(role)
-                    return await ctx.send("role added!", delete_after=5)
-                else:
-                    self.add_instructor_role_counter += 1
-                    if self.add_instructor_role_counter > 5:
-                        if self.add_instructor_role_counter == 42:
-                            if random.random() > 0.999:
-                                return await ctx.send("Congratulations, you found the secret message. IDEK how you did it, but good job. Still can't add the instructor role though. Bummer, I know.", delete_after=5)
-                        elif self.add_instructor_role_counter == 69:
-                            if random.random() > 0.9999:
-                                return await ctx.send("nice.", delete_after=5)
-                        return await ctx.send("You can't add that role, but if you try again, maybe something different will happen on the 42nd attempt", delete_after=5)
-                    else:
-                        return await ctx.send("you cannot add an instructor/invalid role!", delete_after=5)
+        # Grab the rolee that the user selected
+        role = next((r for r in ctx.guild.roles if name == r.name.lower()), None)
 
-        await ctx.send("you can't add that role!", delete_after=5)
-        return await ctx.send(ctx.command.help)
+        # Check that the role actually exists
+        if not role:
+            await ctx.send("You can't add that role!", delete_after=5)
+            return await ctx.send(ctx.command.help)
+
+        # Ensure that the author does not already have the role
+        if role in ctx.author.roles:
+            return await ctx.send("you already have that role!", delete_after=5)
+
+        # Special handling for roles that exist but can not be selected by a student
+        if role.name not in valid_roles:
+            self.add_instructor_role_counter += 1
+            if self.add_instructor_role_counter > 5:
+                if self.add_instructor_role_counter == 42:
+                    if random.random() > 0.999:
+                        return await ctx.send("Congratulations, you found the secret message. IDEK how you did it, but good job. Still can't add the instructor role though. Bummer, I know.", delete_after=5)
+                elif self.add_instructor_role_counter == 69:
+                    if random.random() > 0.9999:
+                        return await ctx.send("nice.", delete_after=5)
+                return await ctx.send("You can't add that role, but if you try again, maybe something different will happen on the 42nd attempt", delete_after=5)
+            else:
+                return await ctx.send("you cannot add an instructor/invalid role!", delete_after=5)
+
+        await ctx.author.add_roles(role)
+        return await ctx.send("role added!", delete_after=5)
 
     @commands.command()
     @commands.cooldown(1, 10, commands.BucketType.user)
