@@ -1149,13 +1149,14 @@ class Main(commands.Cog):
         if not self.d_handler.piazza_handler:
             return await ctx.send("Piazza hasn't been instantiated yet!")
 
-        post = self.d_handler.piazza_handler.get_post(postID)
+        try:
+            post = self.d_handler.piazza_handler.get_post(postID)
+        except:
+            await ctx.send("Post not found.")
 
         if post:
             post_embed = self.create_post_embed(post)
             await ctx.send(embed=post_embed)
-        else:
-            await ctx.send("Sorry! That post doesn't exist.")
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
@@ -1199,7 +1200,10 @@ class Main(commands.Cog):
         if post:
             post_embed = discord.Embed(title=post["subject"], url=post["url"], description=post["num"])
             post_embed.add_field(name=post["post_type"], value=post["post_body"], inline=False)
-            post_embed.add_field(name=post["ans_type"], value=post["ans_body"], inline=False)
+            
+            if post["post_type"] != "Note":
+                post_embed.add_field(name=post["ans_type"], value=post["ans_body"], inline=False)
+
             post_embed.set_thumbnail(url=PIAZZA_THUMBNAIL_URL)
 
             if post["more_answers"]:
