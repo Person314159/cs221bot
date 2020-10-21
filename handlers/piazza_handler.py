@@ -9,6 +9,9 @@ from piazza_api import Piazza
 
 # Exception for when a post ID is invalid or the post is private etc.
 class InvalidPostID(Exception):
+    """
+    Exception raised when a Piazza post ID is invalid, refers to a non-existent post, or refers to a private post.
+    """
     pass
 
 
@@ -114,14 +117,13 @@ class PiazzaHandler:
             requested post ID
         """
 
-        post = self.network.get_post(postID)
+        try:
+            post = self.network.get_post(postID)
+        except Exception as ex:  # TODO: Find actual exception
+            raise InvalidPostID("Post not found.") from ex
 
-        # TODO: Find actual exceptions
-        #  I know it could be InvalidPostID since I added that but that's only when the post is private. It should
-        #  also be thrown when the ID itself does not lead to any post but I have not figured out what to catch in
-        #  order to rethrow as InvalidPostID
         if self.checkIfPrivate(post):
-            raise InvalidPostID("Post not found.")
+            raise InvalidPostID("Post is Private.")
 
         return post
 
