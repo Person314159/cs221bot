@@ -216,27 +216,27 @@ class Commands(commands.Cog):
             r, g, b = map(int, c_str.group(1, 2, 3))
 
             if max(r, g, b) > 255 or min(r, g, b) < 0:
-                raise BadArgs("You inputted an invalid colour. Please try again.", ctx.command)
+                raise BadArgs("You inputted an invalid colour. Please try again.", show_help=True)
 
             await ctx.send(embed=RGB(r, g, b, c_str.group()))
         elif c_str := re.search(r"\bhsl\((\d{1,3}(?:\.\d*)?), *(\d{1,3}(?:\.\d*)?)%?, *(\d{1,3}(?:\.\d*)?)%?\)", colour):
             h, s, l = map(Fraction, c_str.group(1, 2, 3))
 
             if h > 360 or max(s, l) > 100 or min(h, s, l) < 0:
-                raise BadArgs("You inputted an invalid colour. Please try again.", ctx.command)
+                raise BadArgs("You inputted an invalid colour. Please try again.", show_help=True)
 
             await ctx.send(embed=hslRGB(h, s, l, c_str.group()))
         elif c_str := re.search(r"\bcmyk\((\d{1,3}(\.\d*)?)%?, *(\d{1,3}(\.\d*)?)%?, *(\d{1,3}(\.\d*)?)%?, *(\d{1,3}(\.\d*)?)%?\)", colour):
             c, m, y, k = map(Fraction, c_str.group(1, 2, 3, 4))
 
             if max(c, m, y, k) > 100 or min(c, m, y, k) < 0:
-                raise BadArgs("You inputted an invalid colour. Please try again.", ctx.command)
+                raise BadArgs("You inputted an invalid colour. Please try again.", show_help=True)
 
             await ctx.send(embed=cmykRGB(c, m, y, k, c_str.group()))
         elif colour.lower() in css:
             await ctx.send(embed=cssRGB(colour.lower()))
         else:
-            raise BadArgs("You inputted an invalid colour. Please try again.", ctx.command)
+            raise BadArgs("You inputted an invalid colour. Please try again.", show_help=True)
 
     @commands.command()
     async def dm(self, ctx):
@@ -269,7 +269,7 @@ class Commands(commands.Cog):
             raise BadArgs("You do not have permission to use this command.")
 
         if not ctx.message.mentions:
-            raise BadArgs("You need to specify a user or users to add!", ctx.command)
+            raise BadArgs("You need to specify a user or users to add!", show_help=True)
 
         # generate customized channel name to allow customized role
         nam = int(str((datetime.now() - datetime(1970, 1, 1)).total_seconds()).replace(".", "")) + ctx.author.id
@@ -360,7 +360,7 @@ class Commands(commands.Cog):
 
         # Display help if given no argument
         if not name:
-            raise BadArgs("", ctx.command)
+            raise BadArgs("", show_help=True)
 
         # make sure that you can't add roles like "prof" or "ta"
         valid_roles = ["Looking for Partners", "Study Group", "L1A", "L1B", "L1C", "L1D", "L1E", "L1F", "L1G", "L1H", "L1J", "L1K", "L1N", "L1P", "L1R", "L1S", "L1T", "He/Him/His", "She/Her/Hers", "They/Them/Theirs", "Ze/Zir/Zirs", "notify"]
@@ -379,7 +379,7 @@ class Commands(commands.Cog):
 
         # Check that the role actually exists
         if not role:
-            raise BadArgs("You can't add that role!", ctx.command)
+            raise BadArgs("You can't add that role!", show_help=True)
 
         # Ensure that the author does not already have the role
         if role in ctx.author.roles:
@@ -392,13 +392,15 @@ class Commands(commands.Cog):
             if self.add_instructor_role_counter > 5:
                 if self.add_instructor_role_counter == 42:
                     if random.random() > 0.999:
-                        raise BadArgs("Congratulations, you found the secret message. IDEK how you did it, but good job. Still can't add the instructor role though. Bummer, I know.")
+                        raise BadArgs(
+                            "Congratulations, you found the secret message. IDEK how you did it, but good job. Still can't add the instructor role though. Bummer, I know.")
                 elif self.add_instructor_role_counter == 69:
                     if random.random() > 0.9999:
                         raise BadArgs("nice.")
-                raise BadArgs("You can't add that role, but if you try again, maybe something different will happen on the 42nd attempt")
+                raise BadArgs(
+                    "You can't add that role, but if you try again, maybe something different will happen on the 42nd attempt")
             else:
-                raise BadArgs("you cannot add an instructor/invalid role!", ctx.command)
+                raise BadArgs("you cannot add an instructor/invalid role!", show_help=True)
 
         await ctx.author.add_roles(role)
         await ctx.send("role added!", delte_after=5)
@@ -462,7 +464,7 @@ class Commands(commands.Cog):
         name = " ".join(arg).lower()
 
         if not name:
-            raise BadArgs("", ctx.command)
+            raise BadArgs("", show_help=True)
 
         aliases = {"he": "he/him/his", "she": "she/her/hers", "ze": "ze/zir/zirs", "they": "they/them/theirs"}
 
@@ -554,7 +556,7 @@ class Commands(commands.Cog):
             return await ctx.send("There's an active poll in this channel already.")
 
         if len(options) <= 1:
-            raise BadArgs("Please enter more than one option to poll.", ctx.command)
+            raise BadArgs("Please enter more than one option to poll.", show_help=True)
         elif len(options) > 20:
             raise BadArgs("Please limit to 10 options.")
         elif len(options) == 2 and options[0] == "yes" and options[1] == "no":
@@ -617,7 +619,7 @@ class Commands(commands.Cog):
             try:
                 userid = int(userid[0])
             except ValueError:
-                raise BadArgs("Please enter a user id", ctx.command)
+                raise BadArgs("Please enter a user id", show_help=True)
 
             user = ctx.guild.get_member(userid)
 
