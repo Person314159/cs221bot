@@ -329,13 +329,12 @@ class Commands(commands.Cog):
             txt = translation.text
             await asyncio.sleep(0)
 
-        if len(txt) > 2000:
-            if len(txt) > 10000:
-                BadArgs("Result too large.", False)
+        if len(txt) > 10000:
+            BadArgs("Result too large.", False)
 
-            while len(txt) > 2000:
-                await ctx.send(txt[:2000])
-                txt = txt[2000:]
+        while len(txt) > 2000:
+            await ctx.send(txt[:2000])
+            txt = txt[2000:]
 
         await ctx.send(txt)
 
