@@ -1130,8 +1130,7 @@ class Main(commands.Cog):
         `!ptest` simulates a single call of `send_pupdate` to ensure the set-up was done correctly.
         """
 
-        if self.d_handler.piazza_handler:
-            await self.send_piazza_posts(False)
+        await self.send_piazza_posts(False)
 
     @staticmethod
     def create_post_embed(post):
@@ -1168,6 +1167,9 @@ class Main(commands.Cog):
             await asyncio.sleep(60*60*24)
 
     async def send_piazza_posts(self, wait: bool):
+        if not self.d_handler.piazza_handler:
+            return
+
         posts = self.d_handler.piazza_handler.get_posts_in_range()
 
         response = f"**{self.d_handler.piazza_handler.course_name}'s posts for {datetime.today().strftime('%a. %B %d, %Y')}**\n"
