@@ -1,6 +1,6 @@
 import re
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Set
 
 import dateutil.parser.isoparser
 import discord
@@ -100,7 +100,7 @@ class CanvasHandler(Canvas):
         self._due_day = due_day
 
     @staticmethod
-    def _ids_converter(ids: Tuple[str, ...]) -> List[int]:
+    def _ids_converter(ids: Tuple[str, ...]) -> Set[int]:
         """
         Converts list of string to list of int, removes duplicates
 
@@ -115,13 +115,7 @@ class CanvasHandler(Canvas):
             List of int ids
         """
 
-        temp = []
-
-        for i in ids:
-            temp.append(int(i))
-
-        temp = list(dict.fromkeys(temp))
-        return temp
+        return set(int(i) for i in ids)
 
     def track_course(self, course_ids_str: Tuple[str, ...]):
         """
@@ -134,12 +128,9 @@ class CanvasHandler(Canvas):
         """
 
         course_ids = self._ids_converter(course_ids_str)
-
-        for i in course_ids:
-            c_ids = [c.id for c in self.courses]
-
-            if i not in c_ids:
-                self.courses.append(self.get_course(i))
+        c_ids = {c.id for c in self.courses}
+        
+        self.courses.extend(self.get_course(i) for i in course_ids if i not in c_ids)
 
         for c in course_ids_str:
             if c not in self.timings:
@@ -162,22 +153,20 @@ class CanvasHandler(Canvas):
         """
 
         course_ids = self._ids_converter(course_ids_str)
+        c_ids = {c.id for c in self.courses}
 
-        for i in course_ids:
-            c_ids = [c.id for c in self.courses]
-
-            if i in c_ids:
-                del self.courses[c_ids.index(i)]
+        for i in filter(c_ids.__contains__, course_ids):
+            self.courses.remove(c_ids[i])
 
         for c in course_ids_str:
             if c in self.timings:
-                self.timings.pop(c)
+                del self.timings[c]
 
             if c in self.due_week:
-                self.due_week.pop(c)
+                del self.due_week[c]
 
             if c in self.due_day:
-                self.due_day.pop(c)
+                del self.due_day[c]
 
     def get_course_stream_ch(self, since: Optional[str], course_ids_str: Tuple[str, ...], base_url, access_token) -> List[List[str]]:
         """
@@ -204,50 +193,31 @@ class CanvasHandler(Canvas):
         """
 
         course_ids = self._ids_converter(course_ids_str)
-
-        course_stream_list = []
-
-        for c in self.courses:
-            if course_ids:
-                if c.id in course_ids:
-                    course_stream_list.append(get_course_stream(c.id, base_url, access_token))
-            else:
-                course_stream_list.append(get_course_stream(c.id, base_url, access_token))
-
+        course_stream_list = tuple(get_course_stream(c.id, base_url, access_token) for c in self.courses if (not course_ids) or c.id in course_ids)
         data_list = []
 
-        for course_stream in course_stream_list:
-            for item in course_stream:
-                if item["type"] in ["Conversation"]:
-                    course = self.get_course(item["course_id"])
+        url = "https://canvas.ubc.ca/conversations?#filter=type=inbox&course=course_53540"
 
-                    course_name = course.name
-                    course_url = get_course_url(course.id, base_url)
+        for item in (i for c_s in course_stream_list for i in c_s if i['type'] == "Conversation"):
+            course = self.get_course(item["course_id"])
 
-                    title = "Announcement: " + item["title"]
+            course_url = get_course_url(course.id, base_url)
+            title = "Announcement: " + item["title"]
+            short_desc = "\n".join(item["latest_messages"][0]["message"].split("\n")[:4])
+            ctime_iso = item["created_at"]
 
-                    url = "https://canvas.ubc.ca/conversations?#filter=type=inbox&course=course_53540"
+            if ctime_iso is None:
+                ctime_text = "No info"
+            else:
+                time_shift = datetime.now() - datetime.utcnow()
+                ctime_iso_parsed = (dateutil.parser.isoparse(ctime_iso) + time_shift).replace(tzinfo=None)
+                ctime_timedelta = ctime_iso_parsed - datetime.now()
+                if since and ctime_timedelta < -self._make_timedelta(since):
+                    break
 
-                    desc = item["latest_messages"][0]["message"]
-                    short_desc = "\n".join(desc.split("\n")[:4])
+                ctime_text = ctime_iso_parsed.strftime("%Y-%m-%d %H:%M:%S")
 
-                    ctime_iso = item["created_at"]
-                    time_shift = datetime.now() - datetime.utcnow()
-
-                    if ctime_iso is None:
-                        ctime_text = "No info"
-                    else:
-                        ctime_iso_parsed = (dateutil.parser.isoparse(ctime_iso) + time_shift).replace(tzinfo=None)
-                        ctime_timedelta = ctime_iso_parsed - datetime.now()
-
-                        if since is not None:
-                            if ctime_timedelta < -self._make_timedelta(since):
-                                # since announcements are in order
-                                break
-
-                        ctime_text = ctime_iso_parsed.strftime("%Y-%m-%d %H:%M:%S")
-
-                    data_list.append([course_name, course_url, title, url, short_desc, ctime_text, course.id])
+            data_list.append([course.name, course_url, title, url, short_desc, ctime_text, course.id])
 
         return data_list
 
@@ -272,15 +242,8 @@ class CanvasHandler(Canvas):
             List of assignment data to be formatted and sent as embeds
         """
 
-        courses_assignments = []
         course_ids = self._ids_converter(course_ids_str)
-
-        for c in self.courses:
-            if course_ids:
-                if c.id in course_ids:
-                    courses_assignments.append([c, c.get_assignments()])
-            else:
-                courses_assignments.append([c, c.get_assignments()])
+        courses_assignments = [[c, c.get_assignments()] for c in self.courses if not course_ids or c.id in course_ids]
 
         return self._get_assignment_data(due, courses_assignments, base_url)
 
@@ -310,23 +273,15 @@ class CanvasHandler(Canvas):
         for course_assignments in courses_assignments:
             course = course_assignments[0]
             course_name = course.name
+            course_url = get_course_url(course.id, base_url)
 
             for assignment in course_assignments[1]:
-                course_url = get_course_url(course.id, base_url)
-
                 ass_id = assignment.__getattribute__("id")
-
                 title = "Assignment: " + assignment.__getattribute__("name")
-
                 url = assignment.__getattribute__("html_url")
+                desc_html = assignment.__getattribute__("description") or "No description"
 
-                desc_html = assignment.__getattribute__("description")
-
-                if desc_html is None:
-                    desc_html = "No description"
-
-                desc_soup = BeautifulSoup(desc_html, "html.parser")
-                short_desc = "\n".join(desc_soup.get_text().split("\n")[:4])
+                short_desc = "\n".join(BeautifulSoup(desc_html, "html.parser").get_text().split("\n")[:4])
 
                 ctime_iso = assignment.__getattribute__("created_at")
                 dtime_iso = assignment.__getattribute__("due_at")
@@ -343,15 +298,8 @@ class CanvasHandler(Canvas):
                 else:
                     dtime_iso_parsed = (dateutil.parser.isoparse(dtime_iso) + time_shift).replace(tzinfo=None)
                     dtime_timedelta = dtime_iso_parsed - datetime.now()
-
-                    if dtime_timedelta < timedelta(0):
+                    if dtime_timedelta < timedelta(0) or (due and dtime_timedelta > self._make_timedelta(due)):
                         continue
-
-                    if due is not None:
-                        if dtime_timedelta > self._make_timedelta(due):
-                            # since assignments are not in order
-                            continue
-
                     dtime_text = dtime_iso_parsed.strftime("%Y-%m-%d %H:%M:%S")
 
                 data_list.append([course_name, course_url, title, url, short_desc, ctime_text, dtime_text, course.id, ass_id])
@@ -376,30 +324,18 @@ class CanvasHandler(Canvas):
 
         till = re.split(r"[-:]", till_str)
 
-        if till[1] in ["hour", "day", "week", "month", "year"]:
-            num = float(till[0])
-            options = {
-                "hour": timedelta(hours=num),
-                "day": timedelta(days=num),
-                "week": timedelta(weeks=num),
-                "month": timedelta(days=30*num),
-                "year": timedelta(days=365*num)
-            }
+        if till[1] in ["hour", "day", "week"]:
+            return abs(timedelta(**{till[1]+"s": float(till[0])}))
+        elif till[1] in ["month", "year"]:
+            return abs(timedelta(days=(30 if till[1] == "month" else 365)*float(till[1])))
 
-            return abs(options[till[1]])
-        elif len(till) == 3:
-            year = int(till[0])
-            month = int(till[1])
-            day = int(till[2])
+        year, month, day = int(till[0]), int(till[1]), int(till[2])
+
+        if len(till) == 3:
             return abs(datetime(year, month, day) - datetime.now())
-        else:
-            year = int(till[0])
-            month = int(till[1])
-            day = int(till[2])
-            hour = int(till[3])
-            minute = int(till[4])
-            second = int(till[5])
-            return abs(datetime(year, month, day, hour, minute, second) - datetime.now())
+
+        hour, minute, second = int(till[3]), int(till[4]), int(till[5])
+        return abs(datetime(year, month, day, hour, minute, second) - datetime.now())
 
     def get_course_names(self, url) -> List[List[str]]:
         """
@@ -416,9 +352,4 @@ class CanvasHandler(Canvas):
             List of course names and their page urls
         """
 
-        course_names = []
-
-        for c in self.courses:
-            course_names.append([c.name, get_course_url(c.id, url)])
-
-        return course_names
+        return [[c.name, get_course_url(c.id, url)] for c in self.courses]
