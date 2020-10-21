@@ -32,7 +32,29 @@ CANVAS_API_KEY = os.getenv("CANVAS_API_KEY")
 PIAZZA_EMAIL = os.getenv("PIAZZA_EMAIL")
 PIAZZA_PASSWORD = os.getenv("PIAZZA_PASSWORD")
 
-#################### COMMANDS ####################
+
+class BadArgs(Exception):
+    """
+    Exception raised if the arguments to a command are in correct.
+
+    Attributes:
+        command -- The command that was run
+        show_help -- Whether help should be shown
+        msg -- Message to show (or none for no message)
+    """
+    def __init__(self, command, show_help, msg):
+        self.command = command
+        self.show_help = show_help
+        self.msg = msg
+
+    def print(self, ctx):
+        if self.msg:
+            ctx.send(self.msg, delete_after=5)
+        if self.show_help:
+            ctx.send(self.command.help)
+
+
+# ################### COMMANDS ################### #
 
 
 class Main(commands.Cog):
@@ -188,7 +210,7 @@ class Main(commands.Cog):
             r = round(r)
             g = round(g)
             b = round(b)
-            return color_embed(colour, 
+            return color_embed(colour,
                                , c, m, y, k, h, s, l)
 
         def cmykRGB(c, m, y, k, colour):
@@ -226,22 +248,22 @@ class Main(commands.Cog):
         elif c_str := re.search(r"rgb\((\d{1,3}), *(\d{1,3}), *(\d{1,3})\)", colour):
             r, g, b = map(int, c_str.group(1, 2, 3))
             if max(r, g, b) > 255 or min(r, g, b) < 0:
-                return await ctx.send("You inputted an invalid colour. Please try again.", delete_after=5)
+                raise BadArgs("You inputted an invalid colour. Please try again.", False)
             await ctx.send(embed=RGB(r, g, b, c_str))
         elif c_str := re.search(r"hsl\((\d{1,3}(?:\.\d*)?), *(\d{1,3}(?:\.\d*)?)%?, *(\d{1,3}(?:\.\d*)?)%?\)", colour):
             h, s, l = map(Fraction, c_str.group(1, 2, 3))
             if h > 360 or max(s, l) > 100 or min(h, s, l) < 0:
-                return await ctx.send("You inputted an invalid colour. Please try again.", delete_after=5)
+                raise BadArgs("You inputted an invalid colour. Please try again.", False)
             await ctx.send(embed=hslRGB(h, s, l, c_str))
         elif c_str := re.search(r"cmyk\((\d{1,3}(\.\d*)?)%?, *(\d{1,3}(\.\d*)?)%?, *(\d{1,3}(\.\d*)?)%?, *(\d{1,3}(\.\d*)?)%?\)", colour):
             c, m, y, k = map(Fraction, c_str.group(1, 2, 3, 4))
             if max(c, m, y, k) > 100 or min(c, m, y, k) < 0:
-                return await ctx.send("You inputted an invalid colour. Please try again.", delete_after=5)
+                raise BadArgs("You inputted an invalid colour. Please try again.", False)
             await ctx.send(embed=cmykRGB(c, m, y, k, c_str))
         elif colour.lower() in css:
             await ctx.send(embed=cssRGB(colour.lower()))
         else:
-            await ctx.send("You inputted an invalid colour. Please try again.", delete_after=5)
+            raise BadArgs("You inputted an invalid colour. Please try again.", False)
 
     @commands.command(hidden=True)
     @commands.is_owner()
@@ -380,7 +402,7 @@ class Main(commands.Cog):
             comm = self.bot.get_command(help_command)
 
             if not comm or not comm.help or comm.hidden:
-                return await ctx.send("That command doesn't exist.", delete_after=5)
+                raise BadArgs("That command doesn't exist.", False)
 
             await ctx.send(comm.help)
 
@@ -414,19 +436,18 @@ class Main(commands.Cog):
 
         # Ensure that people only add one lab role
         if name.startswith("l1") and any(role.name.startswith("L1") for role in ctx.author.roles):
-            return await ctx.send("You already have a lab role!", delete_after=5)
+            raise BadArgs("You already have a lab role!", False)
 
         # Grab the role that the user selected
         role = next((r for r in ctx.guild.roles if name == r.name.lower()), None)
 
         # Check that the role actually exists
         if not role:
-            await ctx.send("You can't add that role!", delete_after=5)
-            return await ctx.send(ctx.command.help)
+            raise BadArgs("You can't add that role!", True)
 
         # Ensure that the author does not already have the role
         if role in ctx.author.roles:
-            return await ctx.send("you already have that role!", delete_after=5)
+            raise BadArgs("you already have that role!", False)
 
         # Special handling for roles that exist but can not be selected by a student
         if role.name not in valid_roles:
@@ -434,16 +455,16 @@ class Main(commands.Cog):
             if self.add_instructor_role_counter > 5:
                 if self.add_instructor_role_counter == 42:
                     if random.random() > 0.999:
-                        return await ctx.send("Congratulations, you found the secret message. IDEK how you did it, but good job. Still can't add the instructor role though. Bummer, I know.", delete_after=5)
+                        raise BadArgs("Congratulations, you found the secret message. IDEK how you did it, but good job. Still can't add the instructor role though. Bummer, I know.", False)
                 elif self.add_instructor_role_counter == 69:
                     if random.random() > 0.9999:
-                        return await ctx.send("nice.", delete_after=5)
-                return await ctx.send("You can't add that role, but if you try again, maybe something different will happen on the 42nd attempt", delete_after=5)
+                        raise BadArgs("nice.", False)
+                raise BadArgs("You can't add that role, but if you try again, maybe something different will happen on the 42nd attempt", False)
             else:
-                return await ctx.send("you cannot add an instructor/invalid role!", delete_after=5)
+                raise BadArgs("you cannot add an instructor/invalid role!", False)
 
         await ctx.author.add_roles(role)
-        return await ctx.send("role added!", delete_after=5)
+        raise BadArgs("role added!", False)
 
     @commands.command()
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -475,7 +496,7 @@ class Main(commands.Cog):
         try:
             img = requests.post("https://www.quicklatex.com/latex3.f", data=body, timeout=10)
         except (requests.ConnectionError, requests.HTTPError, requests.TooManyRedirects, requests.Timeout):
-            return await ctx.send("Render timed out.", delete_after=5)
+            raise BadArgs("Render timed out.", False)
 
         if img.status_code == 200:
             if img.text.startswith("0"):
@@ -483,7 +504,7 @@ class Main(commands.Cog):
             else:
                 await ctx.send(" ".join(img.text.split()[5:]), delete_after=5)
         else:
-            await ctx.send("Something done goofed. Maybe check your syntax?", delete_after=5)
+            raise BadArgs("Something done goofed. Maybe check your syntax?", False)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -506,12 +527,11 @@ class Main(commands.Cog):
             if name == role.name.lower():
                 if role in ctx.author.roles:
                     await ctx.author.remove_roles(role)
-                    return await ctx.send("role removed!", delete_after=5)
+                    raise BadArgs("role removed!", False)
                 else:
-                    return await ctx.send("you don't have that role!", delete_after=5)
+                    raise BadArgs("you don't have that role!", False)
         else:
-            await ctx.send("that role doesn't exist!", delete_after=5)
-            return await ctx.send(ctx.command.help)
+            raise BadArgs("that role doesn't exist!", True)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -539,12 +559,12 @@ class Main(commands.Cog):
                 self.bot.writeJSON(self.bot.poll_dict, "data/poll.json")
 
             if not id_:
-                return await ctx.send("No active poll found.", delete_after=5)
+                raise BadArgs("No active poll found.", False)
 
             try:
                 poll_message = await ctx.channel.fetch_message(id_)
             except discord.NotFound:
-                return await ctx.send("Looks like someone deleted the poll, or there is no active poll.", delete_after=5)
+                raise BadArgs("Looks like someone deleted the poll, or there is no active poll.", False)
 
             embed = poll_message.embeds[0]
             unformatted_options = [x.strip().split(": ")
@@ -589,10 +609,9 @@ class Main(commands.Cog):
             return await ctx.send("There's an active poll in this channel already.")
 
         if len(options) <= 1:
-            await ctx.send("Please enter more than one option to poll.", delete_after=5)
-            return await ctx.send(ctx.command.help)
+            raise BadArgs("Please enter more than one option to poll.", True)
         elif len(options) > 20:
-            return await ctx.send("Please limit to 10 options.", delete_after=5)
+            raise BadArgs("Please limit to 10 options.", False)
         elif len(options) == 2 and options[0] == "yes" and options[1] == "no":
             reactions = ["✅", "❌"]
         else:
@@ -663,12 +682,12 @@ class Main(commands.Cog):
             try:
                 userid = int(userid[0])
             except ValueError:
-                return await ctx.send("Please enter a user id", delete_after=5)
+                raise BadArgs("Please enter a user id", False)
 
             user = ctx.guild.get_member(userid)
 
         if not user:
-            return await ctx.send("That user does not exist", delete_after=5)
+            raise BadArgs("That user does not exist", False)
 
         # we use both user and member objects, since some stats can only be obtained
         # from either user or member object
@@ -709,7 +728,7 @@ class Main(commands.Cog):
         c_handler = self._get_canvas_handler(ctx.message.guild)
 
         if not isinstance(c_handler, CanvasHandler):
-            return await ctx.send("Canvas Handler doesn't exist.", delete_after=5)
+            raise BadArgs("Canvas Handler doesn't exist.", False)
 
         c_handler.track_course(course_ids)
 
@@ -730,7 +749,7 @@ class Main(commands.Cog):
         c_handler = self._get_canvas_handler(ctx.message.guild)
 
         if not isinstance(c_handler, CanvasHandler):
-            return await ctx.send("Canvas Handler doesn't exist.", delete_after=5)
+            raise BadArgs("Canvas Handler doesn't exist.", False)
 
         c_handler.untrack_course(course_ids)
 
@@ -760,7 +779,7 @@ class Main(commands.Cog):
         c_handler = self._get_canvas_handler(ctx.message.guild)
 
         if not isinstance(c_handler, CanvasHandler):
-            return await ctx.send("Canvas Handler doesn't exist.", delete_after=5)
+            raise BadArgs("Canvas Handler doesn't exist.", False)
 
         if args and args[0].startswith("-due"):
             due = args[1]
@@ -793,7 +812,7 @@ class Main(commands.Cog):
         c_handler = self._get_canvas_handler(ctx.message.guild)
 
         if not isinstance(c_handler, CanvasHandler):
-            return await ctx.send("Canvas Handler doesn't exist.", delete_after=5)
+            raise BadArgs("Canvas Handler doesn't exist.", False)
 
         if ctx.message.channel not in c_handler.live_channels:
             c_handler.live_channels.append(ctx.message.channel)
@@ -812,7 +831,7 @@ class Main(commands.Cog):
         c_handler = self._get_canvas_handler(ctx.message.guild)
 
         if not isinstance(c_handler, CanvasHandler):
-            return await ctx.send("Canvas Handler doesn't exist.", delete_after=5)
+            raise BadArgs("Canvas Handler doesn't exist.", False)
 
         if ctx.message.channel in c_handler.live_channels:
             c_handler.live_channels.remove(ctx.message.channel)
@@ -845,7 +864,7 @@ class Main(commands.Cog):
         c_handler = self._get_canvas_handler(ctx.message.guild)
 
         if not isinstance(c_handler, CanvasHandler):
-            return await ctx.send("Canvas Handler doesn't exist.", delete_after=5)
+            raise BadArgs("Canvas Handler doesn't exist.", False)
 
         if args and args[0].startswith("-since"):
             since = args[1]

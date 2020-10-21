@@ -71,14 +71,11 @@ def startup():
         bot.writeJSON({}, "data/piazza.json")
         bot.piazza_dict = bot.loadJSON("data/piazza.json")
 
-    for channel in list(bot.poll_dict):
-        if not bot.get_channel(int(channel)):
-            del bot.poll_dict[channel]
+    for channel in filter(lambda ch: not bot.get_channel(int(ch)), list(bot.poll_dict)):
+        del bot.poll_dict[channel]
 
-    for guild in bot.guilds:
-        for channel in guild.text_channels:
-            if str(channel.id) not in bot.poll_dict:
-                bot.poll_dict.update({str(channel.id): ""})
+    for channel in (c for g in bot.guilds for c in g.text_channels if str(c.id) not in bot.poll_dict):
+        bot.poll_dict.update({str(channel.id): ""})
 
     bot.writeJSON(bot.poll_dict, "data/poll.json")
 
@@ -91,15 +88,14 @@ async def wipe_dms():
 
     while True:
         await asyncio.sleep(300)
+        now = datetime.utcnow()
 
-        for channel in guild.channels:
-            if channel.name.startswith("221dm-"):
-                async for msg in channel.history(limit=1):
-                    if (datetime.utcnow() - msg.created_at).total_seconds() >= 86400:
-                        await channel.delete()
-                        break
-                else:
+        for channel in filter(lambda c: c.name.startswith("221dm-"), guild.channels):
+            if msg := next(channel.history(limit=1), None):
+                if (now - msg.created_at).total_seconds() >= 86400:
                     await channel.delete()
+            else:
+                await channel.delete()
 
 
 @bot.event
@@ -119,10 +115,9 @@ async def on_guild_join(guild):
 
 @bot.event
 async def on_guild_remove(guild):
-    for channel in guild.channels:
-        if str(channel.id) in bot.poll_dict:
-            del bot.poll_dict[str(channel.id)]
-            bot.writeJSON(bot.poll_dict, "data/poll.json")
+    for channel in filter(lambda c: str(c.id) in bot.poll_dict, guild.channels):
+        del bot.poll_dict[str(channel.id)]
+        bot.writeJSON(bot.poll_dict, "data/poll.json")
 
 
 @bot.event
@@ -146,9 +141,7 @@ async def on_message_edit(before, after):
 
 @bot.event
 async def on_message(message):
-    if message.author.bot:
-        return
-    else:
+    if not message.author.bot:
         # debugging
         # with open("messages.txt", "a") as f:
         # 	print(f"{message.guild.name}: {message.channel.name}: {message.author.name}: \"{message.content}\" @ {str(datetime.datetime.now())} \r\n", file = f)
@@ -172,15 +165,18 @@ if __name__ == "__main__":
 
 @bot.event
 async def on_command_error(ctx, error):
-    if isinstance(error, commands.CommandNotFound) or isinstance(error, discord.HTTPException) or isinstance(error, discord.NotFound):
+    # Technically, using .type means that it would not catch if it was a subclass but that is unlikely to be an issue.
+    if error.type in (commands.CommandNotFound, discord.HTTPException, discord.NotFound):
         pass
-    elif isinstance(error, commands.CommandOnCooldown):
+    elif error.type == commands.BadArgs:
+        error.print(ctx)
+    elif error.type == commands.CommandOnCooldown:
         await ctx.send(f"Oops! That command is on cooldown right now. Please wait **{round(error.retry_after, 3)}** seconds before trying again.", delete_after=error.retry_after)
-    elif isinstance(error, commands.MissingRequiredArgument):
+    elif error.type == commands.MissingRequiredArgument:
         await ctx.send(f"The required argument(s) {error.param} is/are missing.", delete_after=5)
-    elif isinstance(error, commands.DisabledCommand):
+    elif error.type == commands.DisabledCommand:
         await ctx.send("This command is disabled.", delete_after=5)
-    elif isinstance(error, commands.MissingPermissions) or isinstance(error, commands.BotMissingPermissions):
+    elif error.type in (commands.MissingPermissions, commands.BotMissingPermissions):
         await ctx.send(error, delete_after=5)
     else:
         etype = type(error)
