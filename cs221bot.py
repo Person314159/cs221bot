@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 
 from cogs.piazza import Piazza
 from cogs.canvas import Canvas
+from cogs.meta import BadArgs
 
 CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
@@ -172,7 +173,7 @@ async def on_command_error(ctx, error):
     # Technically, using .type means that it would not catch if it was a subclass but that is unlikely to be an issue.
     if error.type in (commands.CommandNotFound, discord.HTTPException, discord.NotFound):
         pass
-    elif error.type == commands.BadArgs:
+    elif error.type == BadArgs:
         error.print(ctx)
     elif error.type == commands.CommandOnCooldown:
         await ctx.send(f"Oops! That command is on cooldown right now. Please wait **{round(error.retry_after, 3)}** seconds before trying again.", delete_after=error.retry_after)

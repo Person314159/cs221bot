@@ -16,6 +16,7 @@ from discord.ext import commands
 from googletrans import constants, Translator
 
 from handlers.discord_handler import DiscordHandler
+from cogs.meta import BadArgs
 
 
 # This is a huge hack but it technically works
@@ -25,27 +26,6 @@ def _urlencode(*args, **kwargs):
 
 
 requests.models.urlencode = _urlencode
-
-
-class BadArgs(Exception):
-    """
-    Exception raised if the arguments to a command are in correct.
-
-    Attributes:
-        command -- The command that was run
-        show_help -- Whether help should be shown
-        msg -- Message to show (or none for no message)
-    """
-    def __init__(self, msg, show_help, command):
-        self.command = command
-        self.show_help = show_help
-        self.msg = msg
-
-    def print(self, ctx):
-        if self.msg:
-            await ctx.send(self.msg, delete_after=5)
-        if self.show_help:
-            await ctx.send(self.command.help)
 
 
 # ################### COMMANDS ################### #

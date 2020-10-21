@@ -7,6 +7,27 @@ import discord
 from discord.ext import commands
 
 
+class BadArgs(Exception):
+    """
+    Exception raised if the arguments to a command are in correct.
+
+    Attributes:
+        command -- The command that was run
+        show_help -- Whether help should be shown
+        msg -- Message to show (or none for no message)
+    """
+    def __init__(self, msg, show_help, command):
+        self.command = command
+        self.show_help = show_help
+        self.msg = msg
+
+    def print(self, ctx):
+        if self.msg:
+            await ctx.send(self.msg, delete_after=5)
+        if self.show_help:
+            await ctx.send(self.command.help)
+
+
 class Meta(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -49,7 +70,7 @@ class Meta(commands.Cog):
             comm = self.bot.get_command(help_command)
 
             if not comm or not comm.help or comm.hidden:
-                return await ctx.send("That command doesn't exist.", delete_after=5)
+                raise BadArgs("That command doesn't exist.", False, ctx.command)
 
             await ctx.send(comm.help)
 
