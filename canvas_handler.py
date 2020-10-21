@@ -128,7 +128,8 @@ class CanvasHandler(Canvas):
         """
 
         course_ids = self._ids_converter(course_ids_str)
-
+        c_ids = {c.id for c in self.courses}
+        
         self.courses.extend(self.get_course(i) for i in course_ids if i not in c_ids)
 
         for c in course_ids_str:
@@ -192,7 +193,6 @@ class CanvasHandler(Canvas):
         """
 
         course_ids = self._ids_converter(course_ids_str)
-        c_ids = {c.id: c for c in self.courses}
         course_stream_list = tuple(get_course_stream(c.id, base_url, access_token) for c in self.courses if (not course_ids) or c.id in course_ids)
         data_list = []
 
