@@ -13,7 +13,7 @@ import webcolors
 from discord.ext import commands
 from googletrans import constants, Translator
 
-from discord_handler import DiscordHandler
+from handlers.discord_handler import DiscordHandler
 
 
 class Commands(commands.Cog):

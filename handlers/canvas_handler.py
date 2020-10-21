@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from canvasapi.canvas import Canvas
 from canvasapi.course import Course
 
-from canvas_api_extension import get_course_stream, get_course_url
+from handlers.canvas_api_extension import get_course_stream, get_course_url
 
 
 class CanvasHandler(Canvas):

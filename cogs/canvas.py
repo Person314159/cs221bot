@@ -9,7 +9,7 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from canvas_handler import CanvasHandler
+from handlers.canvas_handler import CanvasHandler
 
 CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
