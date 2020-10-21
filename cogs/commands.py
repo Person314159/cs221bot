@@ -16,8 +16,8 @@ import webcolors
 from discord.ext import commands
 from googletrans import constants, Translator
 
-from handlers.discord_handler import DiscordHandler
 from cogs.meta import BadArgs
+from handlers.discord_handler import DiscordHandler
 
 
 # This is a huge hack but it technically works

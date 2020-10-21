@@ -11,9 +11,9 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from cogs.piazza import Piazza
 from cogs.canvas import Canvas
 from cogs.meta import BadArgs
+from cogs.piazza import Piazza
 
 CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
@@ -174,7 +174,7 @@ async def on_command_error(ctx, error):
     if error.type in (commands.CommandNotFound, discord.HTTPException, discord.NotFound):
         pass
     elif error.type == BadArgs:
-        error.print(ctx)
+        await error.print(ctx)
     elif error.type == commands.CommandOnCooldown:
         await ctx.send(f"Oops! That command is on cooldown right now. Please wait **{round(error.retry_after, 3)}** seconds before trying again.", delete_after=error.retry_after)
     elif error.type == commands.MissingRequiredArgument:
@@ -192,6 +192,7 @@ async def on_command_error(ctx, error):
             await ctx.send(("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```").replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
         except Exception:
             print(("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```").replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
+
 
 bot.loop.create_task(Piazza.track_inotes(bot.get_cog("Piazza")))
 bot.loop.create_task(Piazza.send_pupdate(bot.get_cog("Piazza")))
