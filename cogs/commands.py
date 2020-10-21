@@ -13,6 +13,14 @@ import webcolors
 from discord.ext import commands
 from googletrans import constants, Translator
 
+# This is a huge hack but it technically works
+import urllib.parse
+import requests.models
+def _urlencode(*args, **kwargs):
+    kwargs.update(quote_via=urllib.parse.quote)
+    return urllib.parse.urlencode(*args, **kwargs)
+requests.models.urlencode = _urlencode
+
 from handlers.discord_handler import DiscordHandler
 
 
@@ -416,9 +424,9 @@ class Commands(commands.Cog):
         `!latex \\frac{a}{b}` [img]
         """
 
-        formula = " ".join(args).strip("`\n")
+        formula = " ".join(args).strip("`\n ")
 
-        if (sm := formula.splitlines()[0].lower) in ("latex", "tex"):
+        if (sm := formula.splitlines()[0].lower()) in ("latex", "tex"):
             formula = formula[3 if sm == "tex" else 5:]
 
         body = {
