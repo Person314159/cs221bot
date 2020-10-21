@@ -401,7 +401,7 @@ class Commands(commands.Cog):
                 raise BadArgs("you cannot add an instructor/invalid role!", ctx.command)
 
         await ctx.author.add_roles(role)
-        raise ctx.send("role added!", delte_after=5)
+        await ctx.send("role added!", delte_after=5)
 
     @commands.command()
     @commands.cooldown(1, 10, commands.BucketType.user)
