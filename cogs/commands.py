@@ -6,6 +6,7 @@ import urllib.parse
 from datetime import datetime, timedelta, timezone
 from fractions import Fraction
 from io import BytesIO
+from operator import methodcaller
 
 import discord
 import pytz
@@ -206,48 +207,36 @@ class Commands(commands.Cog):
 
         if not colour:
             await ctx.send(embed=RGB(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), "Random Colour"))
-        elif c_str := re.search(r"#([0-9A-Fa-f]{3}){1,2}", colour):
-            c_str = c_str.group()
+        elif c_str := re.search(r"\b#?([\dA-F]((?=[\dA-F]{4})[\dA-F])?)([\dA-F]((?<=[\dA-F]{3})[\dA-F])?)([\dA-F]((?<=[\dA-F]{5})[\dA-F])?)\b", colour, re.I):
+            mul = methodcaller("__mul__", 1 + bool(c_str.group(2)))
+            r, g, b = map(mul, c_str.group(1, 3, 5))
 
-            if len(c_str) == 7:
-                await ctx.send(embed=RGB(int(c_str[1:3], 16), int(c_str[3:5], 16), int(c_str[5:], 16), c_str))
-            elif len(c_str) == 4:
-                await ctx.send(embed=RGB(int(c_str[1] * 2, 16), int(c_str[2] * 2, 16), int(c_str[3] * 2, 16), c_str))
-        elif c_str := re.search(r"([0-9A-Fa-f]{3}){1,2}", colour):
-            c_str = c_str.group()
-
-            if len(c_str) == 6:
-                await ctx.send(embed=RGB(int(c_str[:2], 16), int(c_str[2:4], 16), int(c_str[4:], 16), c_str))
-            elif len(c_str) == 3:
-                await ctx.send(embed=RGB(int(c_str[0] * 2, 16), int(c_str[1] * 2, 16), int(c_str[2] * 2, 16), c_str))
-        elif c_str := re.search(r"rgb\((\d{1,3}), *(\d{1,3}), *(\d{1,3})\)", colour):
+            await ctx.send(embed=RGB(int(r, 16), int(g, 16), int(b, 16), c_str.group()))
+        elif c_str := re.search(r"\brgb\((\d{1,3}), *(\d{1,3}), *(\d{1,3})\)", colour):
             r, g, b = map(int, c_str.group(1, 2, 3))
-            c_str = c_str.group()
 
             if max(r, g, b) > 255 or min(r, g, b) < 0:
-                raise BadArgs("You inputted an invalid colour. Please try again.", False)
+                raise BadArgs("You inputted an invalid colour. Please try again.", ctx.command)
 
-            await ctx.send(embed=RGB(r, g, b, c_str))
-        elif c_str := re.search(r"hsl\((\d{1,3}(?:\.\d*)?), *(\d{1,3}(?:\.\d*)?)%?, *(\d{1,3}(?:\.\d*)?)%?\)", colour):
+            await ctx.send(embed=RGB(r, g, b, c_str.group()))
+        elif c_str := re.search(r"\bhsl\((\d{1,3}(?:\.\d*)?), *(\d{1,3}(?:\.\d*)?)%?, *(\d{1,3}(?:\.\d*)?)%?\)", colour):
             h, s, l = map(Fraction, c_str.group(1, 2, 3))
-            c_str = c_str.group()
 
             if h > 360 or max(s, l) > 100 or min(h, s, l) < 0:
-                raise BadArgs("You inputted an invalid colour. Please try again.", False)
+                raise BadArgs("You inputted an invalid colour. Please try again.", ctx.command)
 
-            await ctx.send(embed=hslRGB(h, s, l, c_str))
-        elif c_str := re.search(r"cmyk\((\d{1,3}(\.\d*)?)%?, *(\d{1,3}(\.\d*)?)%?, *(\d{1,3}(\.\d*)?)%?, *(\d{1,3}(\.\d*)?)%?\)", colour):
+            await ctx.send(embed=hslRGB(h, s, l, c_str.group()))
+        elif c_str := re.search(r"\bcmyk\((\d{1,3}(\.\d*)?)%?, *(\d{1,3}(\.\d*)?)%?, *(\d{1,3}(\.\d*)?)%?, *(\d{1,3}(\.\d*)?)%?\)", colour):
             c, m, y, k = map(Fraction, c_str.group(1, 2, 3, 4))
-            c_str = c_str.group()
 
             if max(c, m, y, k) > 100 or min(c, m, y, k) < 0:
-                raise BadArgs("You inputted an invalid colour. Please try again.", False)
+                raise BadArgs("You inputted an invalid colour. Please try again.", ctx.command)
 
-            await ctx.send(embed=cmykRGB(c, m, y, k, c_str))
+            await ctx.send(embed=cmykRGB(c, m, y, k, c_str.group()))
         elif colour.lower() in css:
             await ctx.send(embed=cssRGB(colour.lower()))
         else:
-            raise BadArgs("You inputted an invalid colour. Please try again.", True, ctx.command)
+            raise BadArgs("You inputted an invalid colour. Please try again.", ctx.command)
 
     @commands.command()
     async def dm(self, ctx):
@@ -269,7 +258,7 @@ class Commands(commands.Cog):
 
         if "close" in ctx.message.content.lower():
             if not ctx.channel.name.startswith("221dm-"):
-                return await ctx.send("This is not a 221DM.")
+                raise BadArgs("This is not a 221DM.")
 
             await ctx.send("Closing 221DM.")
             await next(i for i in guild.roles if i.name == ctx.channel.name).delete()
@@ -277,10 +266,10 @@ class Commands(commands.Cog):
 
         if all(i.name not in ("TA", "Prof") for i in ctx.author.roles):
             # only TAs and Prof can use this command
-            return await ctx.send("You do not have permission to use this command.")
+            raise BadArgs("You do not have permission to use this command.")
 
         if not ctx.message.mentions:
-            return await ctx.send("You need to specify a user or users to add!")
+            raise BadArgs("You need to specify a user or users to add!", ctx.command)
 
         # generate customized channel name to allow customized role
         nam = int(str((datetime.now() - datetime(1970, 1, 1)).total_seconds()).replace(".", "")) + ctx.author.id
@@ -342,15 +331,13 @@ class Commands(commands.Cog):
 
         if len(txt) > 2000:
             if len(txt) > 10000:
-                await ctx.send("Result too large.")
-            else:
-                while len(txt) > 2000:
-                    await ctx.send(txt[:2000])
-                    txt = txt[2000:]
+                BadArgs("Result too large.", False)
 
-                await ctx.send(txt)
-        else:
-            await ctx.send(txt)
+            while len(txt) > 2000:
+                await ctx.send(txt[:2000])
+                txt = txt[2000:]
+
+        await ctx.send(txt)
 
         return
 
@@ -374,7 +361,7 @@ class Commands(commands.Cog):
 
         # Display help if given no argument
         if not name:
-            raise BadArgs("", True, ctx.command)
+            raise BadArgs("", ctx.command)
 
         # make sure that you can't add roles like "prof" or "ta"
         valid_roles = ["Looking for Partners", "Study Group", "L1A", "L1B", "L1C", "L1D", "L1E", "L1F", "L1G", "L1H", "L1J", "L1K", "L1N", "L1P", "L1R", "L1S", "L1T", "He/Him/His", "She/Her/Hers", "They/Them/Theirs", "Ze/Zir/Zirs", "notify"]
@@ -386,18 +373,18 @@ class Commands(commands.Cog):
 
         # Ensure that people only add one lab role
         if name.startswith("l1") and any(role.name.startswith("L1") for role in ctx.author.roles):
-            raise BadArgs("You already have a lab role!", False, ctx.command)
+            raise BadArgs("You already have a lab role!")
 
         # Grab the role that the user selected
         role = next((r for r in ctx.guild.roles if name == r.name.lower()), None)
 
         # Check that the role actually exists
         if not role:
-            raise BadArgs("You can't add that role!", True, ctx.command)
+            raise BadArgs("You can't add that role!", ctx.command)
 
         # Ensure that the author does not already have the role
         if role in ctx.author.roles:
-            raise BadArgs("you already have that role!", False, ctx.command)
+            raise BadArgs("you already have that role!")
 
         # Special handling for roles that exist but can not be selected by a student
         if role.name not in valid_roles:
@@ -406,13 +393,13 @@ class Commands(commands.Cog):
             if self.add_instructor_role_counter > 5:
                 if self.add_instructor_role_counter == 42:
                     if random.random() > 0.999:
-                        raise BadArgs("Congratulations, you found the secret message. IDEK how you did it, but good job. Still can't add the instructor role though. Bummer, I know.", False, ctx.command)
+                        raise BadArgs("Congratulations, you found the secret message. IDEK how you did it, but good job. Still can't add the instructor role though. Bummer, I know.")
                 elif self.add_instructor_role_counter == 69:
                     if random.random() > 0.9999:
-                        raise BadArgs("nice.", False, ctx.command)
-                raise BadArgs("You can't add that role, but if you try again, maybe something different will happen on the 42nd attempt", False, ctx.command)
+                        raise BadArgs("nice.")
+                raise BadArgs("You can't add that role, but if you try again, maybe something different will happen on the 42nd attempt")
             else:
-                raise BadArgs("you cannot add an instructor/invalid role!", True, ctx.command)
+                raise BadArgs("you cannot add an instructor/invalid role!", ctx.command)
 
         await ctx.author.add_roles(role)
         raise ctx.send("role added!", delte_after=5)
@@ -450,15 +437,15 @@ class Commands(commands.Cog):
         try:
             img = requests.post("https://www.quicklatex.com/latex3.f", data=body, timeout=10)
         except (requests.ConnectionError, requests.HTTPError, requests.TooManyRedirects, requests.Timeout):
-            raise BadArgs("Render timed out.", False, ctx.command)
+            raise BadArgs("Render timed out.")
 
-        if img.status_code == 200:
-            if img.text.startswith("0"):
-                await ctx.send(file=discord.File(BytesIO(requests.get(img.text.split()[1]).content), "latex.png"))
-            else:
-                await ctx.send(" ".join(img.text.split()[5:]), delete_after=5)
+        if img.status_code != 200:
+            raise BadArgs("Something done goofed. Maybe check your syntax?")
+
+        if img.text.startswith("0"):
+            await ctx.send(file=discord.File(BytesIO(requests.get(img.text.split()[1]).content), "latex.png"))
         else:
-            raise BadArgs("Something done goofed. Maybe check your syntax?", False, ctx.command)
+            await ctx.send(" ".join(img.text.split()[5:]), delete_after=5)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -476,23 +463,24 @@ class Commands(commands.Cog):
         name = " ".join(arg).lower()
 
         if not name:
-            raise BadArgs("", True, ctx.command)
+            raise BadArgs("", ctx.command)
 
-        aliases = {"he": "He/Him/His", "she": "She/Her/Hers", "ze": "Ze/Zir/Zirs", "they": "They/Them/Theirs"}
+        aliases = {"he": "he/him/his", "she": "she/her/hers", "ze": "ze/zir/zirs", "they": "they/them/theirs"}
 
         # Convert alias to proper name
         if name.lower() in aliases:
-            name = aliases[name].lower()
+            name = aliases[name]
 
-        for role in ctx.guild.roles:
-            if name == role.name.lower():
-                if role in ctx.author.roles:
-                    await ctx.author.remove_roles(role)
-                    raise BadArgs("role removed!", False, ctx.command)
-                else:
-                    raise BadArgs("you don't have that role!", False, ctx.command)
-        else:
-            raise BadArgs("that role doesn't exist!", True, ctx.command)
+        role = next((r for r in ctx.guild.roles if name == r.name.lower()), None)
+
+        if not role:
+            raise BadArgs("that role doesn't exist!")
+
+        if role not in ctx.author.roles:
+            raise BadArgs("you don't have that role!")
+
+        await ctx.author.remove_roles(role)
+        await ctx.send("role removed!", delete_after=5)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -520,12 +508,12 @@ class Commands(commands.Cog):
                 self.bot.writeJSON(self.bot.poll_dict, "data/poll.json")
 
             if not id_:
-                raise BadArgs("No active poll found.", False, ctx.command)
+                raise BadArgs("No active poll found.")
 
             try:
                 poll_message = await ctx.channel.fetch_message(id_)
             except discord.NotFound:
-                raise BadArgs("Looks like someone deleted the poll, or there is no active poll.", False, ctx.command)
+                raise BadArgs("Looks like someone deleted the poll, or there is no active poll.")
 
             embed = poll_message.embeds[0]
             unformatted_options = [x.strip().split(": ") for x in embed.description.split("\n")]
@@ -534,25 +522,22 @@ class Commands(commands.Cog):
             for x in unformatted_options:
                 options_dict[x[0]] = x[1]
 
-            tally = {x: 0 for x in options_dict.keys()}
+            tally = {x: 0 for x in options_dict}
 
             for reaction in poll_message.reactions:
-                if reaction.emoji in options_dict.keys():
+                if reaction.emoji in options_dict:
                     async for reactor in reaction.users():
                         if reactor.id != self.bot.user.id:
                             tally[reaction.emoji] += 1
 
             output = f"{'Final' if end else 'Current'} results of the poll **\"{embed.title}\"**\nLink: {poll_message.jump_url}\n```"
 
-            max_len = max(map(len, map(str, tally.values())))
+            max_len = max(map(len, options_dict.values()))
 
             for key in tally:
-                if tally[key]:
-                    output += f"{options_dict[key].ljust(max_len)}: " + \
-                              f"{('👑' * tally[key]).replace('👑', '▓', tally[key] - 2) if tally[key] == max(tally.values()) else '░' * tally[key]}".rjust(max(tally.values())).replace('👑👑', '👑') + \
-                              f" ({tally[key]} votes, {round(tally[key] / sum(tally.values()) * 100 if sum(tally.values()) else 0, 2)}%)\n\n"
-                else:
-                    output += f"{options_dict[key].ljust(max_len)}: 0\n\n"
+                output += f"{options_dict[key].ljust(max_len)}: " + \
+                          f"{('👑' * tally[key]).replace('👑', '▓', ((tally[key] - 1) or 1) - 1) if tally[key] == max(tally.values()) else '░' * tally[key]}".ljust(max(tally.values())).replace('👑👑', '👑') + \
+                          f" ({tally[key]} votes, {round(tally[key] / sum(tally.values()) * 100, 2)}%)\n\n"
 
             output += "```"
 
@@ -570,9 +555,9 @@ class Commands(commands.Cog):
             return await ctx.send("There's an active poll in this channel already.")
 
         if len(options) <= 1:
-            raise BadArgs("Please enter more than one option to poll.", True, ctx.command)
+            raise BadArgs("Please enter more than one option to poll.", ctx.command)
         elif len(options) > 20:
-            raise BadArgs("Please limit to 10 options.", False, ctx.command)
+            raise BadArgs("Please limit to 10 options.")
         elif len(options) == 2 and options[0] == "yes" and options[1] == "no":
             reactions = ["✅", "❌"]
         else:
@@ -581,7 +566,7 @@ class Commands(commands.Cog):
         description = []
 
         for x, option in enumerate(options):
-            description += f"\n {reactions[x]}: {option}"
+            description += f"\n{reactions[x]}: {option}"
 
         embed = discord.Embed(title=question, description="".join(description))
         files = []
@@ -633,12 +618,12 @@ class Commands(commands.Cog):
             try:
                 userid = int(userid[0])
             except ValueError:
-                raise BadArgs("Please enter a user id", True, ctx.command)
+                raise BadArgs("Please enter a user id", ctx.command)
 
             user = ctx.guild.get_member(userid)
 
         if not user:
-            raise BadArgs("That user does not exist", False, ctx.command)
+            raise BadArgs("That user does not exist")
 
         # we use both user and member objects, since some stats can only be obtained
         # from either user or member object

@@ -16,15 +16,14 @@ class BadArgs(Exception):
         show_help -- Whether help should be shown
         msg -- Message to show (or none for no message)
     """
-    def __init__(self, msg, show_help, command):
+    def __init__(self, msg, command=None):
         self.command = command
-        self.show_help = show_help
         self.msg = msg
 
     def print(self, ctx):
         if self.msg:
             await ctx.send(self.msg, delete_after=5)
-        if self.show_help:
+        if self.command:
             await ctx.send(self.command.help)
 
 
@@ -70,7 +69,7 @@ class Meta(commands.Cog):
             comm = self.bot.get_command(help_command)
 
             if not comm or not comm.help or comm.hidden:
-                raise BadArgs("That command doesn't exist.", False, ctx.command)
+                raise BadArgs("That command doesn't exist.")
 
             await ctx.send(comm.help)
 

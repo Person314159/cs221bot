@@ -190,7 +190,7 @@ async def on_command_error(ctx, error):
         # prints full traceback
         try:
             await ctx.send(("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```").replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
-        except:
+        except Exception:
             print(("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```").replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
 
 bot.loop.create_task(Piazza.track_inotes(bot.get_cog("Piazza")))
