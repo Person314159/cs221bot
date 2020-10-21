@@ -2,6 +2,7 @@ import asyncio
 import mimetypes
 import random
 import re
+import urllib.parse
 from datetime import datetime, timedelta, timezone
 from fractions import Fraction
 from io import BytesIO
@@ -9,11 +10,21 @@ from io import BytesIO
 import discord
 import pytz
 import requests
+import requests.models
 import webcolors
 from discord.ext import commands
 from googletrans import constants, Translator
 
 from handlers.discord_handler import DiscordHandler
+
+
+# This is a huge hack but it technically works
+def _urlencode(*args, **kwargs):
+    kwargs.update(quote_via=urllib.parse.quote)
+    return urllib.parse.urlencode(*args, **kwargs)
+
+
+requests.models.urlencode = _urlencode
 
 
 class Commands(commands.Cog):
@@ -416,10 +427,12 @@ class Commands(commands.Cog):
         `!latex \\frac{a}{b}` [img]
         """
 
-        formula = " ".join(args).strip("`\n")
+        formula = " ".join(args).strip("\n ")
 
-        if (sm := formula.splitlines()[0].lower) in ("latex", "tex"):
-            formula = formula[3 if sm == "tex" else 5:]
+        if sm := re.match(r"```(latex|tex)", formula):
+            formula = formula[6 if sm.group(1) == "tex" else 8:]
+
+        formula = formula.strip("`")
 
         body = {
             "formula" : formula,
