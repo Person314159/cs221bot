@@ -416,7 +416,7 @@ class Main(commands.Cog):
         if name.startswith("l1") and any(role.name.startswith("L1") for role in ctx.author.roles):
             return await ctx.send("You already have a lab role!", delete_after=5)
 
-        # Grab the rolee that the user selected
+        # Grab the role that the user selected
         role = next((r for r in ctx.guild.roles if name == r.name.lower()), None)
 
         # Check that the role actually exists
@@ -457,7 +457,7 @@ class Main(commands.Cog):
         `!latex \\frac{a}{b}` [img]
         """
 
-        formula = " ".join(*args).strip("`")
+        formula = " ".join(args).strip("`")
         if (sm := formula.splitlines()[0].lower) in ("latex", "tex"):
             formula = formula[3 if sm == "tex" else 5:]
 
