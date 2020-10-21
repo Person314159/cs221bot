@@ -425,7 +425,7 @@ class Main(commands.Cog):
         name = " ".join(arg).lower()
         # Display help if given no argument
         if not name:
-            return await ctx.send(ctx.command.help)
+            raise BadArgs("", True, ctx.command)
         # make sure that you can't add roles like "prof" or "ta"
         valid_roles = ["Looking for Partners", "Study Group", "L1A", "L1B", "L1C", "L1D", "L1E", "L1F", "L1G", "L1H", "L1J", "L1K", "L1N", "L1P", "L1R", "L1S", "L1T", "He/Him/His", "She/Her/Hers", "They/Them/Theirs", "Ze/Zir/Zirs", "notify"]
         aliases = {"he": "He/Him/His", "she": "She/Her/Hers", "ze": "Ze/Zir/Zirs", "they": "They/Them/Theirs"}
@@ -521,7 +521,7 @@ class Main(commands.Cog):
         # case where role name is space separated
         name = " ".join(arg).lower()
         if not name:
-            return await ctx.send(ctx.command.help)
+            raise BadArgs("", True, ctx.command)
 
         for role in ctx.guild.roles:
             if name == role.name.lower():
