@@ -43,9 +43,9 @@ class BadArgs(Exception):
 
     def print(self, ctx):
         if self.msg:
-            ctx.send(self.msg, delete_after=5)
+            await ctx.send(self.msg, delete_after=5)
         if self.show_help:
-            ctx.send(self.command.help)
+            await ctx.send(self.command.help)
 
 
 # ################### COMMANDS ################### #
