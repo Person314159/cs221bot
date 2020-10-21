@@ -334,7 +334,7 @@ class Main(commands.Cog):
         lang_list = ["en"] + lang_list[:limit] + ["en"]
         translator = Translator()
 
-        for i, j in zip(lang_list[:-1], lang_list[:1]):
+        for i, j in zip(lang_list[:-1], lang_list[1:]):
             translation = translator.translate(txt, src=i, dest=j)
             txt = translation.text
             await asyncio.sleep(0)
