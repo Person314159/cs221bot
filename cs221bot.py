@@ -5,12 +5,14 @@ import random
 import re
 import traceback
 from datetime import datetime
+from os.path import isfile, join
 
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from commands import Main
+from cogs.piazza import Piazza
+from cogs.canvas import Canvas
 
 CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
@@ -82,8 +84,8 @@ def startup():
 
     bot.writeJSON(bot.poll_dict, "data/poll.json")
 
-    Main.canvas_init(bot.get_cog("Main"))
-    Main.piazza_start(bot.get_cog("Main"))
+    Canvas.canvas_init(bot.get_cog("Canvas"))
+    Piazza.piazza_start(bot.get_cog("Piazza"))
 
 
 async def wipe_dms():
@@ -166,8 +168,10 @@ async def on_message(message):
 if __name__ == "__main__":
     bot.loadJSON = loadJSON
     bot.writeJSON = writeJSON
-    bot.load_extension("commands")
-    print("commands module loaded")
+
+    for extension in filter(lambda f: isfile(join("cogs", f)), os.listdir("cogs")):
+        bot.load_extension(f"cogs.{extension[:-3]}")
+        print(f"{extension} module loaded")
 
 
 @bot.event
@@ -192,8 +196,8 @@ async def on_command_error(ctx, error):
         except:
             print(("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```").replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
 
-bot.loop.create_task(Main.track_inotes(bot.get_cog("Main")))
-bot.loop.create_task(Main.send_pupdate(bot.get_cog("Main")))
-bot.loop.create_task(Main.stream_tracking(bot.get_cog("Main")))
-bot.loop.create_task(Main.assignment_reminder(bot.get_cog("Main")))
+bot.loop.create_task(Piazza.track_inotes(bot.get_cog("Piazza")))
+bot.loop.create_task(Piazza.send_pupdate(bot.get_cog("Piazza")))
+bot.loop.create_task(Canvas.stream_tracking(bot.get_cog("Canvas")))
+bot.loop.create_task(Canvas.assignment_reminder(bot.get_cog("Canvas")))
 bot.run(CS221BOT_KEY)
