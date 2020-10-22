@@ -205,7 +205,10 @@ class Piazza(commands.Cog):
     async def send_pupdate(self):
         while True:
             await self.send_piazza_posts(True)
-            await asyncio.sleep(60 * 60 * 24)
+            if not self.bot.d_handler.piazza_handler:
+                await asyncio.sleep(60)
+            else:
+                await asyncio.sleep(60 * 60 * 24)
 
     async def send_piazza_posts(self, wait: bool):
         if not self.bot.d_handler.piazza_handler:
