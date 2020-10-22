@@ -254,8 +254,9 @@ class Piazza(commands.Cog):
                     for chnl in self.bot.d_handler.piazza_handler.channels:
                         channel = self.bot.get_channel(chnl)
                         await channel.send(response)
-
-            await asyncio.sleep(60 * 60 * 5)
+                await asyncio.sleep(60 * 60 * 5)
+            else:
+                await asyncio.sleep(60)
 
     @staticmethod
     def piazza_start(self):
