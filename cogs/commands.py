@@ -207,11 +207,6 @@ class Commands(commands.Cog):
 
         if not colour:
             await ctx.send(embed=RGB(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), "Random Colour"))
-        elif c_str := re.search(r"\b#?([\dA-F]((?=[\dA-F]{4})[\dA-F])?)([\dA-F]((?<=[\dA-F]{3})[\dA-F])?)([\dA-F]((?<=[\dA-F]{5})[\dA-F])?)\b", colour, re.I):
-            mul = methodcaller("__mul__", 1 + bool(c_str.group(2)))
-            r, g, b = map(mul, c_str.group(1, 3, 5))
-
-            await ctx.send(embed=RGB(int(r, 16), int(g, 16), int(b, 16), c_str.group()))
         elif c_str := re.search(r"\brgb\((\d{1,3}), *(\d{1,3}), *(\d{1,3})\)", colour):
             r, g, b = map(int, c_str.group(1, 2, 3))
 
@@ -226,7 +221,7 @@ class Commands(commands.Cog):
                 raise BadArgs("You inputted an invalid colour. Please try again.", show_help=True)
 
             await ctx.send(embed=hslRGB(h, s, l, c_str.group()))
-        elif c_str := re.search(r"\bcmyk\((\d{1,3}(\.\d*)?)%?, *(\d{1,3}(\.\d*)?)%?, *(\d{1,3}(\.\d*)?)%?, *(\d{1,3}(\.\d*)?)%?\)", colour):
+        elif c_str := re.search(r"\bcmyk\((\d{1,3}(?:\.\d*)?)%?, *(\d{1,3}(?:\.\d*)?)%?, *(\d{1,3}(?:\.\d*)?)%?, *(\d{1,3}(?:\.\d*)?)%?\)", colour):
             c, m, y, k = map(Fraction, c_str.group(1, 2, 3, 4))
 
             if max(c, m, y, k) > 100 or min(c, m, y, k) < 0:
@@ -235,6 +230,11 @@ class Commands(commands.Cog):
             await ctx.send(embed=cmykRGB(c, m, y, k, c_str.group()))
         elif colour.lower() in css:
             await ctx.send(embed=cssRGB(colour.lower()))
+        elif c_str := re.search(r"\b#?([\dA-F]([\dA-F](?=[\dA-F]{4}))?)([\dA-F](?:(?<=[\dA-F]{3})[\dA-F](?=[\dA-F]{2}))?)([\dA-F](?:(?<=[\dA-F]{5})[\dA-F])?)\b", colour, re.I):
+            mul = methodcaller("__mul__", 1 + (not c_str.group(2)))
+            r, g, b = map(mul, c_str.group(1, 3, 4))
+
+            await ctx.send(embed=RGB(int(r, 16), int(g, 16), int(b, 16), c_str.group()))
         else:
             raise BadArgs("You inputted an invalid colour. Please try again.", show_help=True)
 
