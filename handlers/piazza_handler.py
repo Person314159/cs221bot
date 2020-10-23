@@ -140,7 +140,7 @@ class PiazzaHandler:
             Upper limit on posts fetched. Must be in range [FETCH_MIN, FETCH_MAX] (inclusive)
         """
 
-        posts = self.fetch_posts_in_range(days=0, seconds=60 * 60 * 5, lim=lim)
+        posts = await self.fetch_posts_in_range(days=0, seconds=60 * 60 * 5, lim=lim)
         response = []
 
         for post in posts:
@@ -172,7 +172,7 @@ class PiazzaHandler:
 
         return response
 
-    def fetch_posts_in_range(self, days=1, seconds=0, lim=55) -> List[dict]:
+    async def fetch_posts_in_range(self, days=1, seconds=0, lim=55) -> List[dict]:
         """
         Returns up to `lim` JSON objects that represent a Piazza post posted today
         """
@@ -291,7 +291,7 @@ class PiazzaHandler:
         if showLimit < 1:
             raise ValueError(f"Invalid showLimit for get_posts_in_range(): {showLimit}")
 
-        posts = self.fetch_posts_in_range(days=days, seconds=seconds, lim=self.max)
+        posts = await self.fetch_posts_in_range(days=days, seconds=seconds, lim=self.max)
         instr, stud = [], []
         response = []
 
