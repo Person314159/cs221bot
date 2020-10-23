@@ -227,6 +227,9 @@ class Canvas(commands.Cog):
 
     def _add_guild(self, guild: discord.Guild):
         if guild not in (ch.guild for ch in self.bot.d_handler.canvas_handlers):
+            # Note to developers
+            # If you're testing this bot on your own server, replace "" with CANVAS_API_KEY
+            # When pushing the code to GitHub, replace CANVAS_API_KEY with "".
             self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, "", guild))
             self.bot.canvas_dict[str(guild.id)] = {
                 "courses"      : [],
@@ -501,6 +504,9 @@ class Canvas(commands.Cog):
             guild = self.bot.guilds[[guild.id for guild in self.bot.guilds].index(int(c_handler_guild_id))]
 
             if guild not in (ch.guild for ch in self.bot.d_handler.canvas_handlers):
+                # Note to developers
+                # If you're testing this bot on your own server, replace "" with CANVAS_API_KEY
+                # When pushing the code to GitHub, replace CANVAS_API_KEY with "".
                 self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, "", guild))
 
             c_handler = self._get_canvas_handler(guild)
