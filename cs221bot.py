@@ -171,6 +171,8 @@ if __name__ == "__main__":
 @bot.event
 async def on_command_error(ctx, error):
     try:
+        if isinstance(error, discord.CommandInvokeError):
+            raise error.original
         raise error
     except (commands.CommandNotFound, discord.HTTPException, discord.NotFound):
         pass
