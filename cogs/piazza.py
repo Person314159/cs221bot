@@ -214,7 +214,7 @@ class Piazza(commands.Cog):
         if not self.bot.d_handler.piazza_handler:
             return
 
-        posts = self.bot.d_handler.piazza_handler.get_posts_in_range()
+        posts = await self.bot.d_handler.piazza_handler.get_posts_in_range()
 
         response = f"**{self.bot.d_handler.piazza_handler.course_name}'s posts for {datetime.today().strftime('%a. %B %d, %Y')}**\n"
 
@@ -246,7 +246,7 @@ class Piazza(commands.Cog):
     async def track_inotes(self):
         while True:
             if self.bot.d_handler.piazza_handler:
-                posts = self.bot.d_handler.piazza_handler.get_recent_notes()
+                posts = await self.bot.d_handler.piazza_handler.get_recent_notes()
 
                 if len(posts) > 1:
                     response = "Instructor Update:\n"

@@ -130,7 +130,7 @@ class PiazzaHandler:
 
         return post
 
-    def fetch_recent_notes(self, lim=55) -> List[dict]:
+    async def fetch_recent_notes(self, lim=55) -> List[dict]:
         """
         Returns up to `lim` JSON objects representing instructor's notes that were posted today
 
@@ -287,7 +287,7 @@ class PiazzaHandler:
         else:
             return None
 
-    def get_posts_in_range(self, showLimit=10, days=1, seconds=0) -> List[List[dict]]:
+    async def get_posts_in_range(self, showLimit=10, days=1, seconds=0) -> List[List[dict]]:
         if showLimit < 1:
             raise ValueError(f"Invalid showLimit for get_posts_in_range(): {showLimit}")
 
@@ -327,13 +327,13 @@ class PiazzaHandler:
         response.append(stud)
         return response
 
-    def get_recent_notes(self) -> List[dict]:
+    async def get_recent_notes(self) -> List[dict]:
         """
         Fetches `FETCH_MIN` posts, filters out non-important (not instructor notes or pinned) posts and
         returns an array of corresponding post details
         """
 
-        posts = self.fetch_recent_notes(lim=self.min)
+        posts = await self.fetch_recent_notes(lim=self.min)
         response = []
 
         for post in posts:
