@@ -1,6 +1,8 @@
 import re
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Set
+import os
+import shutil
 
 import dateutil.parser.isoparser
 import discord
@@ -8,8 +10,12 @@ from bs4 import BeautifulSoup
 from canvasapi.canvas import Canvas
 from canvasapi.course import Course
 
+import util
 from handlers.canvas_api_extension import get_course_stream, get_course_url
 
+# Stores course modules and channels that are live tracking courses
+# Do *not* put a slash at the end of this path
+COURSES_DIRECTORY = "./data/courses"
 
 class CanvasHandler(Canvas):
     """
@@ -130,7 +136,8 @@ class CanvasHandler(Canvas):
         course_ids = self._ids_converter(course_ids_str)
         c_ids = {c.id for c in self.courses}
 
-        self.courses.extend(self.get_course(i) for i in course_ids if i not in c_ids)
+        new_courses = [self.get_course(i) for i in course_ids if i not in c_ids]
+        self.courses.extend(new_courses)
 
         for c in course_ids_str:
             if c not in self.timings:
@@ -141,6 +148,35 @@ class CanvasHandler(Canvas):
 
             if c not in self.due_day:
                 self.due_day[c] = []
+        
+        for c in new_courses:
+            watchers_file = f'{COURSES_DIRECTORY}/{c.id}/watchers.txt'
+            self.store_channels_in_file(self._live_channels, watchers_file)
+
+    @staticmethod
+    def store_channels_in_file(text_channels: List[discord.TextChannel], file_path: str):
+        """
+        For each text channel provided, we add its id to the file with given path if the file does
+        not already contain the id.
+        """
+        
+        if text_channels:
+            util.create_file_if_not_exists(file_path)
+
+            with open(file_path, "r") as f:
+                existing_ids = f.readlines()
+
+            ids_to_add = set(map(lambda channel: str(channel.id) + "\n", text_channels))
+
+            with open(file_path, "w") as f:
+                for channel_id in existing_ids:
+                    if channel_id in ids_to_add:
+                        ids_to_add.remove(channel_id)
+                        
+                    f.write(channel_id)
+
+                for channel_id in ids_to_add:
+                    f.write(channel_id)
 
     def untrack_course(self, course_ids_str: Tuple[str, ...]):
         """
@@ -155,8 +191,10 @@ class CanvasHandler(Canvas):
         course_ids = self._ids_converter(course_ids_str)
         c_ids = {c.id: c for c in self.courses}
 
+        ids_of_removed_courses = []
         for i in filter(c_ids.__contains__, course_ids):
             self.courses.remove(c_ids[i])
+            ids_of_removed_courses.append(i)
 
         for c in course_ids_str:
             if c in self.timings:
@@ -167,6 +205,33 @@ class CanvasHandler(Canvas):
 
             if c in self.due_day:
                 del self.due_day[c]
+
+        for i in ids_of_removed_courses:
+            watchers_file = f'{COURSES_DIRECTORY}/{i}/watchers.txt'
+            self.delete_channels_from_file(self.live_channels, watchers_file)
+
+            # If there are no more channels watching the course, we should delete that course's directory.
+            if os.stat(watchers_file).st_size == 0:
+                shutil.rmtree(f'{COURSES_DIRECTORY}/{i}')
+        
+    @staticmethod
+    def delete_channels_from_file(text_channels: List[discord.TextChannel], file_path: str):
+        """
+        For each text channel provided, we remove its id from the file with given path
+        if the id is contained in the file.
+        """
+
+        util.create_file_if_not_exists(file_path)
+
+        with open(file_path, "r") as f:
+            channel_ids = f.readlines()
+
+        ids_to_remove = set(map(lambda channel: str(channel.id) + "\n", text_channels))
+
+        with open(file_path, "w") as f:
+            for channel_id in channel_ids:
+                if not channel_id in ids_to_remove:
+                    f.write(channel_id)
 
     def get_course_stream_ch(self, since: Optional[str], course_ids_str: Tuple[str, ...], base_url, access_token) -> List[List[str]]:
         """
