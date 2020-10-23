@@ -134,8 +134,15 @@ class Canvas(commands.Cog):
             c_handler.live_channels.append(ctx.message.channel)
 
             for course in c_handler.courses:
+                modules_file = f'{handlers.canvas_handler.COURSES_DIRECTORY}/{course.id}/modules.txt'
                 watchers_file = f'{handlers.canvas_handler.COURSES_DIRECTORY}/{course.id}/watchers.txt'
                 CanvasHandler.store_channels_in_file([ctx.message.channel], watchers_file)
+
+                util.create_file_if_not_exists(modules_file)
+
+                # Here, we will only download modules if modules_file is empty.
+                if os.stat(modules_file).st_size == 0:
+                    CanvasHandler.download_modules(course)
 
             self.bot.canvas_dict[str(ctx.message.guild.id)]["live_channels"] = [channel.id for channel in c_handler.live_channels]
             self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")

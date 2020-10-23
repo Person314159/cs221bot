@@ -150,9 +150,38 @@ class CanvasHandler(Canvas):
                 self.due_day[c] = []
         
         for c in new_courses:
+            modules_file = f'{COURSES_DIRECTORY}/{c.id}/modules.txt'
             watchers_file = f'{COURSES_DIRECTORY}/{c.id}/watchers.txt'
             self.store_channels_in_file(self._live_channels, watchers_file)
+            
+            if self._live_channels:
+                util.create_file_if_not_exists(modules_file)
 
+                # Here, we will only download modules if modules_file is empty.
+                if os.stat(modules_file).st_size == 0:
+                    self.download_modules(c)
+
+    @staticmethod
+    def download_modules(course: Course):
+        """
+        Download all modules for a Canvas course, storing each module's URL (or name/title
+        if the url does not exist) in {COURSES_DIRECTORY}/{course.id}/modules.txt.
+
+        Assumption: {COURSES_DIRECTORY}/{course.id}/modules.txt exists.
+        """
+        modules_file = f'{COURSES_DIRECTORY}/{course.id}/modules.txt'
+        with open(modules_file, 'w') as f:
+            for module in course.get_modules():
+                if hasattr(module, 'name'):
+                    f.write(module.name + '\n')
+
+                for item in module.get_module_items():
+                    if hasattr(item, 'title'):
+                        if hasattr(item, 'html_url'):
+                            f.write(item.html_url + '\n')
+                        else:
+                            f.write(item.title + '\n')
+    
     @staticmethod
     def store_channels_in_file(text_channels: Tuple[discord.TextChannel], file_path: str):
         """
