@@ -1,10 +1,13 @@
+import asyncio
 import datetime
 import html
 import re
 import typing
+from operator import itemgetter
 from typing import List
 
 from piazza_api import Piazza
+import piazza_api.exceptions
 
 
 # Exception for when a post ID is invalid or the post is private etc.
@@ -175,9 +178,26 @@ class PiazzaHandler:
         """
 
         if lim < 0:
-            raise Exception(f"Invalid lim for fetch_posts_in_days(): {lim}")
+            raise ValueError(f"Invalid lim for fetch_posts_in_days(): {lim}")
 
-        posts = self.network.iter_all_posts(limit=min(self.max, lim))
+        posts = []
+
+        feed = self.network.get_feed(limit=lim, offset=0)
+        for cid in map(itemgetter('id'), feed["feed"]):
+            post = None
+            retries = 5
+            while not post and retries:
+                try:
+                    post = self.network.get_post(cid)
+                except piazza_api.exceptions.RequestError as ex:
+                    retries -= 1
+                    if "foo fast" in str(ex):
+                        await asyncio.sleep(1)
+                    else:
+                        break
+            if post:
+                posts.append(post)
+
         date = datetime.date.today()
         result = []
 
@@ -269,7 +289,7 @@ class PiazzaHandler:
 
     def get_posts_in_range(self, showLimit=10, days=1, seconds=0) -> List[List[dict]]:
         if showLimit < 1:
-            raise Exception(f"Invalid showLimit for get_posts_in_range(): {showLimit}")
+            raise ValueError(f"Invalid showLimit for get_posts_in_range(): {showLimit}")
 
         posts = self.fetch_posts_in_range(days=days, seconds=seconds, lim=self.max)
         instr, stud = [], []
