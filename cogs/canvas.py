@@ -15,6 +15,7 @@ from canvasapi.module import Module
 from canvasapi.module import ModuleItem
 
 import handlers.canvas_handler
+from cogs.meta import BadArgs
 from handlers.canvas_handler import CanvasHandler
 import util
 
@@ -43,7 +44,7 @@ class Canvas(commands.Cog):
         c_handler = self._get_canvas_handler(ctx.message.guild)
 
         if not isinstance(c_handler, CanvasHandler):
-            return await ctx.send("Canvas Handler doesn't exist.", delete_after=5)
+            raise BadArgs("Canvas Handler doesn't exist.")
 
         c_handler.track_course(course_ids)
 
@@ -64,7 +65,7 @@ class Canvas(commands.Cog):
         c_handler = self._get_canvas_handler(ctx.message.guild)
 
         if not isinstance(c_handler, CanvasHandler):
-            return await ctx.send("Canvas Handler doesn't exist.", delete_after=5)
+            raise BadArgs("Canvas Handler doesn't exist.")
 
         c_handler.untrack_course(course_ids)
 
@@ -94,7 +95,7 @@ class Canvas(commands.Cog):
         c_handler = self._get_canvas_handler(ctx.message.guild)
 
         if not isinstance(c_handler, CanvasHandler):
-            return await ctx.send("Canvas Handler doesn't exist.", delete_after=5)
+            raise BadArgs("Canvas Handler doesn't exist.")
 
         if args and args[0].startswith("-due"):
             due = args[1]
@@ -127,7 +128,7 @@ class Canvas(commands.Cog):
         c_handler = self._get_canvas_handler(ctx.message.guild)
 
         if not isinstance(c_handler, CanvasHandler):
-            return await ctx.send("Canvas Handler doesn't exist.", delete_after=5)
+            raise BadArgs("Canvas Handler doesn't exist.")
 
         if ctx.message.channel not in c_handler.live_channels:
             c_handler.live_channels.append(ctx.message.channel)
@@ -150,7 +151,7 @@ class Canvas(commands.Cog):
         c_handler = self._get_canvas_handler(ctx.message.guild)
 
         if not isinstance(c_handler, CanvasHandler):
-            return await ctx.send("Canvas Handler doesn't exist.", delete_after=5)
+            raise BadArgs("Canvas Handler doesn't exist.")
 
         if ctx.message.channel in c_handler.live_channels:
             c_handler.live_channels.remove(ctx.message.channel)
@@ -191,7 +192,7 @@ class Canvas(commands.Cog):
         c_handler = self._get_canvas_handler(ctx.message.guild)
 
         if not isinstance(c_handler, CanvasHandler):
-            return await ctx.send("Canvas Handler doesn't exist.", delete_after=5)
+            raise BadArgs("Canvas Handler doesn't exist.")
 
         if args and args[0].startswith("-since"):
             since = args[1]

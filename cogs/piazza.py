@@ -6,6 +6,7 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
+from cogs.meta import BadArgs
 from handlers.piazza_handler import InvalidPostID, PiazzaHandler
 
 PIAZZA_THUMBNAIL_URL = "https://store-images.s-microsoft.com/image/apps.25584.554ac7a6-231b-46e2-9960-a059f3147dbe.727eba5c-763a-473f-981d-ffba9c91adab.4e76ea6a-bd74-487f-bf57-3612e43ca795.png"
@@ -131,7 +132,7 @@ class Piazza(commands.Cog):
 
             await ctx.send(embed=embed)
         else:
-            await ctx.send("Piazza hasn't been instantiated yet!")
+            raise BadArgs("Piazza hasn't been instantiated yet!")
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -147,12 +148,12 @@ class Piazza(commands.Cog):
         """
 
         if not self.bot.d_handler.piazza_handler:
-            return await ctx.send("Piazza hasn't been instantiated yet!")
+            raise BadArgs("Piazza hasn't been instantiated yet!")
 
         try:
             post = self.bot.d_handler.piazza_handler.get_post(postID)
         except InvalidPostID:
-            return await ctx.send("Post not found.")
+            raise BadArgs("Post not found.")
 
         if post:
             post_embed = self.create_post_embed(post)
@@ -204,7 +205,10 @@ class Piazza(commands.Cog):
     async def send_pupdate(self):
         while True:
             await self.send_piazza_posts(True)
-            await asyncio.sleep(60 * 60 * 24)
+            if not self.bot.d_handler.piazza_handler:
+                await asyncio.sleep(60)
+            else:
+                await asyncio.sleep(60 * 60 * 24)
 
     async def send_piazza_posts(self, wait: bool):
         if not self.bot.d_handler.piazza_handler:
@@ -253,8 +257,9 @@ class Piazza(commands.Cog):
                     for chnl in self.bot.d_handler.piazza_handler.channels:
                         channel = self.bot.get_channel(chnl)
                         await channel.send(response)
-
-            await asyncio.sleep(60 * 60 * 5)
+                await asyncio.sleep(60 * 60 * 5)
+            else:
+                await asyncio.sleep(60)
 
     @staticmethod
     def piazza_start(self):
