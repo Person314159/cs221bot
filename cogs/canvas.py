@@ -457,6 +457,7 @@ class Canvas(commands.Cog):
                         embeds_to_send = []
 
                         curr_embed = discord.Embed(title=f"New modules found for {course.name}:", color=CANVAS_COLOR)
+                        curr_embed.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
                         curr_num_fields = 0
 
                         with open(modules_file, 'w') as m:
@@ -479,8 +480,9 @@ class Canvas(commands.Cog):
                             with open(watchers_file, 'r') as w:
                                 for channel_id in w:
                                     channel = self.bot.get_channel(int(channel_id.rstrip()))
+                                    notify_role = next((r for r in channel.guild.roles if r.name.lower() == "notify"), None)
                                     for element in embeds_to_send:
-                                        await channel.send(embed=element)
+                                        await channel.send(notify_role.mention if notify_role else "", embed=element)
 
                     except Exception:
                         print(traceback.format_exc(), flush=True)
