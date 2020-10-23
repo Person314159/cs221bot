@@ -7,7 +7,7 @@ import discord
 from discord.ext import commands
 
 
-class BadArgs(Exception):
+class BadArgs(commands.CommandError):
     """
     Exception raised if the arguments to a command are in correct.
 
