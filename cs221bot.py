@@ -170,20 +170,21 @@ if __name__ == "__main__":
 
 @bot.event
 async def on_command_error(ctx, error):
-    # Technically, using .type means that it would not catch if it was a subclass but that is unlikely to be an issue.
-    if error.type in (commands.CommandNotFound, discord.HTTPException, discord.NotFound):
+    try:
+        raise error
+    except (commands.CommandNotFound, discord.HTTPException, discord.NotFound):
         pass
-    elif error.type == BadArgs:
+    except BadArgs:
         await error.print(ctx)
-    elif error.type == commands.CommandOnCooldown:
+    except commands.CommandOnCooldown:
         await ctx.send(f"Oops! That command is on cooldown right now. Please wait **{round(error.retry_after, 3)}** seconds before trying again.", delete_after=error.retry_after)
-    elif error.type == commands.MissingRequiredArgument:
+    except commands.MissingRequiredArgument:
         await ctx.send(f"The required argument(s) {error.param} is/are missing.", delete_after=5)
-    elif error.type == commands.DisabledCommand:
+    except commands.DisabledCommand:
         await ctx.send("This command is disabled.", delete_after=5)
-    elif error.type in (commands.MissingPermissions, commands.BotMissingPermissions):
+    except (commands.MissingPermissions, commands.BotMissingPermissions):
         await ctx.send(error, delete_after=5)
-    else:
+    except Exception:
         etype = type(error)
         trace = error.__traceback__
 
