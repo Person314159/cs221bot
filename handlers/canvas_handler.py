@@ -136,7 +136,7 @@ class CanvasHandler(Canvas):
         course_ids = self._ids_converter(course_ids_str)
         c_ids = {c.id for c in self.courses}
 
-        new_courses = [self.get_course(i) for i in course_ids if i not in c_ids]
+        new_courses = tuple(self.get_course(i) for i in course_ids if i not in c_ids)
         self.courses.extend(new_courses)
 
         for c in course_ids_str:
@@ -154,7 +154,7 @@ class CanvasHandler(Canvas):
             self.store_channels_in_file(self._live_channels, watchers_file)
 
     @staticmethod
-    def store_channels_in_file(text_channels: List[discord.TextChannel], file_path: str):
+    def store_channels_in_file(text_channels: Tuple[discord.TextChannel], file_path: str):
         """
         For each text channel provided, we add its id to the file with given path if the file does
         not already contain the id.
@@ -230,7 +230,7 @@ class CanvasHandler(Canvas):
 
         with open(file_path, "w") as f:
             for channel_id in channel_ids:
-                if not channel_id in ids_to_remove:
+                if channel_id not in ids_to_remove:
                     f.write(channel_id)
 
     def get_course_stream_ch(self, since: Optional[str], course_ids_str: Tuple[str, ...], base_url, access_token) -> List[List[str]]:
