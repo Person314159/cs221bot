@@ -1,6 +1,7 @@
 data/
-/__pycache__
+__pycache__/
 .vscode/
 .env
 testing.py
 .idea/
+package-lock.json
