@@ -1,8 +1,8 @@
-import re
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple, Set
 import os
+import re
 import shutil
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Set, Tuple
 
 import dateutil.parser.isoparser
 import discord
@@ -16,6 +16,7 @@ from handlers.canvas_api_extension import get_course_stream, get_course_url
 # Stores course modules and channels that are live tracking courses
 # Do *not* put a slash at the end of this path
 COURSES_DIRECTORY = "./data/courses"
+
 
 class CanvasHandler(Canvas):
     """
@@ -148,12 +149,12 @@ class CanvasHandler(Canvas):
 
             if c not in self.due_day:
                 self.due_day[c] = []
-        
+
         for c in new_courses:
             modules_file = f'{COURSES_DIRECTORY}/{c.id}/modules.txt'
             watchers_file = f'{COURSES_DIRECTORY}/{c.id}/watchers.txt'
-            self.store_channels_in_file(self._live_channels, watchers_file)
-            
+            self.store_channels_in_file(tuple(self._live_channels), watchers_file)
+
             if self._live_channels:
                 util.create_file_if_not_exists(modules_file)
 
@@ -169,7 +170,9 @@ class CanvasHandler(Canvas):
 
         Assumption: {COURSES_DIRECTORY}/{course.id}/modules.txt exists.
         """
+
         modules_file = f'{COURSES_DIRECTORY}/{course.id}/modules.txt'
+
         with open(modules_file, 'w') as f:
             for module in course.get_modules():
                 if hasattr(module, 'name'):
@@ -181,14 +184,14 @@ class CanvasHandler(Canvas):
                             f.write(item.html_url + '\n')
                         else:
                             f.write(item.title + '\n')
-    
+
     @staticmethod
     def store_channels_in_file(text_channels: Tuple[discord.TextChannel], file_path: str):
         """
         For each text channel provided, we add its id to the file with given path if the file does
         not already contain the id.
         """
-        
+
         if text_channels:
             util.create_file_if_not_exists(file_path)
 
@@ -201,7 +204,7 @@ class CanvasHandler(Canvas):
                 for channel_id in existing_ids:
                     if channel_id in ids_to_add:
                         ids_to_add.remove(channel_id)
-                        
+
                     f.write(channel_id)
 
                 for channel_id in ids_to_add:
@@ -221,6 +224,7 @@ class CanvasHandler(Canvas):
         c_ids = {c.id: c for c in self.courses}
 
         ids_of_removed_courses = []
+
         for i in filter(c_ids.__contains__, course_ids):
             self.courses.remove(c_ids[i])
             ids_of_removed_courses.append(i)
@@ -242,7 +246,7 @@ class CanvasHandler(Canvas):
             # If there are no more channels watching the course, we should delete that course's directory.
             if os.stat(watchers_file).st_size == 0:
                 shutil.rmtree(f'{COURSES_DIRECTORY}/{i}')
-        
+
     @staticmethod
     def delete_channels_from_file(text_channels: List[discord.TextChannel], file_path: str):
         """
@@ -392,8 +396,10 @@ class CanvasHandler(Canvas):
                 else:
                     dtime_iso_parsed = (dateutil.parser.isoparse(dtime_iso) + time_shift).replace(tzinfo=None)
                     dtime_timedelta = dtime_iso_parsed - datetime.now()
+
                     if dtime_timedelta < timedelta(0) or (due and dtime_timedelta > self._make_timedelta(due)):
                         continue
+
                     dtime_text = dtime_iso_parsed.strftime("%Y-%m-%d %H:%M:%S")
 
                 data_list.append([course_name, course_url, title, url, short_desc, ctime_text, dtime_text, course.id, ass_id])
@@ -419,9 +425,9 @@ class CanvasHandler(Canvas):
         till = re.split(r"[-:]", till_str)
 
         if till[1] in ["hour", "day", "week"]:
-            return abs(timedelta(**{till[1]+"s": float(till[0])}))
+            return abs(timedelta(**{till[1] + "s": float(till[0])}))
         elif till[1] in ["month", "year"]:
-            return abs(timedelta(days=(30 if till[1] == "month" else 365)*float(till[1])))
+            return abs(timedelta(days=(30 if till[1] == "month" else 365) * float(till[1])))
 
         year, month, day = int(till[0]), int(till[1]), int(till[2])
 
