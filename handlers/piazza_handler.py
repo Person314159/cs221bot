@@ -6,8 +6,8 @@ import typing
 from operator import itemgetter
 from typing import List
 
-from piazza_api import Piazza
 import piazza_api.exceptions
+from piazza_api import Piazza
 
 
 # Exception for when a post ID is invalid or the post is private etc.
@@ -183,14 +183,17 @@ class PiazzaHandler:
         posts = []
 
         feed = self.network.get_feed(limit=lim, offset=0)
+
         for cid in map(itemgetter('id'), feed["feed"]):
             post = None
             retries = 5
+
             while not post and retries:
                 try:
                     post = self.network.get_post(cid)
                 except piazza_api.exceptions.RequestError as ex:
                     retries -= 1
+
                     if "foo fast" in str(ex):
                         await asyncio.sleep(1)
                     else:

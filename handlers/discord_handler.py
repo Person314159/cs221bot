@@ -17,7 +17,7 @@ class DiscordHandler:
     """
 
     def __init__(self):
-        self._canvas_handlers = []   # [c_handler1, ... ]
+        self._canvas_handlers = []  # [c_handler1, ... ]
         self._piazza_handler = None
 
     @property

@@ -2,22 +2,21 @@ import asyncio
 import operator
 import os
 import re
-from datetime import datetime
-from typing import Optional, Union, List, Tuple, TextIO
-import traceback
 import shutil
+import traceback
+from datetime import datetime
+from typing import List, Optional, TextIO, Tuple, Union
 
+import canvasapi
 import discord
+from canvasapi.module import Module, ModuleItem
 from discord.ext import commands
 from dotenv import load_dotenv
-import canvasapi
-from canvasapi.module import Module
-from canvasapi.module import ModuleItem
 
 import handlers.canvas_handler
+import util
 from cogs.meta import BadArgs
 from handlers.canvas_handler import CanvasHandler
-import util
 
 CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
@@ -30,6 +29,7 @@ CANVAS_API_KEY = os.getenv("CANVAS_API_KEY")
 CANVAS_INSTANCE = canvasapi.Canvas(CANVAS_API_URL, CANVAS_API_KEY)
 EMBED_CHAR_LIMIT = 6000
 MAX_MODULE_IDENTIFIER_LENGTH = 120
+
 
 class Canvas(commands.Cog):
     def __init__(self, bot):
@@ -110,7 +110,7 @@ class Canvas(commands.Cog):
         assignments = c_handler.get_assignments(due, course_ids, CANVAS_API_URL)
 
         if not assignments:
-            pattern = r'\d{4}-\d{2}-\d{2}'
+            pattern = r"\d{4}-\d{2}-\d{2}"
             return await ctx.send(f"No assignments due by {due}{' (at 00:00)' if re.match(pattern, due) else ''}.")
 
         for data in assignments:
@@ -134,8 +134,8 @@ class Canvas(commands.Cog):
             c_handler.live_channels.append(ctx.message.channel)
 
             for course in c_handler.courses:
-                modules_file = f'{handlers.canvas_handler.COURSES_DIRECTORY}/{course.id}/modules.txt'
-                watchers_file = f'{handlers.canvas_handler.COURSES_DIRECTORY}/{course.id}/watchers.txt'
+                modules_file = f"{handlers.canvas_handler.COURSES_DIRECTORY}/{course.id}/modules.txt"
+                watchers_file = f"{handlers.canvas_handler.COURSES_DIRECTORY}/{course.id}/watchers.txt"
                 CanvasHandler.store_channels_in_file([ctx.message.channel], watchers_file)
 
                 util.create_file_if_not_exists(modules_file)
@@ -167,12 +167,12 @@ class Canvas(commands.Cog):
             self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
 
             for course in c_handler.courses:
-                watchers_file = f'{handlers.canvas_handler.COURSES_DIRECTORY}/{course.id}/watchers.txt'
+                watchers_file = f"{handlers.canvas_handler.COURSES_DIRECTORY}/{course.id}/watchers.txt"
                 CanvasHandler.delete_channels_from_file([ctx.message.channel], watchers_file)
 
                 # If there are no more channels watching the course, we should delete that course's directory.
                 if os.stat(watchers_file).st_size == 0:
-                    shutil.rmtree(f'{handlers.canvas_handler.COURSES_DIRECTORY}/{course.id}')
+                    shutil.rmtree(f"{handlers.canvas_handler.COURSES_DIRECTORY}/{course.id}")
 
             await ctx.send("Removed channel from live tracking.")
         else:
@@ -230,9 +230,9 @@ class Canvas(commands.Cog):
             # Note to developers:
             # If you are testing this bot on your own server, replace "" with CANVAS_API_KEY.
             # When pushing the code to GitHub, replace CANVAS_API_KEY with "".
-            # The CANVAS_API_KEY is required for Canvas courses without public access. 
+            # The CANVAS_API_KEY is required for Canvas courses without public access.
             # However, the CPSC 221 course is accessible to the public. Since we only want to
-            # notify users about CPSC 221 assignments that are publically available, we are using 
+            # notify users about CPSC 221 assignments that are publically available, we are using
             # this empty placeholder "" instead of CANVAS_API_KEY.
             self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, "", guild))
             self.bot.canvas_dict[str(guild.id)] = {
@@ -327,7 +327,9 @@ class Canvas(commands.Cog):
         Every hour, we check Canvas modules for courses being tracked, and send information
         about new modules to Discord channels that are live tracking the courses.
         """
+
         await self.bot.wait_until_ready()
+
         while True:
             await self.check_modules()
             await asyncio.sleep(3600)
@@ -340,29 +342,30 @@ class Canvas(commands.Cog):
         - send the names of any modules not in the file to all channels in CDIR/{course_id}/watchers.txt
         - update CDIR/{course_id}/modules.txt with the modules we retrieved from Canvas
         """
-        
+
         def get_field_value(module: Union[Module, ModuleItem]) -> str:
             """
             This function returns a string that can be added to a Discord embed as a field's value. The returned
             string contains the module's name/title attribute (depending on which one it has), as well
-            as a hyperlink to the module (if the module has the html_url attribute). If the module's name/title exceeds 
-            MAX_MODULE_IDENTIFIER_LENGTH characters, we truncate it and append an ellipsis (...) so that the name/title has 
+            as a hyperlink to the module (if the module has the html_url attribute). If the module's name/title exceeds
+            MAX_MODULE_IDENTIFIER_LENGTH characters, we truncate it and append an ellipsis (...) so that the name/title has
             MAX_MODULE_IDENTIFIER_LENGTH characters.
             """
-            if hasattr(module, 'title'):
+
+            if hasattr(module, "title"):
                 field = module.title
             else:
                 field = module.name
-            
-            if len(field) > MAX_MODULE_IDENTIFIER_LENGTH:
-                field = f'{field[:MAX_MODULE_IDENTIFIER_LENGTH - 3]}...'
 
-            if hasattr(module, 'html_url'):
-                field = f'[{field}]({module.html_url})'
-            
+            if len(field) > MAX_MODULE_IDENTIFIER_LENGTH:
+                field = f"{field[:MAX_MODULE_IDENTIFIER_LENGTH - 3]}..."
+
+            if hasattr(module, "html_url"):
+                field = f"[{field}]({module.html_url})"
+
             return field
-        
-        def update_embed(embed: discord.Embed, module: Union[Module, ModuleItem], 
+
+        def update_embed(embed: discord.Embed, module: Union[Module, ModuleItem],
                          num_fields: int, embed_list: List[discord.Embed]) -> Tuple[discord.Embed, int]:
             """
             Adds a field to embed containing information about given module. The field includes the module's name or title,
@@ -371,11 +374,11 @@ class Canvas(commands.Cog):
             If the module's identifier (its name or title) has over MAX_MODULE_IDENTIFIER_LENGTH characters, we truncate the identifier
             and append an ellipsis (...) so that it has MAX_MODULE_IDENTIFIER_LENGTH characters.
 
-            The embed object that is passed in must have at most 24 fields. Use the parameter `num_fields` to specify the number 
+            The embed object that is passed in must have at most 24 fields. Use the parameter `num_fields` to specify the number
             of fields the embed object has.
 
             The embed object is appended to embed_list in two cases:
-            - if adding the new field will cause the embed to exceed EMBED_CHAR_LIMIT characters in length, the embed is appended to embed_list first. 
+            - if adding the new field will cause the embed to exceed EMBED_CHAR_LIMIT characters in length, the embed is appended to embed_list first.
                 Then, we create a new embed and add the field to the new embed.
             - if the embed has 25 fields after adding the new field, we append embed to embed_list.
 
@@ -383,20 +386,21 @@ class Canvas(commands.Cog):
             this function will modify embed_list if embed was added to embed_list.
 
             This function returns a tuple (embed, num_fields) containing the updated values of embed and num_fields.
-            
-            NOTE: changes to embed_list will persist outside this function, but changes to embed and num_fields 
-            may not be reflected outside this function. The caller should update (reassign) the values that were passed 
+
+            NOTE: changes to embed_list will persist outside this function, but changes to embed and num_fields
+            may not be reflected outside this function. The caller should update (reassign) the values that were passed
             in to embed and num_fields using the tuple returned by this function. A reassignment of embed will not
             change the contents of embed_list.
             """
+
             field_value = get_field_value(module)
-            
+
             # Note: 11 is the length of the string "Module Item"
             if 11 + len(field_value) + len(embed) > EMBED_CHAR_LIMIT:
                 embed_list.append(embed)
                 embed = discord.Embed(title=f"New modules for {course.name} (continued):", color=CANVAS_COLOR)
                 num_fields = 0
-            
+
             if isinstance(module, canvasapi.module.Module):
                 embed.add_field(name="Module", value=field_value, inline=False)
             else:
@@ -408,11 +412,11 @@ class Canvas(commands.Cog):
                 embed_list.append(embed)
                 embed = discord.Embed(title=f"New modules for {course.name} (continued):", color=CANVAS_COLOR)
                 num_fields = 0
-            
-            return (embed, num_fields)
-        
-        def handle_module(module: Union[Module, ModuleItem], modules_file: TextIO, existing_modules: List[str], 
-                          curr_embed: discord.Embed, curr_embed_num_fields: int, 
+
+            return embed, num_fields
+
+        def handle_module(module: Union[Module, ModuleItem], modules_file: TextIO, existing_modules: List[str],
+                          curr_embed: discord.Embed, curr_embed_num_fields: int,
                           embed_list: List[discord.Embed]) -> Tuple[discord.Embed, int]:
             """
             Writes given module or module item to modules_file. This function assumes that:
@@ -423,86 +427,88 @@ class Canvas(commands.Cog):
             existing_modules contains contents of the pre-existing modules file (or is empty if the modules file has just been created)
 
             This function updates curr_embed, curr_embed_num_fields, and embed_list depending on whether existing_modules already
-            knows about the given module item. 
-            
+            knows about the given module item.
+
             The function returns a tuple (curr_embed, curr_embed_num_fields) containing the updated values of curr_embed and curr_embed_num_fields.
-            
-            NOTE: changes to embed_list will persist outside this function, but changes to curr_embed and curr_embed_num_fields may not be 
-            reflected outside this function. The caller should update the values that were passed in to curr_embed and curr_embed_num_fields 
+
+            NOTE: changes to embed_list will persist outside this function, but changes to curr_embed and curr_embed_num_fields may not be
+            reflected outside this function. The caller should update the values that were passed in to curr_embed and curr_embed_num_fields
             using the tuple returned by this function.
             """
-            if isinstance(module, canvasapi.module.Module):
-                to_write = module.name + '\n'
-            else:
-                if hasattr(module, 'html_url'):
-                    to_write = module.html_url + '\n'
-                else:
-                    to_write = module.title + '\n'
-                
-            modules_file.write(to_write)
 
-            if not to_write in existing_modules:
+            if isinstance(module, canvasapi.module.Module):
+                to_write = module.name
+            else:
+                if hasattr(module, "html_url"):
+                    to_write = module.html_url
+                else:
+                    to_write = module.title
+
+            modules_file.write(to_write + "\n")
+
+            if to_write not in existing_modules:
                 embed_num_fields_tuple = update_embed(curr_embed, module, curr_embed_num_fields, embed_list)
                 curr_embed = embed_num_fields_tuple[0]
                 curr_embed_num_fields = embed_num_fields_tuple[1]
-            
-            return (curr_embed, curr_embed_num_fields)
 
-        if (os.path.exists(handlers.canvas_handler.COURSES_DIRECTORY)):
+            return curr_embed, curr_embed_num_fields
+
+        if os.path.exists(handlers.canvas_handler.COURSES_DIRECTORY):
             courses = [name for name in os.listdir(handlers.canvas_handler.COURSES_DIRECTORY)]
 
             # each folder in the courses directory is named with a course id (which is a positive integer)
             for course_id_str in courses:
                 if course_id_str.isdigit():
                     course_id = int(course_id_str)
+
                     try:
                         course = CANVAS_INSTANCE.get_course(course_id)
-                        modules_file = f'{handlers.canvas_handler.COURSES_DIRECTORY}/{course_id}/modules.txt'
-                        watchers_file = f'{handlers.canvas_handler.COURSES_DIRECTORY}/{course_id}/watchers.txt'
-                        
-                        print(f'Downloading modules for {course.name}', flush=True)
+                        modules_file = f"{handlers.canvas_handler.COURSES_DIRECTORY}/{course_id}/modules.txt"
+                        watchers_file = f"{handlers.canvas_handler.COURSES_DIRECTORY}/{course_id}/watchers.txt"
+
+                        print(f"Downloading modules for {course.name}", flush=True)
 
                         util.create_file_if_not_exists(modules_file)
                         util.create_file_if_not_exists(watchers_file)
 
-                        with open(modules_file, 'r') as m:
-                            existing_modules = set(m.readlines())
-                        
+                        with open(modules_file, "r") as m:
+                            existing_modules = list(set(m.readlines()))
+
                         embeds_to_send = []
 
                         curr_embed = discord.Embed(title=f"New modules found for {course.name}:", color=CANVAS_COLOR)
                         curr_embed.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
                         curr_num_fields = 0
 
-                        with open(modules_file, 'w') as m:
+                        with open(modules_file, "w") as m:
                             for module in course.get_modules():
-                                if hasattr(module, 'name'):
+                                if hasattr(module, "name"):
                                     embed_num_fields_tuple = handle_module(module, m, existing_modules, curr_embed, curr_num_fields, embeds_to_send)
                                     curr_embed = embed_num_fields_tuple[0]
                                     curr_num_fields = embed_num_fields_tuple[1]
-                                    
+
                                     for item in module.get_module_items():
-                                        if hasattr(item, 'title'):
+                                        if hasattr(item, "title"):
                                             embed_num_fields_tuple = handle_module(item, m, existing_modules, curr_embed, curr_num_fields, embeds_to_send)
                                             curr_embed = embed_num_fields_tuple[0]
                                             curr_num_fields = embed_num_fields_tuple[1]
-                        
+
                         if curr_num_fields:
                             embeds_to_send.append(curr_embed)
-                        
+
                         if embeds_to_send:
-                            with open(watchers_file, 'r') as w:
+                            with open(watchers_file, "r") as w:
                                 for channel_id in w:
                                     first_embed_sent = False
                                     channel = self.bot.get_channel(int(channel_id.rstrip()))
                                     notify_role = next((r for r in channel.guild.roles if r.name.lower() == "notify"), None)
+
                                     for element in embeds_to_send:
                                         await channel.send(notify_role.mention if (notify_role and not first_embed_sent) else "", embed=element)
                                         first_embed_sent = True
 
                     except Exception:
                         print(traceback.format_exc(), flush=True)
-
 
     @staticmethod
     def canvas_init(self):
@@ -513,9 +519,9 @@ class Canvas(commands.Cog):
                 # Note to developers:
                 # If you are testing this bot on your own server, replace "" with CANVAS_API_KEY.
                 # When pushing the code to GitHub, replace CANVAS_API_KEY with "".
-                # The CANVAS_API_KEY is required for Canvas courses without public access. 
+                # The CANVAS_API_KEY is required for Canvas courses without public access.
                 # However, the CPSC 221 course is accessible to the public. Since we only want to
-                # notify users about CPSC 221 assignments that are publically available, we are using 
+                # notify users about CPSC 221 assignments that are publically available, we are using
                 # this empty placeholder "" instead of CANVAS_API_KEY.
                 self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, "", guild))
 

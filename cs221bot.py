@@ -144,6 +144,9 @@ async def on_message_edit(before, after):
 
 @bot.event
 async def on_message(message):
+    if isinstance(message.channel, discord.abc.PrivateChannel):
+        return
+
     if not message.author.bot:
         # debugging
         # with open("messages.txt", "a") as f:

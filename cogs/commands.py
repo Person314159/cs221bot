@@ -71,6 +71,7 @@ class Commands(commands.Cog):
                 s = 0
             else:
                 s = delta / (1 - abs(2 * l - 1))
+
                 if c_max == r:
                     h = 60 * (((g - b) / delta) % 6)
                 elif c_max == g:
@@ -392,13 +393,11 @@ class Commands(commands.Cog):
             if self.add_instructor_role_counter > 5:
                 if self.add_instructor_role_counter == 42:
                     if random.random() > 0.999:
-                        raise BadArgs(
-                            "Congratulations, you found the secret message. IDEK how you did it, but good job. Still can't add the instructor role though. Bummer, I know.")
+                        raise BadArgs("Congratulations, you found the secret message. IDEK how you did it, but good job. Still can't add the instructor role though. Bummer, I know.")
                 elif self.add_instructor_role_counter == 69:
                     if random.random() > 0.9999:
                         raise BadArgs("nice.")
-                raise BadArgs(
-                    "You can't add that role, but if you try again, maybe something different will happen on the 42nd attempt")
+                raise BadArgs( "You can't add that role, but if you try again, maybe something different will happen on the 42nd attempt")
             else:
                 raise BadArgs("you cannot add an instructor/invalid role!", show_help=True)
 
