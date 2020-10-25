@@ -1,8 +1,10 @@
 beautifulsoup4~=4.9.1
+binarytree==5.1.0
 canvasapi==2.0.0
 discord.py==1.5.1
 googletrans==3.0.0
 piazza-api==0.11.0
+Pillow==8.0.1
 python-dateutil==2.8.1
 python-dotenv==0.14.0
 pytz==2020.1
