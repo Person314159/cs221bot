@@ -21,6 +21,8 @@ The bot requires the following pip packages:
 - `canvasapi`
 - `piazza-api`
 - `pytz`
+- `Pillow`
+- `binarytree`
 
 You can install all of them using `pip install -r requirements.txt`.
 
