@@ -49,18 +49,13 @@ class Meta(commands.Cog):
         `!help` [embed]
         """
 
-        commands = self.bot.get_cog("Commands")
-        canvas = self.bot.get_cog("Canvas")
-        piazza = self.bot.get_cog("Piazza")
-        meta = self.bot.get_cog("Meta")
-
         if not arg:
             embed = discord.Embed(title="CS221 Bot", description="Commands:", colour=random.randint(0, 0xFFFFFF), timestamp=datetime.utcnow())
             embed.add_field(name=f"❗ Current Prefix: `{self.bot.command_prefix}`", value="\u200b", inline=False)
-            embed.add_field(name="Main", value=" ".join(f"`{i}`" for i in commands.get_commands() if not i.hidden), inline=False)
-            embed.add_field(name="Canvas", value=" ".join(f"`{i}`" for i in canvas.get_commands() if not i.hidden), inline=False)
-            embed.add_field(name="Piazza", value=" ".join(f"`{i}`" for i in piazza.get_commands() if not i.hidden), inline=False)
-            embed.add_field(name="Meta", value=" ".join(f"`{i}`" for i in meta.get_commands() if not i.hidden), inline=False)
+
+            for k, v in self.bot.cogs.items():
+                embed.add_field(name=k, value=" ".join(f"`{i}`" for i in v.get_commands() if not i.hidden), inline=False)
+
             embed.set_thumbnail(url=self.bot.user.avatar_url)
             embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=str(ctx.author.avatar_url))
             await ctx.send(embed=embed)
