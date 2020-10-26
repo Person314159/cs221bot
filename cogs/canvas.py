@@ -31,9 +31,9 @@ CANVAS_API_KEY = os.getenv("CANVAS_API_KEY")
 # and replace "" with CANVAS_API_KEY. Before pushing the code to GitHub, when you are done testing,
 # replace CANVAS_API_KEY with "".
 #
-# The CANVAS_API_KEY is required for Canvas courses without public access. 
+# The CANVAS_API_KEY is required for Canvas courses without public access.
 # However, the CPSC 221 course is accessible to the public. Since we only want to
-# notify users about CPSC 221 assignments that are publically available, we are using 
+# notify users about CPSC 221 assignments that are publicly available, we are using
 # this empty placeholder "" instead of CANVAS_API_KEY.
 
 # Used for updating Canvas modules
@@ -147,7 +147,7 @@ class Canvas(commands.Cog):
             for course in c_handler.courses:
                 modules_file = f"{handlers.canvas_handler.COURSES_DIRECTORY}/{course.id}/modules.txt"
                 watchers_file = f"{handlers.canvas_handler.COURSES_DIRECTORY}/{course.id}/watchers.txt"
-                CanvasHandler.store_channels_in_file([ctx.message.channel], watchers_file)
+                CanvasHandler.store_channels_in_file((ctx.message.channel,), watchers_file)
 
                 util.create_file_if_not_exists(modules_file)
 
@@ -471,8 +471,6 @@ class Canvas(commands.Cog):
                         course = CANVAS_INSTANCE.get_course(course_id)
                         modules_file = f"{handlers.canvas_handler.COURSES_DIRECTORY}/{course_id}/modules.txt"
                         watchers_file = f"{handlers.canvas_handler.COURSES_DIRECTORY}/{course_id}/watchers.txt"
-
-                        print(f"Downloading modules for {course.name}", flush=True)
 
                         util.create_file_if_not_exists(modules_file)
                         util.create_file_if_not_exists(watchers_file)

@@ -175,7 +175,7 @@ if __name__ == "__main__":
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound) or isinstance(error, discord.HTTPException) or isinstance(error, discord.NotFound):
         pass
-    elif isinstance(error, BadArgs):
+    elif isinstance(error, BadArgs) or str(type(error)) == "<class 'cogs.meta.BadArgs'>":
         await error.print(ctx)
     elif isinstance(error, commands.CommandOnCooldown):
         await ctx.send(f"Oops! That command is on cooldown right now. Please wait **{round(error.retry_after, 3)}** seconds before trying again.", delete_after=error.retry_after)

@@ -537,7 +537,7 @@ class Commands(commands.Cog):
             for key in tally:
                 output += f"{options_dict[key].ljust(max_len)}: " + \
                           f"{('👑' * tally[key]).replace('👑', '▓', ((tally[key] - 1) or 1) - 1) if tally[key] == max(tally.values()) else '░' * tally[key]}".ljust(max(tally.values())).replace('👑👑', '👑') + \
-                          f" ({tally[key]} votes, {round(tally[key] / sum(tally.values()) * 100, 2)}%)\n\n"
+                          f" ({tally[key]} votes, {round(tally[key] / sum(tally.values()) * 100, 2) if sum(tally.values()) else 0}%)\n\n"
 
             output += "```"
 
