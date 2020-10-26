@@ -16,8 +16,8 @@ import webcolors
 from discord.ext import commands
 from googletrans import constants, Translator
 
-from cogs.meta import BadArgs
-from handlers.discord_handler import DiscordHandler
+from util.badargs import BadArgs
+from util.discord_handler import DiscordHandler
 
 
 # This is a huge hack but it technically works
@@ -397,7 +397,7 @@ class Commands(commands.Cog):
                 elif self.add_instructor_role_counter == 69:
                     if random.random() > 0.9999:
                         raise BadArgs("nice.")
-                raise BadArgs( "You can't add that role, but if you try again, maybe something different will happen on the 42nd attempt")
+                raise BadArgs("You can't add that role, but if you try again, maybe something different will happen on the 42nd attempt")
             else:
                 raise BadArgs("you cannot add an instructor/invalid role!", show_help=True)
 

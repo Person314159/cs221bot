@@ -8,7 +8,7 @@ from binarytree import Node
 from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
 
-from cogs.meta import BadArgs
+from util.badargs import BadArgs
 
 
 class Tree(commands.Cog):

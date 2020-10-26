@@ -12,8 +12,8 @@ from discord.ext import commands
 from dotenv import load_dotenv
 
 from cogs.canvas import Canvas
-from cogs.meta import BadArgs
 from cogs.piazza import Piazza
+from util.badargs import BadArgs
 
 CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"

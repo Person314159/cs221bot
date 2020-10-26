@@ -1,5 +1,6 @@
-import pathlib
 import os
+import pathlib
+
 
 def create_file_if_not_exists(file_path):
     """

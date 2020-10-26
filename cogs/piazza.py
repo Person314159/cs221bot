@@ -6,8 +6,8 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from cogs.meta import BadArgs
-from handlers.piazza_handler import InvalidPostID, PiazzaHandler
+from util.badargs import BadArgs
+from util.piazza_handler import InvalidPostID, PiazzaHandler
 
 PIAZZA_THUMBNAIL_URL = "https://store-images.s-microsoft.com/image/apps.25584.554ac7a6-231b-46e2-9960-a059f3147dbe.727eba5c-763a-473f-981d-ffba9c91adab.4e76ea6a-bd74-487f-bf57-3612e43ca795.png"
 
