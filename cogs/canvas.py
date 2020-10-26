@@ -26,8 +26,19 @@ load_dotenv()
 CANVAS_API_URL = "https://canvas.ubc.ca"
 CANVAS_API_KEY = os.getenv("CANVAS_API_KEY")
 
+# Note to developers:
+# A few lines in this file have a comment beside them saying !KEY_REPLACEMENT!
+# If you are testing this bot on your own server, go to every line commented with !KEY_REPLACEMENT!
+# and replace "" with CANVAS_API_KEY. Before pushing the code to GitHub, when you are done testing,
+# replace CANVAS_API_KEY with "".
+#
+# The CANVAS_API_KEY is required for Canvas courses without public access. 
+# However, the CPSC 221 course is accessible to the public. Since we only want to
+# notify users about CPSC 221 assignments that are publically available, we are using 
+# this empty placeholder "" instead of CANVAS_API_KEY.
+
 # Used for updating Canvas modules
-CANVAS_INSTANCE = canvasapi.Canvas(CANVAS_API_URL, CANVAS_API_KEY)
+CANVAS_INSTANCE = canvasapi.Canvas(CANVAS_API_URL, "")  # !KEY_REPLACEMENT!
 EMBED_CHAR_LIMIT = 6000
 MAX_MODULE_IDENTIFIER_LENGTH = 120
 
@@ -227,14 +238,7 @@ class Canvas(commands.Cog):
 
     def _add_guild(self, guild: discord.Guild):
         if guild not in (ch.guild for ch in self.bot.d_handler.canvas_handlers):
-            # Note to developers:
-            # If you are testing this bot on your own server, replace "" with CANVAS_API_KEY.
-            # When pushing the code to GitHub, replace CANVAS_API_KEY with "".
-            # The CANVAS_API_KEY is required for Canvas courses without public access. 
-            # However, the CPSC 221 course is accessible to the public. Since we only want to
-            # notify users about CPSC 221 assignments that are publically available, we are using 
-            # this empty placeholder "" instead of CANVAS_API_KEY.
-            self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, "", guild))
+            self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, "", guild))     # !KEY_REPLACEMENT!
             self.bot.canvas_dict[str(guild.id)] = {
                 "courses"      : [],
                 "live_channels": [],
@@ -510,14 +514,7 @@ class Canvas(commands.Cog):
             guild = self.bot.guilds[[guild.id for guild in self.bot.guilds].index(int(c_handler_guild_id))]
 
             if guild not in (ch.guild for ch in self.bot.d_handler.canvas_handlers):
-                # Note to developers:
-                # If you are testing this bot on your own server, replace "" with CANVAS_API_KEY.
-                # When pushing the code to GitHub, replace CANVAS_API_KEY with "".
-                # The CANVAS_API_KEY is required for Canvas courses without public access. 
-                # However, the CPSC 221 course is accessible to the public. Since we only want to
-                # notify users about CPSC 221 assignments that are publically available, we are using 
-                # this empty placeholder "" instead of CANVAS_API_KEY.
-                self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, "", guild))
+                self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, "", guild))     # !KEY_REPLACEMENT!
 
             c_handler = self._get_canvas_handler(guild)
             c_handler.track_course(tuple(self.bot.canvas_dict[c_handler_guild_id]["courses"]))
