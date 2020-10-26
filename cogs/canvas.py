@@ -443,14 +443,14 @@ class Canvas(commands.Cog):
             """
 
             if isinstance(module, canvasapi.module.Module):
-                to_write = module.name
+                to_write = module.name + "\n"
             else:
                 if hasattr(module, "html_url"):
-                    to_write = module.html_url
+                    to_write = module.html_url + "\n"
                 else:
-                    to_write = module.title
+                    to_write = module.title + "\n"
 
-            modules_file.write(to_write + "\n")
+            modules_file.write(to_write)
 
             if to_write not in existing_modules:
                 embed_num_fields_tuple = update_embed(curr_embed, module, curr_embed_num_fields, embed_list)
