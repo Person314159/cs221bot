@@ -46,15 +46,18 @@ class Tree(commands.Cog):
         numbers = []
 
         for num in ctx.message.content[5:].replace(",", "").split():
-            if math.modf(float(num))[0] == 0:
-                numbers.append(int(round(float(num))))
-            else:
-                numbers.append(float(num))
+            try:
+                if math.modf(float(num))[0] == 0:
+                    numbers.append(int(round(float(num))))
+                else:
+                    numbers.append(float(num))
+            except Exception:
+                raise BadArgs("Please provide valid numbers for the tree.", show_help=True)
 
-        try:
-            root = Node(numbers[0])
-        except:
-            raise BadArgs("Please provide some numbers for the tree.")
+        if not numbers:
+            raise BadArgs("Please provide some numbers for the tree.", show_help=True)
+
+        root = Node(numbers[0])
 
         nodes = [root]
         highlighted = []
@@ -232,6 +235,7 @@ class Tree(commands.Cog):
                 return
 
             command = message.content.replace(",", "").replace("!", "").lower()
+            timeout = 60
 
             if command.startswith("level"):
                 await ctx.send("Level-Order Traversal:\n**" + "  ".join([str(n.val) for n in root.levelorder]) + "**")
@@ -268,7 +272,7 @@ class Tree(commands.Cog):
                 filex.seek(0)
                 await ctx.send(embed=embed, file=discord.File(filex, "bst.png"))
             elif command.startswith("pause"):
-                timeout = None
+                timeout = 86400
                 await ctx.send("Timeout paused.")
             elif command.startswith("unpause"):
                 timeout = 60
@@ -315,7 +319,7 @@ class Tree(commands.Cog):
                 display = True
             elif command.startswith("exit"):
                 return await ctx.send("Exiting.")
-            elif command.startswith("!bst"):
+            elif command.startswith("bst"):
                 return
 
 
