@@ -5,7 +5,7 @@ import re
 import shutil
 import traceback
 from datetime import datetime
-from typing import List, Optional, TextIO, Tuple, Union
+from typing import List, Optional, Set, TextIO, Tuple, Union
 
 import canvasapi
 import discord
@@ -421,7 +421,7 @@ class Canvas(commands.Cog):
 
             return embed, num_fields
 
-        def handle_module(module: Union[Module, ModuleItem], modules_file: TextIO, existing_modules: List[str],
+        def handle_module(module: Union[Module, ModuleItem], modules_file: TextIO, existing_modules: Set[str],
                           curr_embed: discord.Embed, curr_embed_num_fields: int,
                           embed_list: List[discord.Embed]) -> Tuple[discord.Embed, int]:
             """
@@ -443,14 +443,14 @@ class Canvas(commands.Cog):
             """
 
             if isinstance(module, canvasapi.module.Module):
-                to_write = module.name + "\n"
+                to_write = module.name
             else:
                 if hasattr(module, "html_url"):
-                    to_write = module.html_url + "\n"
+                    to_write = module.html_url
                 else:
-                    to_write = module.title + "\n"
+                    to_write = module.title
 
-            modules_file.write(to_write)
+            modules_file.write(to_write + "\n")
 
             if to_write not in existing_modules:
                 embed_num_fields_tuple = update_embed(curr_embed, module, curr_embed_num_fields, embed_list)
@@ -478,7 +478,7 @@ class Canvas(commands.Cog):
                         util.create_file_if_not_exists(watchers_file)
 
                         with open(modules_file, "r") as m:
-                            existing_modules = list(set(m.readlines()))
+                            existing_modules = set(m.read().splitlines())
 
                         embeds_to_send = []
 
