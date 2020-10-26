@@ -505,13 +505,12 @@ class Canvas(commands.Cog):
                         if embeds_to_send:
                             with open(watchers_file, "r") as w:
                                 for channel_id in w:
-                                    first_embed_sent = False
                                     channel = self.bot.get_channel(int(channel_id.rstrip()))
                                     notify_role = next((r for r in channel.guild.roles if r.name.lower() == "notify"), None)
+                                    await channel.send(notify_role.mention if notify_role else "")
 
                                     for element in embeds_to_send:
-                                        await channel.send(notify_role.mention if (notify_role and not first_embed_sent) else "", embed=element)
-                                        first_embed_sent = True
+                                        await channel.send(embed=element)
 
                     except Exception:
                         print(traceback.format_exc(), flush=True)
