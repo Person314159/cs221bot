@@ -1,7 +1,7 @@
 from typing import List
 
-from handlers.canvas_handler import CanvasHandler
-from handlers.piazza_handler import PiazzaHandler
+from util.canvas_handler import CanvasHandler
+from util.piazza_handler import PiazzaHandler
 
 
 class DiscordHandler:

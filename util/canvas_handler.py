@@ -10,8 +10,8 @@ from bs4 import BeautifulSoup
 from canvasapi.canvas import Canvas
 from canvasapi.course import Course
 
-import util
-from handlers.canvas_api_extension import get_course_stream, get_course_url
+from util import create_file
+from util.canvas_api_extension import get_course_stream, get_course_url
 
 # Stores course modules and channels that are live tracking courses
 # Do *not* put a slash at the end of this path
@@ -156,7 +156,7 @@ class CanvasHandler(Canvas):
             self.store_channels_in_file(tuple(self._live_channels), watchers_file)
 
             if self._live_channels:
-                util.create_file_if_not_exists(modules_file)
+                create_file.create_file_if_not_exists(modules_file)
 
                 # Here, we will only download modules if modules_file is empty.
                 if os.stat(modules_file).st_size == 0:
@@ -193,7 +193,7 @@ class CanvasHandler(Canvas):
         """
 
         if text_channels:
-            util.create_file_if_not_exists(file_path)
+            create_file.create_file_if_not_exists(file_path)
 
             with open(file_path, "r") as f:
                 existing_ids = f.readlines()
@@ -254,7 +254,7 @@ class CanvasHandler(Canvas):
         if the id is contained in the file.
         """
 
-        util.create_file_if_not_exists(file_path)
+        create_file.create_file_if_not_exists(file_path)
 
         with open(file_path, "r") as f:
             channel_ids = f.readlines()

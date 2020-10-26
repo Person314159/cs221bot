@@ -13,10 +13,10 @@ from canvasapi.module import Module, ModuleItem
 from discord.ext import commands
 from dotenv import load_dotenv
 
-import handlers.canvas_handler
-import util
-from cogs.meta import BadArgs
-from handlers.canvas_handler import CanvasHandler
+import util.canvas_handler
+from util import create_file
+from util.badargs import BadArgs
+from util.canvas_handler import CanvasHandler
 
 CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
@@ -145,11 +145,11 @@ class Canvas(commands.Cog):
             c_handler.live_channels.append(ctx.message.channel)
 
             for course in c_handler.courses:
-                modules_file = f"{handlers.canvas_handler.COURSES_DIRECTORY}/{course.id}/modules.txt"
-                watchers_file = f"{handlers.canvas_handler.COURSES_DIRECTORY}/{course.id}/watchers.txt"
+                modules_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course.id}/modules.txt"
+                watchers_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course.id}/watchers.txt"
                 CanvasHandler.store_channels_in_file((ctx.message.channel,), watchers_file)
 
-                util.create_file_if_not_exists(modules_file)
+                create_file.create_file_if_not_exists(modules_file)
 
                 # Here, we will only download modules if modules_file is empty.
                 if os.stat(modules_file).st_size == 0:
@@ -178,12 +178,12 @@ class Canvas(commands.Cog):
             self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
 
             for course in c_handler.courses:
-                watchers_file = f"{handlers.canvas_handler.COURSES_DIRECTORY}/{course.id}/watchers.txt"
+                watchers_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course.id}/watchers.txt"
                 CanvasHandler.delete_channels_from_file([ctx.message.channel], watchers_file)
 
                 # If there are no more channels watching the course, we should delete that course's directory.
                 if os.stat(watchers_file).st_size == 0:
-                    shutil.rmtree(f"{handlers.canvas_handler.COURSES_DIRECTORY}/{course.id}")
+                    shutil.rmtree(f"{util.canvas_handler.COURSES_DIRECTORY}/{course.id}")
 
             await ctx.send("Removed channel from live tracking.")
         else:
@@ -238,7 +238,7 @@ class Canvas(commands.Cog):
 
     def _add_guild(self, guild: discord.Guild):
         if guild not in (ch.guild for ch in self.bot.d_handler.canvas_handlers):
-            self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, "", guild))     # !KEY_REPLACEMENT!
+            self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, "", guild))  # !KEY_REPLACEMENT!
             self.bot.canvas_dict[str(guild.id)] = {
                 "courses"      : [],
                 "live_channels": [],
@@ -296,9 +296,15 @@ class Canvas(commands.Cog):
                 for c in ch.courses:
                     for time in ("week", "day"):
                         data_list = ch.get_assignments(f"1-{time}", (str(c.id),), CANVAS_API_URL)
-                        recorded_ass_ids = ch.due_week[str(c.id)]
+                        if time == "week":
+                            recorded_ass_ids = ch.due_week[str(c.id)]
+                        else:
+                            recorded_ass_ids = ch.due_day[str(c.id)]
                         ass_ids = await self._assignment_sender(ch, data_list, recorded_ass_ids, notify_role, time)
-                        ch.due_week[str(c.id)] = ass_ids
+                        if time == "week":
+                            ch.due_week[str(c.id)] = ass_ids
+                        else:
+                            ch.due_day[str(c.id)] = ass_ids
                         self.bot.canvas_dict[str(ch.guild.id)][f"due_{time}"][str(c.id)] = ass_ids
 
                     self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
@@ -459,8 +465,8 @@ class Canvas(commands.Cog):
 
             return curr_embed, curr_embed_num_fields
 
-        if os.path.exists(handlers.canvas_handler.COURSES_DIRECTORY):
-            courses = [name for name in os.listdir(handlers.canvas_handler.COURSES_DIRECTORY)]
+        if os.path.exists(util.canvas_handler.COURSES_DIRECTORY):
+            courses = [name for name in os.listdir(util.canvas_handler.COURSES_DIRECTORY)]
 
             # each folder in the courses directory is named with a course id (which is a positive integer)
             for course_id_str in courses:
@@ -469,11 +475,11 @@ class Canvas(commands.Cog):
 
                     try:
                         course = CANVAS_INSTANCE.get_course(course_id)
-                        modules_file = f"{handlers.canvas_handler.COURSES_DIRECTORY}/{course_id}/modules.txt"
-                        watchers_file = f"{handlers.canvas_handler.COURSES_DIRECTORY}/{course_id}/watchers.txt"
+                        modules_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course_id}/modules.txt"
+                        watchers_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course_id}/watchers.txt"
 
-                        util.create_file_if_not_exists(modules_file)
-                        util.create_file_if_not_exists(watchers_file)
+                        create_file.create_file_if_not_exists(modules_file)
+                        create_file.create_file_if_not_exists(watchers_file)
 
                         with open(modules_file, "r") as m:
                             existing_modules = set(m.read().splitlines())
@@ -519,7 +525,7 @@ class Canvas(commands.Cog):
             guild = self.bot.guilds[[guild.id for guild in self.bot.guilds].index(int(c_handler_guild_id))]
 
             if guild not in (ch.guild for ch in self.bot.d_handler.canvas_handlers):
-                self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, "", guild))     # !KEY_REPLACEMENT!
+                self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, "", guild))  # !KEY_REPLACEMENT!
 
             c_handler = self._get_canvas_handler(guild)
             c_handler.track_course(tuple(self.bot.canvas_dict[c_handler_guild_id]["courses"]))
@@ -529,7 +535,10 @@ class Canvas(commands.Cog):
 
             for due in ("due_week", "due_day"):
                 for c in self.bot.canvas_dict[c_handler_guild_id][due]:
-                    c_handler.due_week[c] = self.bot.canvas_dict[c_handler_guild_id][due][c]
+                    if due == "due_week":
+                        c_handler.due_week[c] = self.bot.canvas_dict[c_handler_guild_id][due][c]
+                    else:
+                        c_handler.due_day[c] = self.bot.canvas_dict[c_handler_guild_id][due][c]
 
 
 def setup(bot):
