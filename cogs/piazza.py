@@ -97,6 +97,7 @@ class Piazza(commands.Cog):
 
         *Only usable by TAs and Profs
         """
+
         if not cid:
             cid = ctx.message.channel.id
         else:
@@ -205,6 +206,7 @@ class Piazza(commands.Cog):
     async def send_pupdate(self):
         while True:
             await self.send_piazza_posts(True)
+
             if not self.bot.d_handler.piazza_handler:
                 await asyncio.sleep(60)
             else:
@@ -257,6 +259,7 @@ class Piazza(commands.Cog):
                     for chnl in self.bot.d_handler.piazza_handler.channels:
                         channel = self.bot.get_channel(chnl)
                         await channel.send(response)
+
                 await asyncio.sleep(60 * 60 * 5)
             else:
                 await asyncio.sleep(60)

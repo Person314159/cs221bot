@@ -284,6 +284,7 @@ class Tree(commands.Cog):
                     else:
                         if math.modf(num)[0] == 0:
                             num = int(round(num))
+
                         insert(root, num, highlight=True)
 
                 display = True

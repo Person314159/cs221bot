@@ -24,6 +24,7 @@ class BadArgs(commands.CommandError):
     async def print(self, ctx):
         if self.msg:
             await ctx.send(self.msg, delete_after=5)
+
         if self.help:
             await ctx.send(ctx.command.help)
 
@@ -81,6 +82,7 @@ class Meta(commands.Cog):
 
         for extension in modules:
             Reload = await ctx.send(f"Reloading the {extension} module")
+
             try:
                 self.bot.reload_extension(f"cogs.{extension}")
             except Exception as exc:
