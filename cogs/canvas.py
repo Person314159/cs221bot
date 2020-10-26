@@ -296,9 +296,15 @@ class Canvas(commands.Cog):
                 for c in ch.courses:
                     for time in ("week", "day"):
                         data_list = ch.get_assignments(f"1-{time}", (str(c.id),), CANVAS_API_URL)
-                        recorded_ass_ids = ch.due_week[str(c.id)]
+                        if time == "week":
+                            recorded_ass_ids = ch.due_week[str(c.id)]
+                        else:
+                            recorded_ass_ids = ch.due_day[str(c.id)]
                         ass_ids = await self._assignment_sender(ch, data_list, recorded_ass_ids, notify_role, time)
-                        ch.due_week[str(c.id)] = ass_ids
+                        if time == "week":
+                            ch.due_week[str(c.id)] = ass_ids
+                        else:
+                            ch.due_day[str(c.id)] = ass_ids
                         self.bot.canvas_dict[str(ch.guild.id)][f"due_{time}"][str(c.id)] = ass_ids
 
                     self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
@@ -529,7 +535,10 @@ class Canvas(commands.Cog):
 
             for due in ("due_week", "due_day"):
                 for c in self.bot.canvas_dict[c_handler_guild_id][due]:
-                    c_handler.due_week[c] = self.bot.canvas_dict[c_handler_guild_id][due][c]
+                    if due == "due_week":
+                        c_handler.due_week[c] = self.bot.canvas_dict[c_handler_guild_id][due][c]
+                    else:
+                        c_handler.due_day[c] = self.bot.canvas_dict[c_handler_guild_id][due][c]
 
 
 def setup(bot):
