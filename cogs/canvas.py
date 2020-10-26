@@ -399,6 +399,7 @@ class Canvas(commands.Cog):
             if 11 + len(field_value) + len(embed) > EMBED_CHAR_LIMIT:
                 embed_list.append(embed)
                 embed = discord.Embed(title=f"New modules for {course.name} (continued):", color=CANVAS_COLOR)
+                embed.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
                 num_fields = 0
             
             if isinstance(module, canvasapi.module.Module):
@@ -411,6 +412,7 @@ class Canvas(commands.Cog):
             if num_fields == 25:
                 embed_list.append(embed)
                 embed = discord.Embed(title=f"New modules for {course.name} (continued):", color=CANVAS_COLOR)
+                embed.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
                 num_fields = 0
             
             return (embed, num_fields)
