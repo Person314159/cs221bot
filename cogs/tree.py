@@ -145,89 +145,89 @@ class Tree(commands.Cog):
         timeout = 60
         display = True
         filex = None
-        text = ""
 
-        while True:
-            if display:
-                if root.height > 8:
-                    raise BadArgs("Tree is too high to reasonably display. Exiting.")
+        async def draw_bst(highlighted, root):
+            entries = list(filter(lambda x: x[0] is not None, [[b, i] for b, i in zip(root.values, range(1, len(root.values) + 1))]))
+            levels = root.height + 1
+            fsize = max(10, 60 - 7 * root.height)
+            font = ImageFont.truetype("boxfont_round.ttf", fsize)
+            radius = max(10, 100 - 10 * root.height)
+            width = 2 * radius * (2 ** (root.height + 1))
+            height = 2 * radius * (root.height + 2)
+            basey = height // (levels + 1)
+            smallest = [math.inf, 1]
 
-                entries = list(filter(lambda x: x[0] is not None, [[b, i] for b, i in zip(root.values, range(1, len(root.values) + 1))]))
-                levels = root.height + 1
-                fsize = max(10, 60 - 7 * root.height)
-                font = ImageFont.truetype("boxfont_round.ttf", fsize)
+            for entry in entries:
+                if entry[0] < smallest[0]:
+                    smallest = entry
 
-                radius = max(10, 100 - 10 * root.height)
-                width = 2 * radius * (2 ** (root.height + 1))
-                height = 2 * radius * (root.height + 2)
-                basey = height // (levels + 1)
+            reflevel = math.floor(math.log(smallest[1], 2))
+            basex = width // (2 ** reflevel + 1)
+            refx = int(basex - 2 * radius)
 
-                text = f"```{root}\n```"
-                smallest = [math.inf, 1]
+            if basex != width // 2:
+                refx = 0
+                offset = 0
+            else:
+                offset = radius
 
-                for entry in entries:
-                    if entry[0] < smallest[0]:
-                        smallest = entry
+            image = Image.new("RGBA", (width - refx - offset, height), (255, 255, 255, 255))
+            layer = Image.new("RGBA", (width - refx - offset, height), (0, 0, 0, 0))
+            drawing = ImageDraw.Draw(image)
+            drawing2 = ImageDraw.Draw(layer)
+            currentlevel = 2
+            x = width // 2
+            y = basey * currentlevel
 
-                reflevel = math.floor(math.log(smallest[1], 2))
-                basex = width // (2 ** reflevel + 1)
-                refx = int(basex - 2 * radius)
+            if root.val in highlighted:
+                col = (0, 128, 128, 255)
+            else:
+                col = (0, 0, 255, 255)
 
-                if basex != width // 2:
-                    refx = 0
-                    offset = 0
-                else:
-                    offset = radius
+            drawing2.ellipse([(x - radius - refx, basey - radius), (x + radius - refx, basey + radius)], fill=col, outline=(0, 0, 0, 255))
+            ln = drawing2.textsize(str(root.val), font=font)[0] / 2
+            drawing2.text((x - refx - fsize // 2 - ln, basey - fsize // 2), str(root.val), fill=(255, 168, 0, 255), font=font)
 
-                image = Image.new("RGBA", (width - refx - offset, height), (255, 255, 255, 255))
-                layer = Image.new("RGBA", (width - refx - offset, height), (0, 0, 0, 0))
-                drawing = ImageDraw.Draw(image)
-                drawing2 = ImageDraw.Draw(layer)
-                currentlevel = 2
-                x = width // 2
-                y = basey * currentlevel
+            for entry in entries[1:]:
+                await asyncio.sleep(0)
 
-                if root.val in highlighted:
+                if math.floor(math.log(entry[1], 2)) > currentlevel - 1:
+                    currentlevel += 1
+                    y = basey * currentlevel
+
+                multiplier = entry[1] - 2 ** (currentlevel - 1) + 1
+                basex = width // (2 ** (currentlevel - 1) + 1)
+                x = basex * multiplier
+                prevx = width // (2 ** (currentlevel - 2) + 1)
+                prevx *= (multiplier + 1) // 2
+
+                if entry[0] in highlighted:
                     col = (0, 128, 128, 255)
+                    linecol = col
                 else:
                     col = (0, 0, 255, 255)
+                    linecol = (0, 0, 0, 255)
 
-                drawing2.ellipse([(x - radius - refx, basey - radius), (x + radius - refx, basey + radius)], fill=col, outline=(0, 0, 0, 255))
-                ln = drawing2.textsize(str(root.val), font=font)[0] / 2
-                drawing2.text((x - refx - fsize // 2 - ln, basey - fsize // 2), str(root.val), fill=(255, 168, 0, 255), font=font)
+                drawing.line([(prevx - refx, basey * (currentlevel - 1)), (x - refx, y)], fill=linecol, width=7)
+                drawing2.ellipse([(x - radius - refx, y - radius), (x + radius - refx, y + radius)], fill=col, outline=(0, 0, 0, 255))
+                ln = drawing2.textsize(str(entry[0]), font=font)[0] / 2
+                drawing2.text((x - refx - fsize // 2 - ln, y - fsize // 2), str(entry[0]), fill=(255, 168, 0, 255), font=font)
 
-                for entry in entries[1:]:
-                    await asyncio.sleep(0)
+            image.alpha_composite(layer)
+            filex = BytesIO()
+            image.save(filex, "PNG", optimize=True)
+            filex.seek(0)
+            return filex
 
-                    if math.floor(math.log(entry[1], 2)) > currentlevel - 1:
-                        currentlevel += 1
-                        y = basey * currentlevel
-
-                    multiplier = entry[1] - 2 ** (currentlevel - 1) + 1
-                    basex = width // (2 ** (currentlevel - 1) + 1)
-                    x = basex * multiplier
-                    prevx = width // (2 ** (currentlevel - 2) + 1)
-                    prevx *= (multiplier + 1) // 2
-
-                    if entry[0] in highlighted:
-                        col = (0, 128, 128, 255)
-                        linecol = col
-                    else:
-                        col = (0, 0, 255, 255)
-                        linecol = (0, 0, 0, 255)
-
-                    drawing.line([(prevx - refx, basey * (currentlevel - 1)), (x - refx, y)], fill=linecol, width=7)
-                    drawing2.ellipse([(x - radius - refx, y - radius), (x + radius - refx, y + radius)], fill=col, outline=(0, 0, 0, 255))
-                    ln = drawing2.textsize(str(entry[0]), font=font)[0] / 2
-                    drawing2.text((x - refx - fsize // 2 - ln, y - fsize // 2), str(entry[0]), fill=(255, 168, 0, 255), font=font)
-
-                image.alpha_composite(layer)
-                filex = BytesIO()
-                image.save(filex, "PNG", optimize=True)
-                filex.seek(0)
-                await ctx.send("> " + text.replace("\n", "\n> "), file=discord.File(filex, "bst.png"))
-                display = False
+        while True:
+            if root.height <= 8:
+                filex = await draw_bst(highlighted, root)
                 highlighted = []
+
+            if display:
+                text = f"```{root}\n```"
+                await ctx.send(text, file=discord.File(filex, "bst.png") if filex else None)
+                display = False
 
             def check(m):
                 return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
