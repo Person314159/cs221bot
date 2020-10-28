@@ -240,6 +240,7 @@ class Commands(commands.Cog):
             raise BadArgs("You inputted an invalid colour. Please try again.", show_help=True)
 
     @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def dm(self, ctx):
         """
         `!dm` __`221DM Generator`__

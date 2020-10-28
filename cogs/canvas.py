@@ -48,7 +48,6 @@ class Canvas(commands.Cog):
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
-    @commands.guild_only()
     async def track(self, ctx: commands.Context, *course_ids: str):
         self._add_guild(ctx.message.guild)
 
@@ -71,7 +70,6 @@ class Canvas(commands.Cog):
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
-    @commands.guild_only()
     async def untrack(self, ctx: commands.Context, *course_ids: str):
         c_handler = self._get_canvas_handler(ctx.message.guild)
 
@@ -86,7 +84,6 @@ class Canvas(commands.Cog):
         await self.send_canvas_track_msg(c_handler, ctx)
 
     @commands.command()
-    @commands.guild_only()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def asgn(self, ctx: commands.Context, *args):
         """
@@ -134,7 +131,6 @@ class Canvas(commands.Cog):
 
     @commands.command(hidden=True)
     @commands.is_owner()
-    @commands.guild_only()
     async def live(self, ctx: commands.Context):
         c_handler = self._get_canvas_handler(ctx.message.guild)
 
@@ -164,7 +160,6 @@ class Canvas(commands.Cog):
 
     @commands.command(hidden=True)
     @commands.is_owner()
-    @commands.guild_only()
     async def unlive(self, ctx: commands.Context):
         c_handler = self._get_canvas_handler(ctx.message.guild)
 
@@ -190,7 +185,6 @@ class Canvas(commands.Cog):
             await ctx.send("Channel was not live tracking.")
 
     @commands.command()
-    @commands.guild_only()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def annc(self, ctx: commands.Context, *args):
         """
@@ -231,7 +225,6 @@ class Canvas(commands.Cog):
 
     @commands.command(hidden=True)
     @commands.is_owner()
-    @commands.guild_only()
     async def info(self, ctx):
         c_handler = self._get_canvas_handler(ctx.message.guild)
         await ctx.send("\n".join(str(i) for i in [c_handler.courses, c_handler.guild, c_handler.live_channels, c_handler.timings, c_handler.due_week, c_handler.due_day]))

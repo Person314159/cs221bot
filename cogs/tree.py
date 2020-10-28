@@ -1,6 +1,7 @@
 import asyncio
 import math
 import random
+import re
 from io import BytesIO
 
 import discord
@@ -16,6 +17,8 @@ class Tree(commands.Cog):
         self.bot = bot
 
     @commands.command()
+    @commands.guild_only()
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def bst(self, ctx):
         """
         `!bst` __`Binary Search Tree analysis tool`__
@@ -46,13 +49,13 @@ class Tree(commands.Cog):
         numbers = []
 
         for num in ctx.message.content[5:].replace(",", "").split():
-            try:
-                if math.modf(float(num))[0] == 0:
+            if re.fullmatch(r"[+-]?((\d+(\.\d*)?)|(\.\d+))", num):
+                try:
                     numbers.append(int(round(float(num))))
-                else:
+                except ValueError:
                     numbers.append(float(num))
-            except Exception:
-                raise BadArgs("Please provide valid numbers for the tree.", show_help=True)
+            else:
+                raise BadArgs("Please provide valid numbers for the tree.")
 
         if not numbers:
             raise BadArgs("Please provide some numbers for the tree.", show_help=True)
