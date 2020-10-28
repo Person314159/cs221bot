@@ -51,7 +51,7 @@ class Tree(commands.Cog):
         for num in ctx.message.content[5:].replace(",", "").split():
             if re.fullmatch(r"[+-]?((\d+(\.\d*)?)|(\.\d+))", num):
                 try:
-                    numbers.append(int(round(float(num))))
+                    numbers.append(int(num))
                 except ValueError:
                     numbers.append(float(num))
             else:
@@ -288,7 +288,7 @@ class Tree(commands.Cog):
                 for entry in command[7:].split():
                     if re.fullmatch(r"[+-]?((\d+(\.\d*)?)|(\.\d+))", entry):
                         try:
-                            num = int(round(float(entry)))
+                            num = int(entry)
                         except ValueError:
                             num = float(entry)
                     else:
