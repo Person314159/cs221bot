@@ -17,7 +17,6 @@ class Tree(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    @commands.guild_only()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def bst(self, ctx):
         """
@@ -66,35 +65,34 @@ class Tree(commands.Cog):
         highlighted = []
 
         def insert(subroot, num, highlight=False):
-            if num in root.values:
-                return
-
             if highlight:
                 highlighted.append(subroot.val)
 
             if num < subroot.val:
                 if not subroot.left:
-                    subroot.left = Node(num)
+                    node = Node(num)
+                    subroot.left = node
 
                     if highlight:
                         highlighted.append(num)
 
-                    nodes.append(subroot.left)
+                    nodes.append(node)
                 else:
                     insert(subroot.left, num, highlight)
             elif num > subroot.val:
                 if not subroot.right:
-                    subroot.right = Node(num)
+                    node = Node(num)
+                    subroot.right = node
 
                     if highlight:
                         highlighted.append(num)
 
-                    nodes.append(subroot.right)
+                    nodes.append(node)
                 else:
                     insert(subroot.right, num, highlight)
 
         def delete(subroot, num):
-            if subroot is not None:
+            if subroot:
                 if subroot.val == num:
                     if subroot.left is not None and subroot.right is not None:
                         parent = subroot
@@ -140,7 +138,8 @@ class Tree(commands.Cog):
             return None
 
         for num in numbers[1:]:
-            insert(root, num)
+            if not get_node(num):
+                insert(root, num)
 
         timeout = 60
         display = True
@@ -295,7 +294,9 @@ class Tree(commands.Cog):
                         continue
 
                     add.append(str(num))
-                    insert(root, num, highlight=True)
+
+                    if not get_node(num):
+                        insert(root, num, highlight=True)
 
                 await ctx.send(f"Inserted {','.join(add)}.")
                 display = True
