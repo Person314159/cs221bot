@@ -283,42 +283,45 @@ class Tree(commands.Cog):
             elif command.startswith("show"):
                 display = True
             elif command.startswith("insert"):
+                add = []
+
                 for entry in command[7:].split():
-                    try:
-                        num = float(entry)
-                    except Exception as e:
-                        await ctx.send(str(e))
+                    if re.fullmatch(r"[+-]?((\d+(\.\d*)?)|(\.\d+))", entry):
+                        try:
+                            num = int(round(float(entry)))
+                        except ValueError:
+                            num = float(entry)
                     else:
-                        if math.modf(num)[0] == 0:
-                            num = int(round(num))
+                        continue
 
-                        insert(root, num, highlight=True)
+                    add.append(str(num))
+                    insert(root, num, highlight=True)
 
+                await ctx.send(f"Inserted {','.join(add)}.")
                 display = True
             elif command.startswith("delete"):
-                delet = []
+                remove = []
 
                 for entry in command[7:].split():
                     try:
                         num = float(entry)
                     except Exception:
-                        pass
-                    else:
-                        if root.size == 1:
-                            await ctx.send("Tree has reached one node in size. Stopping deletions.")
-                            break
+                        continue
 
-                        if math.modf(num)[0] == 0:
-                            num = int(round(num))
+                    if root.size == 1:
+                        await ctx.send("Tree has reached one node in size. Stopping deletions.")
+                        break
 
-                        if not get_node(num):
-                            continue
+                    if math.modf(num)[0] == 0:
+                        num = int(round(num))
 
-                        delet.append(str(num))
+                    if not get_node(num):
+                        continue
 
-                        root = delete(root, num)
+                    remove.append(str(num))
+                    root = delete(root, num)
 
-                await ctx.send(f"Deleted {','.join(delet)}.")
+                await ctx.send(f"Deleted {','.join(remove)}.")
                 display = True
             elif command.startswith("exit"):
                 return await ctx.send("Exiting.")
