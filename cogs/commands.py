@@ -315,7 +315,7 @@ class Commands(commands.Cog):
         """
 
         text = ctx.message.content[9:].upper()
-        output = "".join(chr(ord(i) + 127397) if i in string.ascii_uppercase else i for i in text)
+        output = "".join(chr(ord(i) + 127397) + " " if i in string.ascii_uppercase else i for i in text)
 
         await ctx.send(output)
 
