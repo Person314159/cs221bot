@@ -2,6 +2,7 @@ import asyncio
 import mimetypes
 import random
 import re
+import string
 import urllib.parse
 from datetime import datetime, timedelta, timezone
 from fractions import Fraction
@@ -272,7 +273,7 @@ class Commands(commands.Cog):
             for role in user.roles:
                 if role.name.startswith("221dm"):
                     raise BadArgs(f"{user.name} is already in a 221DM.")
-            
+
         # generate customized channel name to allow customized role
         nam = int(str((datetime.now() - datetime(1970, 1, 1)).total_seconds()).replace(".", "")) + ctx.author.id
         nam = f"221dm-{nam}"
@@ -312,21 +313,12 @@ class Commands(commands.Cog):
         `!emojify hello` prints "hello" with emoji
         `!emojify b` prints b with emoji"
         """
-        
-        mapping = dict(zip(list("ABCDEFGHIJKLMNOPQRSTUVWXYZ"), ["🇦", "🇧", "🇨", "🇩", "🇪", "🇫", "🇬", "🇭", "🇮", "🇯", "🇰", "🇱", "🇲", "🇳", "🇴", "🇵", "🇶", "🇷", "🇸", "🇹", "🇺", "🇻", "🇼", "🇽", "🇾", "🇿"]))
-        text = ctx.message.content[9:].upper()
-        output = ""
 
-        for i in range(len(text)):
-            if text[i] in mapping:
-                output.append(mapping[text[i]]) + " "  
-            elif text[i] == " ":
-                output.append(" ")
-            else:
-                output.append(text[i])
-        
+        text = ctx.message.content[9:].upper()
+        output = "".join(chr(ord(i) + 127397) if i in string.ascii_uppercase else i for i in text)
+
         await ctx.send(output)
-        
+
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def gtcycle(self, ctx, limit, *, txt):

@@ -79,7 +79,7 @@ class Tree(commands.Cog):
                     nodes.append(node)
                 else:
                     insert(subroot.left, num, highlight)
-            elif num > subroot.val:
+            else:
                 if not subroot.right:
                     node = Node(num)
                     subroot.right = node
