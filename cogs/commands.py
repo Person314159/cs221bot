@@ -251,8 +251,6 @@ class Commands(commands.Cog):
         `!dm @blankuser#1234` creates 221DM with TAs and blankuser
         `!dm @blankuser#1234 @otheruser#5678` creates 221DM with TAs, blankuser and otheruser
         `!dm close` closes 221DM
-
-        *Only usable by TAs and Profs
         """
 
         # meant for 221 server
@@ -266,13 +264,15 @@ class Commands(commands.Cog):
             await next(i for i in guild.roles if i.name == ctx.channel.name).delete()
             return await ctx.channel.delete()
 
-        if all(i.name not in ("TA", "Prof") for i in ctx.author.roles):
-            # only TAs and Prof can use this command
-            raise BadArgs("You do not have permission to use this command.")
-
         if not ctx.message.mentions:
             raise BadArgs("You need to specify a user or users to add!", show_help=True)
 
+        # check that nobody is already in a 221dm before going and creating everything
+        for user in ctx.message.mentions:
+            for role in user.roles:
+                if role.name.startswith("221dm"):
+                    raise BadArgs(f"{user.name} is already in a 221DM.")
+            
         # generate customized channel name to allow customized role
         nam = int(str((datetime.now() - datetime(1970, 1, 1)).total_seconds()).replace(".", "")) + ctx.author.id
         nam = f"221dm-{nam}"
@@ -300,6 +300,33 @@ class Commands(commands.Cog):
         await channel.send(f"<@{ctx.author.id}> {' '.join(users)}\n" +
                            f"Welcome to 221 private DM. Type `!dm close` to exit when you are finished.")
 
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def emojify(self, ctx):
+        """
+        `!emojify` __`Emoji text generator`__
+
+        **Usage:** !emojify <text>
+
+        **Examples:**
+        `!emojify hello` prints "hello" with emoji
+        `!emojify b` prints b with emoji"
+        """
+        
+        mapping = dict(zip(list("ABCDEFGHIJKLMNOPQRSTUVWXYZ"), ["🇦", "🇧", "🇨", "🇩", "🇪", "🇫", "🇬", "🇭", "🇮", "🇯", "🇰", "🇱", "🇲", "🇳", "🇴", "🇵", "🇶", "🇷", "🇸", "🇹", "🇺", "🇻", "🇼", "🇽", "🇾", "🇿"]))
+        text = ctx.message.content[9:].upper()
+        output = ""
+
+        for i in range(len(text)):
+            if text[i] in mapping:
+                output.append(mapping[text[i]]) + " "  
+            elif text[i] == " ":
+                output.append(" ")
+            else:
+                output.append(text[i])
+        
+        await ctx.send(output)
+        
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def gtcycle(self, ctx, limit, *, txt):
