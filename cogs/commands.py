@@ -314,8 +314,10 @@ class Commands(commands.Cog):
         `!emojify b` prints b with emoji"
         """
 
+        mapping = {"A": "🇦", "B": "🅱", "C": "🇨", "D": "🇩", "E": "🇪", "F": "🇫", "G": "🇬", "H": "🇭", "I": "🇮", "J": "🇯", "K": "🇰", "L": "🇱", "M": "🇲", "N": "🇳", "O": "🇴", "P": "🇵", "Q": "🇶", "R": "🇷", "S": "🇸", "T": "🇹", "U": "🇺", "V": "🇻", "W": "🇼", "X": "🇽", "Y": "🇾", "Z": "🇿", '0': '0️⃣', '1': '1️⃣', '2': '2️⃣', '3': '3️⃣', '4': '4️⃣', '5': '5️⃣', '6': '6️⃣', '7': '7️⃣', '8': '8️⃣', '9': '9️⃣'}
+
         text = ctx.message.content[9:].upper()
-        output = "".join(chr(ord(i) + 127397) + " " if i in string.ascii_uppercase else i for i in text)
+        output = "".join(mapping[i] + (" " if i in string.ascii_uppercase else "") if i in mapping else i for i in text)
 
         await ctx.send(output)
 
