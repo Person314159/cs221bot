@@ -310,7 +310,7 @@ class CanvasHandler(Canvas):
                 time_shift = datetime.now() - datetime.utcnow()
                 ctime_iso_parsed = (dateutil.parser.isoparse(ctime_iso) + time_shift).replace(tzinfo=None)
                 ctime_timedelta = ctime_iso_parsed - datetime.now()
-                if since and ctime_timedelta < -self._make_timedelta(since):
+                if since and ctime_timedelta <= -self._make_timedelta(since):
                     break
 
                 ctime_text = ctime_iso_parsed.strftime("%Y-%m-%d %H:%M:%S")
