@@ -314,7 +314,7 @@ class Canvas(commands.Cog):
                 await channel.send(notify_role.mention)
 
         for data in not_recorded:
-            embed_var = discord.Embed(title=f"Due in one {time}: {data[2]}", url=data[3], description=data[4], color=CANVAS_COLOR, timestamp=datetime.strptime(data[5], "%Y-%m-%d %H:%M:%S"))
+            embed_var = discord.Embed(title=f"Due in one {time}: {data[2]}", url=data[3], description=data[4][:2045].rsplit(maxsplit=1)[0] + "...", color=CANVAS_COLOR, timestamp=datetime.strptime(data[5], "%Y-%m-%d %H:%M:%S"))
             embed_var.set_author(name=data[0], url=data[1])
             embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
             embed_var.add_field(name="Due at", value=data[6], inline=True)
