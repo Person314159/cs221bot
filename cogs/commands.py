@@ -16,6 +16,7 @@ import requests.models
 import webcolors
 from discord.ext import commands
 from googletrans import constants, Translator
+from PIL import Image, ImageDraw
 
 from util.badargs import BadArgs
 from util.discord_handler import DiscordHandler
@@ -363,6 +364,111 @@ class Commands(commands.Cog):
 
         return
 
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def imhash(self, ctx):
+        """
+        `!imhash` __`Hashes text into an orbital image`__
+
+        **Usage:** !imhash <text>
+
+        **Examples:**
+        `!imhash never gonna give you up` generates a unique orbital hash image for never gonna give you up
+        """
+        
+        text = list(ctx.message.content[8:])
+        
+        if any([ord(a) > 127 for a in text]):
+            return await ctx.send("Non-ascii character detected. Stopping.")
+        
+        radius = len(text)
+        
+        while radius % 3 != 0:
+            radius += 1
+            
+        radius = radius // 3
+        image = Image.new("RGBA", (radius * 2 + 1, radius * 2 + 1), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(image)
+        r = radius
+        buf = []
+        
+        for word in text:
+            num = ord(word)
+            buf.append(num)
+            await asyncio.sleep(0)
+            
+            if len(buf) < 3: 
+                continue
+                
+            col = (2 * buf[0], 2 * buf[1], 2 * buf[2], 255)
+            buf = []
+            draw.ellipse((radius-r,radius-r,radius+r,radius+r), fill = col, outline = col)
+            r -= 1
+            
+        if len(buf):
+            
+            if len(buf) == 1: 
+                buf += [0, 0]
+            else: 
+                buf.append(0)
+                
+            noise = [random.randint(0, 1) for i in range(3)]
+            col = (2 * buf[0] + noise[0], 2 * buf[1]  + noise[1], 2 * buf[2]  + noise[2], 255)
+            draw.ellipse((radius - r,radius - r,radius + r,radius + r), fill = col, outline = col)
+            
+        filex = BytesIO()
+        image.save(filex, "PNG")
+        filex.seek(0)
+        await ctx.send(file = discord.File(filex, "hash.png"))
+    
+    @bot.command()
+    async def imunhash(self, ctx):
+        """
+        `!imunhash` __`Unhashes an orbital hash image`__
+
+        **Usage:** !imunhash [image url]
+
+        **Examples:**
+        `!imunhash https://somewhere.com/image.png` unhashes image.png from somewhere.com
+        
+        \*Images can also be provided by sending them on Discord as an attachment\*
+        """
+        
+        if ctx.message.attachments: 
+            link = ctx.message.attachments[0].url
+        else:
+            link = ctx.message.content[8:]
+            
+        points = link.split(".")
+        ext = points[-1].rstrip("?v=1")
+        
+        if ext.lower() not in ["png", "bmp", "jpg", "jpeg"]:
+            return await ctx.send("ERROR: Invalid image.\n\nImage must be a PNG, BMP or JPG, and URLs must not end with numbers.")
+            
+        img = Image.open(BytesIO(requests.get(link)))
+        radius = (img.width - 1) // 2
+        msg = ""
+        
+        for i in range(radius):
+            col = img.getpixel((i, radius))
+            msg += chr(col[0]//2)
+            
+            if col[1] // 2 != 0:
+                msg += chr(col[1] // 2) 
+                
+            if col[2] // 2 != 0:
+                msg += chr(col[2] // 2)
+                
+            await asyncio.sleep(0)
+            
+        a = len(msg) // 2000
+        
+        for i in range(a + 1):
+            ms = msg[i * 2000:(i + 1) * 2000]
+            
+            if len(ms):
+                await ctx.send(ms)
+    
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def join(self, ctx, *arg):
