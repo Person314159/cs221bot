@@ -26,14 +26,12 @@ bot = commands.Bot(command_prefix="!", help_command=None, intents=discord.Intent
 
 def loadJSON(jsonfile):
     with open(jsonfile, "r") as f:
-        b = json.load(f)
-        return json.loads(b)
+        return json.load(f)
 
 
 def writeJSON(data, jsonfile):
-    b = json.dumps(data)
     with open(jsonfile, "w") as f:
-        json.dump(b, f)
+        json.dump(data, f)
 
 
 async def status_task():
