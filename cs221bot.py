@@ -1,4 +1,5 @@
 import asyncio
+import argparse
 import json
 import os
 import random
@@ -24,6 +25,10 @@ CS221BOT_KEY = os.getenv("CS221BOT_KEY")
 
 bot = commands.Bot(command_prefix="!", help_command=None, intents=discord.Intents.all())
 
+parser = argparse.ArgumentParser(description="Run CS221Bot")
+parser.add_argument("-t", dest="testing_mode", action="store_const", const=True, default=False, 
+                    help="Run the bot in testing mode, allowing you to track non-public Canvas courses")
+args = parser.parse_args()
 
 def loadJSON(jsonfile):
     with open(jsonfile, "r") as f:
@@ -163,6 +168,13 @@ async def on_message(message):
 if __name__ == "__main__":
     bot.loadJSON = loadJSON
     bot.writeJSON = writeJSON
+
+    # The real Canvas API key (i.e. the one stored in the .env file) is required for Canvas
+    # courses without public access. However, the CPSC 221 course is accessible to the public.
+    # Since we only want to notify users about CPSC 221 assignments that are *publicly* available,
+    # we use the empty placeholder "" instead of the real Canvas API key when running in production.
+    # The -t flag is used in testing to indicate that we want to use the real Canvas API key.
+    bot.canvas_api_key = os.getenv("CANVAS_API_KEY") if args.testing_mode else ""
 
     for extension in filter(lambda f: isfile(join("cogs", f)) and f != "__init__.py", os.listdir("cogs")):
         bot.load_extension(f"cogs.{extension[:-3]}")
