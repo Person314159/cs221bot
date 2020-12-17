@@ -270,8 +270,10 @@ class Piazza(commands.Cog):
             self.bot.d_handler.piazza_handler = PiazzaHandler(self.bot.piazza_dict["course_name"], self.bot.piazza_dict["piazza_id"], PIAZZA_EMAIL, PIAZZA_PASSWORD, self.bot.piazza_dict["guild_id"])
 
         # dict.get defaults to None so a key error is never raised
-        for ch in self.bot.piazza_dict.get("channels"):
-            self.bot.d_handler.piazza_handler.add_channel(int(ch))
+        channels = self.bot.piazza_dict.get("channels")
+        if channels:
+            for ch in channels:
+                self.bot.d_handler.piazza_handler.add_channel(int(ch))
 
 
 def setup(bot):

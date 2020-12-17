@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from cogs.canvas import Canvas
 from cogs.piazza import Piazza
 from util.badargs import BadArgs
+from util.create_file import create_file_if_not_exists
 
 CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
@@ -60,17 +61,16 @@ async def status_task():
 
 
 def startup():
-    try:
-        bot.poll_dict = bot.loadJSON("data/poll.json")
-        bot.canvas_dict = bot.loadJSON("data/canvas.json")
-        bot.piazza_dict = bot.loadJSON("data/piazza.json")
-    except FileNotFoundError:
-        bot.writeJSON({}, "data/poll.json")
-        bot.poll_dict = bot.loadJSON("data/poll.json")
-        bot.writeJSON({}, "data/canvas.json")
-        bot.canvas_dict = bot.loadJSON("data/canvas.json")
-        bot.writeJSON({}, "data/piazza.json")
-        bot.piazza_dict = bot.loadJSON("data/piazza.json")
+    files = ("data/poll.json", "data/canvas.json", "data/piazza.json")
+
+    for f in files:
+        if not isfile(f):
+            create_file_if_not_exists(f)
+            bot.writeJSON({}, f)
+    
+    bot.poll_dict = bot.loadJSON("data/poll.json")
+    bot.canvas_dict = bot.loadJSON("data/canvas.json")
+    bot.piazza_dict = bot.loadJSON("data/piazza.json")
 
     for channel in filter(lambda ch: not bot.get_channel(int(ch)), list(bot.poll_dict)):
         del bot.poll_dict[channel]
