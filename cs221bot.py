@@ -1,4 +1,5 @@
 import asyncio
+import argparse
 import json
 import os
 import random
@@ -14,6 +15,7 @@ from dotenv import load_dotenv
 from cogs.canvas import Canvas
 from cogs.piazza import Piazza
 from util.badargs import BadArgs
+from util.create_file import create_file_if_not_exists
 
 CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
@@ -23,6 +25,10 @@ CS221BOT_KEY = os.getenv("CS221BOT_KEY")
 
 bot = commands.Bot(command_prefix="!", help_command=None, intents=discord.Intents.all())
 
+parser = argparse.ArgumentParser(description="Run CS221Bot")
+parser.add_argument("-t", dest="testing_mode", action="store_const", const=True, default=False, 
+                    help="Run the bot in testing mode, allowing you to track non-public Canvas courses")
+args = parser.parse_args()
 
 def loadJSON(jsonfile):
     with open(jsonfile, "r") as f:
@@ -60,17 +66,16 @@ async def status_task():
 
 
 def startup():
-    try:
-        bot.poll_dict = bot.loadJSON("data/poll.json")
-        bot.canvas_dict = bot.loadJSON("data/canvas.json")
-        bot.piazza_dict = bot.loadJSON("data/piazza.json")
-    except FileNotFoundError:
-        bot.writeJSON({}, "data/poll.json")
-        bot.poll_dict = bot.loadJSON("data/poll.json")
-        bot.writeJSON({}, "data/canvas.json")
-        bot.canvas_dict = bot.loadJSON("data/canvas.json")
-        bot.writeJSON({}, "data/piazza.json")
-        bot.piazza_dict = bot.loadJSON("data/piazza.json")
+    files = ("data/poll.json", "data/canvas.json", "data/piazza.json")
+
+    for f in files:
+        if not isfile(f):
+            create_file_if_not_exists(f)
+            bot.writeJSON({}, f)
+    
+    bot.poll_dict = bot.loadJSON("data/poll.json")
+    bot.canvas_dict = bot.loadJSON("data/canvas.json")
+    bot.piazza_dict = bot.loadJSON("data/piazza.json")
 
     for channel in filter(lambda ch: not bot.get_channel(int(ch)), list(bot.poll_dict)):
         del bot.poll_dict[channel]
@@ -164,7 +169,14 @@ if __name__ == "__main__":
     bot.loadJSON = loadJSON
     bot.writeJSON = writeJSON
 
-    for extension in filter(lambda f: isfile(join("cogs", f)), os.listdir("cogs")):
+    # The real Canvas API key (i.e. the one stored in the .env file) is required for Canvas
+    # courses without public access. However, the CPSC 221 course is accessible to the public.
+    # Since we only want to notify users about CPSC 221 assignments that are *publicly* available,
+    # we use the empty placeholder "" instead of the real Canvas API key when running in production.
+    # The -t flag is used in testing to indicate that we want to use the real Canvas API key.
+    bot.canvas_api_key = os.getenv("CANVAS_API_KEY") if args.testing_mode else ""
+
+    for extension in filter(lambda f: isfile(join("cogs", f)) and f != "__init__.py", os.listdir("cogs")):
         bot.load_extension(f"cogs.{extension[:-3]}")
         print(f"{extension} module loaded")
 

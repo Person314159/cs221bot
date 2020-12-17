@@ -269,8 +269,10 @@ class Piazza(commands.Cog):
         if all(field in self.bot.piazza_dict for field in ("course_name", "piazza_id", "guild_id")):
             self.bot.d_handler.piazza_handler = PiazzaHandler(self.bot.piazza_dict["course_name"], self.bot.piazza_dict["piazza_id"], PIAZZA_EMAIL, PIAZZA_PASSWORD, self.bot.piazza_dict["guild_id"])
 
-        # dict.get defaults to None so a key error is never raised
-        for ch in self.bot.piazza_dict.get("channels"):
+        # dict.get will default to an empty tuple so a key error is never raised
+        # We need to have the empty tuple because if the default value is None, an error is raised (NoneType object
+        # is not iterable).
+        for ch in self.bot.piazza_dict.get("channels", tuple()):
             self.bot.d_handler.piazza_handler.add_channel(int(ch))
 
 
