@@ -164,7 +164,7 @@ if __name__ == "__main__":
     bot.loadJSON = loadJSON
     bot.writeJSON = writeJSON
 
-    for extension in filter(lambda f: isfile(join("cogs", f)), os.listdir("cogs")):
+    for extension in filter(lambda f: isfile(join("cogs", f)) and f != "__init__.py", os.listdir("cogs")):
         bot.load_extension(f"cogs.{extension[:-3]}")
         print(f"{extension} module loaded")
 
