@@ -1,5 +1,5 @@
-import asyncio
 import argparse
+import asyncio
 import json
 import os
 import random
@@ -26,9 +26,10 @@ CS221BOT_KEY = os.getenv("CS221BOT_KEY")
 bot = commands.Bot(command_prefix="!", help_command=None, intents=discord.Intents.all())
 
 parser = argparse.ArgumentParser(description="Run CS221Bot")
-parser.add_argument("-t", dest="testing_mode", action="store_const", const=True, default=False, 
+parser.add_argument("-t", dest="testing_mode", action="store_const", const=True, default=False,
                     help="Run the bot in testing mode, allowing you to track non-public Canvas courses")
 args = parser.parse_args()
+
 
 def loadJSON(jsonfile):
     with open(jsonfile, "r") as f:
@@ -72,7 +73,7 @@ def startup():
         if not isfile(f):
             create_file_if_not_exists(f)
             bot.writeJSON({}, f)
-    
+
     bot.poll_dict = bot.loadJSON("data/poll.json")
     bot.canvas_dict = bot.loadJSON("data/canvas.json")
     bot.piazza_dict = bot.loadJSON("data/piazza.json")

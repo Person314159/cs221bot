@@ -43,6 +43,7 @@ class Canvas(commands.Cog):
         Add the courses with given IDs to the list of courses being tracked. Note that you will
         only receive course updates in channels that you have typed `!live` in.
         """
+
         self._add_guild(ctx.message.guild)
 
         c_handler = self._get_canvas_handler(ctx.message.guild)
@@ -70,6 +71,7 @@ class Canvas(commands.Cog):
 
         Remove the courses with given IDs from the list of courses being tracked.
         """
+
         c_handler = self._get_canvas_handler(ctx.message.guild)
 
         if not isinstance(c_handler, CanvasHandler):
@@ -133,9 +135,10 @@ class Canvas(commands.Cog):
     async def live(self, ctx: commands.Context):
         """
         `!live`
-        
+
         Enables course tracking for the channel the command is invoked in.
         """
+
         c_handler = self._get_canvas_handler(ctx.message.guild)
 
         if not isinstance(c_handler, CanvasHandler):
@@ -167,9 +170,10 @@ class Canvas(commands.Cog):
     async def unlive(self, ctx: commands.Context):
         """
         `!unlive`
-        
+
         Disables course tracking for the channel the command is invoked in.
         """
+
         c_handler = self._get_canvas_handler(ctx.message.guild)
 
         if not isinstance(c_handler, CanvasHandler):
