@@ -7,7 +7,6 @@ from typing import Dict, List, Optional, Set, Tuple
 import dateutil.parser.isoparser
 import discord
 from bs4 import BeautifulSoup
-from canvasapi.assignment import Assignment
 from canvasapi.canvas import Canvas
 from canvasapi.course import Course
 from canvasapi.paginated_list import PaginatedList
@@ -153,8 +152,8 @@ class CanvasHandler(Canvas):
                 self.due_day[c] = []
 
         for c in new_courses:
-            modules_file = f'{COURSES_DIRECTORY}/{c.id}/modules.txt'
-            watchers_file = f'{COURSES_DIRECTORY}/{c.id}/watchers.txt'
+            modules_file = f"{COURSES_DIRECTORY}/{c.id}/modules.txt"
+            watchers_file = f"{COURSES_DIRECTORY}/{c.id}/watchers.txt"
             self.store_channels_in_file(tuple(self._live_channels), watchers_file)
 
             if self._live_channels:
@@ -173,19 +172,19 @@ class CanvasHandler(Canvas):
         Assumption: {COURSES_DIRECTORY}/{course.id}/modules.txt exists.
         """
 
-        modules_file = f'{COURSES_DIRECTORY}/{course.id}/modules.txt'
+        modules_file = f"{COURSES_DIRECTORY}/{course.id}/modules.txt"
 
-        with open(modules_file, 'w') as f:
+        with open(modules_file, "w") as f:
             for module in course.get_modules():
-                if hasattr(module, 'name'):
-                    f.write(module.name + '\n')
+                if hasattr(module, "name"):
+                    f.write(module.name + "\n")
 
                 for item in module.get_module_items():
-                    if hasattr(item, 'title'):
-                        if hasattr(item, 'html_url'):
-                            f.write(item.html_url + '\n')
+                    if hasattr(item, "title"):
+                        if hasattr(item, "html_url"):
+                            f.write(item.html_url + "\n")
                         else:
-                            f.write(item.title + '\n')
+                            f.write(item.title + "\n")
 
     @staticmethod
     def store_channels_in_file(text_channels: Tuple[discord.TextChannel], file_path: str):
@@ -242,12 +241,12 @@ class CanvasHandler(Canvas):
                 del self.due_day[c]
 
         for i in ids_of_removed_courses:
-            watchers_file = f'{COURSES_DIRECTORY}/{i}/watchers.txt'
+            watchers_file = f"{COURSES_DIRECTORY}/{i}/watchers.txt"
             self.delete_channels_from_file(self.live_channels, watchers_file)
 
             # If there are no more channels watching the course, we should delete that course's directory.
             if os.stat(watchers_file).st_size == 0:
-                shutil.rmtree(f'{COURSES_DIRECTORY}/{i}')
+                shutil.rmtree(f"{COURSES_DIRECTORY}/{i}")
 
     @staticmethod
     def delete_channels_from_file(text_channels: List[discord.TextChannel], file_path: str):
@@ -297,7 +296,7 @@ class CanvasHandler(Canvas):
         data_list = []
 
         for stream_iter in map(iter, course_stream_list):
-            for item in filter(lambda i: i['type'] == "Conversation", stream_iter):
+            for item in filter(lambda i: i["type"] == "Conversation", stream_iter):
                 course = self.get_course(item["course_id"])
                 course_url = get_course_url(course.id, base_url)
                 title = "Announcement: " + item["title"]
@@ -310,6 +309,7 @@ class CanvasHandler(Canvas):
                     time_shift = datetime.now() - datetime.utcnow()
                     ctime_iso_parsed = (dateutil.parser.isoparse(ctime_iso) + time_shift).replace(tzinfo=None)
                     ctime_timedelta = ctime_iso_parsed - datetime.now()
+
                     if since and ctime_timedelta <= -self._make_timedelta(since):
                         break
 

@@ -6,12 +6,11 @@ import re
 import shutil
 import traceback
 from datetime import datetime
-from typing import List, Optional, Set, TextIO, Tuple, Union
+from typing import List, Optional, Union
 
 import canvasapi
 import discord
 from canvasapi.module import Module, ModuleItem
-from canvasapi.paginated_list import PaginatedList
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -280,7 +279,7 @@ class Canvas(commands.Cog):
                 for c in ch.courses:
                     since = ch.timings[str(c.id)]
                     since = re.sub(r"\s", "-", since)
-                    
+
                     # TODO: this is broken right now. Replacing "" with CANVAS_API_KEY causes private messages to be sent as announcements.
                     data_list = ch.get_course_stream_ch(since, (str(c.id),), CANVAS_API_URL, "")
 
@@ -308,15 +307,19 @@ class Canvas(commands.Cog):
                 for c in ch.courses:
                     for time in ("week", "day"):
                         data_list = ch.get_assignments(f"1-{time}", (str(c.id),), CANVAS_API_URL)
+
                         if time == "week":
                             recorded_ass_ids = ch.due_week[str(c.id)]
                         else:
                             recorded_ass_ids = ch.due_day[str(c.id)]
+
                         ass_ids = await self._assignment_sender(ch, data_list, recorded_ass_ids, notify_role, time)
+
                         if time == "week":
                             ch.due_week[str(c.id)] = ass_ids
                         else:
                             ch.due_day[str(c.id)] = ass_ids
+
                         self.bot.canvas_dict[str(ch.guild.id)][f"due_{time}"][str(c.id)] = ass_ids
 
                     self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
@@ -361,7 +364,7 @@ class Canvas(commands.Cog):
         For every folder in handler.canvas_handler.COURSES_DIRECTORY (abbreviated as CDIR) we will:
         - get the modules for the Canvas course with ID that matches the folder name
         - compare the modules we retrieved with the modules found in CDIR/{course_id}/modules.txt
-        - send the names of any new modules (i.e. modules that are not in modules.txt) to all channels 
+        - send the names of any new modules (i.e. modules that are not in modules.txt) to all channels
           in CDIR/{course_id}/watchers.txt
         - update CDIR/{course_id}/modules.txt with the modules we retrieved from Canvas
 
@@ -405,7 +408,7 @@ class Canvas(commands.Cog):
             - if adding the new field will cause the embed to exceed EMBED_CHAR_LIMIT characters in length
             - if the embed has 25 fields after adding the new field
             In both cases, we clear all of the original embed's fields after adding the embed copy to embed_list.
-            
+
             NOTE: changes to embed and embed_list will persist outside this function.
             """
 
@@ -440,12 +443,12 @@ class Canvas(commands.Cog):
                 # not have access to unpublished modules. Reference: https://canvas.instructure.com/doc/api/modules.html
                 if self.bot.notify_unpublished or not hasattr(module, "published") or module.published:
                     all_modules.append(module)
-                
+
                     for item in module.get_module_items():
                         # See comment about the "published" attribute above.
                         if self.bot.notify_unpublished or not hasattr(item, "published") or item.published:
                             all_modules.append(item)
-            
+
             return all_modules
 
         def write_modules(file_path: str, modules: List[Union[Module, ModuleItem]]):
@@ -456,7 +459,7 @@ class Canvas(commands.Cog):
             with open(file_path, "w") as f:
                 for module in modules:
                     f.write(str(module.id) + "\n")
-        
+
         def get_embeds(modules: List[Union[Module, ModuleItem]]) -> List[discord.Embed]:
             """
             Returns a list of Discord embeds to send to live channels.
@@ -464,15 +467,15 @@ class Canvas(commands.Cog):
 
             embed = discord.Embed(title=f"New modules found for {course.name}:", color=CANVAS_COLOR)
             embed.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
-            
+
             embed_list = []
-            
+
             for module in modules:
                 update_embed(embed, module, embed_list)
-            
+
             if len(embed.fields) != 0:
                 embed_list.append(embed)
-            
+
             return embed_list
 
         if os.path.exists(util.canvas_handler.COURSES_DIRECTORY):
@@ -509,7 +512,6 @@ class Canvas(commands.Cog):
 
                                     for element in embeds_to_send:
                                         await channel.send(embed=element)
-
                     except Exception:
                         print(traceback.format_exc(), flush=True)
 
