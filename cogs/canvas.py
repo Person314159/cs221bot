@@ -232,8 +232,8 @@ class Canvas(commands.Cog):
             since = "2-week"
             course_ids = args
 
-        # TODO: Issue: this causes private messages to be sent as announcements.
-        for data in c_handler.get_course_stream_ch(since, course_ids, CANVAS_API_URL, CANVAS_API_KEY):
+        # TODO: this is broken right now. Replacing "" with CANVAS_API_KEY causes private messages to be sent as announcements.
+        for data in c_handler.get_course_stream_ch(since, course_ids, CANVAS_API_URL, ""):
             embed_var = discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR)
             embed_var.set_author(name=data[0], url=data[1])
             embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
@@ -281,8 +281,8 @@ class Canvas(commands.Cog):
                     since = ch.timings[str(c.id)]
                     since = re.sub(r"\s", "-", since)
                     
-                    # TODO: Issue: this causes private messages to be sent as announcements.
-                    data_list = ch.get_course_stream_ch(since, (str(c.id),), CANVAS_API_URL, CANVAS_API_KEY)
+                    # TODO: this is broken right now. Replacing "" with CANVAS_API_KEY causes private messages to be sent as announcements.
+                    data_list = ch.get_course_stream_ch(since, (str(c.id),), CANVAS_API_URL, "")
 
                     for data in data_list:
                         embed_var = discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR)
