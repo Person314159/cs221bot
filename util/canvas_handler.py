@@ -295,27 +295,27 @@ class CanvasHandler(Canvas):
         course_ids = self._ids_converter(course_ids_str)
         course_stream_list = tuple(get_course_stream(c.id, base_url, access_token) for c in self.courses if (not course_ids) or c.id in course_ids)
         data_list = []
-        
-        for item in (i for c_s in course_stream_list for i in c_s if i['type'] == "Conversation"):
-            course = self.get_course(item["course_id"])
 
-            course_url = get_course_url(course.id, base_url)
-            title = "Announcement: " + item["title"]
-            short_desc = "\n".join(item["latest_messages"][0]["message"].split("\n")[:4])
-            ctime_iso = item["created_at"]
+        for stream_iter in map(iter, course_stream_list):
+            for item in filter(lambda i: i['type'] == "Conversation", stream_iter):
+                course = self.get_course(item["course_id"])
+                course_url = get_course_url(course.id, base_url)
+                title = "Announcement: " + item["title"]
+                short_desc = "\n".join(item["latest_messages"][0]["message"].split("\n")[:4])
+                ctime_iso = item["created_at"]
 
-            if ctime_iso is None:
-                ctime_text = "No info"
-            else:
-                time_shift = datetime.now() - datetime.utcnow()
-                ctime_iso_parsed = (dateutil.parser.isoparse(ctime_iso) + time_shift).replace(tzinfo=None)
-                ctime_timedelta = ctime_iso_parsed - datetime.now()
-                if since and ctime_timedelta <= -self._make_timedelta(since):
-                    break
+                if ctime_iso is None:
+                    ctime_text = "No info"
+                else:
+                    time_shift = datetime.now() - datetime.utcnow()
+                    ctime_iso_parsed = (dateutil.parser.isoparse(ctime_iso) + time_shift).replace(tzinfo=None)
+                    ctime_timedelta = ctime_iso_parsed - datetime.now()
+                    if since and ctime_timedelta <= -self._make_timedelta(since):
+                        break
 
-                ctime_text = ctime_iso_parsed.strftime("%Y-%m-%d %H:%M:%S")
+                    ctime_text = ctime_iso_parsed.strftime("%Y-%m-%d %H:%M:%S")
 
-            data_list.append([course.name, course_url, title, item["html_url"], short_desc, ctime_text, course.id])
+                data_list.append([course.name, course_url, title, item["html_url"], short_desc, ctime_text, course.id])
 
         return data_list
 
