@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import json
 import os
@@ -5,12 +6,16 @@ import random
 import re
 import traceback
 from datetime import datetime
+from os.path import isfile, join
 
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from commands import Main
+from cogs.canvas import Canvas
+from cogs.piazza import Piazza
+from util.badargs import BadArgs
+from util.create_file import create_file_if_not_exists
 
 CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
@@ -20,17 +25,20 @@ CS221BOT_KEY = os.getenv("CS221BOT_KEY")
 
 bot = commands.Bot(command_prefix="!", help_command=None, intents=discord.Intents.all())
 
+parser = argparse.ArgumentParser(description="Run CS221Bot")
+parser.add_argument("--cnu", dest="notify_unpublished", action="store_true",
+                    help="Allow the bot to send notifications about unpublished Canvas modules (if you have access) as well as published ones.")
+args = parser.parse_args()
+
 
 def loadJSON(jsonfile):
     with open(jsonfile, "r") as f:
-        b = json.load(f)
-        return json.loads(b)
+        return json.load(f)
 
 
 def writeJSON(data, jsonfile):
-    b = json.dumps(data)
     with open(jsonfile, "w") as f:
-        json.dump(b, f)
+        json.dump(data, f)
 
 
 async def status_task():
@@ -59,31 +67,27 @@ async def status_task():
 
 
 def startup():
-    try:
-        bot.poll_dict = bot.loadJSON("data/poll.json")
-        bot.canvas_dict = bot.loadJSON("data/canvas.json")
-        bot.piazza_dict = bot.loadJSON("data/piazza.json")
-    except FileNotFoundError:
-        bot.writeJSON({}, "data/poll.json")
-        bot.poll_dict = bot.loadJSON("data/poll.json")
-        bot.writeJSON({}, "data/canvas.json")
-        bot.canvas_dict = bot.loadJSON("data/canvas.json")
-        bot.writeJSON({}, "data/piazza.json")
-        bot.piazza_dict = bot.loadJSON("data/piazza.json")
+    files = ("data/poll.json", "data/canvas.json", "data/piazza.json")
 
-    for channel in list(bot.poll_dict):
-        if not bot.get_channel(int(channel)):
-            del bot.poll_dict[channel]
+    for f in files:
+        if not isfile(f):
+            create_file_if_not_exists(f)
+            bot.writeJSON({}, f)
 
-    for guild in bot.guilds:
-        for channel in guild.text_channels:
-            if str(channel.id) not in bot.poll_dict:
-                bot.poll_dict.update({str(channel.id): ""})
+    bot.poll_dict = bot.loadJSON("data/poll.json")
+    bot.canvas_dict = bot.loadJSON("data/canvas.json")
+    bot.piazza_dict = bot.loadJSON("data/piazza.json")
+
+    for channel in filter(lambda ch: not bot.get_channel(int(ch)), list(bot.poll_dict)):
+        del bot.poll_dict[channel]
+
+    for channel in (c for g in bot.guilds for c in g.text_channels if str(c.id) not in bot.poll_dict):
+        bot.poll_dict.update({str(channel.id): ""})
 
     bot.writeJSON(bot.poll_dict, "data/poll.json")
 
-    Main.canvas_init(bot.get_cog("Main"))
-    Main.piazza_start(bot.get_cog("Main"))
+    Canvas.canvas_init(bot.get_cog("Canvas"))
+    Piazza.piazza_start(bot.get_cog("Piazza"))
 
 
 async def wipe_dms():
@@ -91,15 +95,14 @@ async def wipe_dms():
 
     while True:
         await asyncio.sleep(300)
+        now = datetime.utcnow()
 
-        for channel in guild.channels:
-            if channel.name.startswith("221dm-"):
-                async for msg in channel.history(limit=1):
-                    if (datetime.utcnow() - msg.created_at).total_seconds() >= 86400:
-                        await channel.delete()
-                        break
-                else:
+        for channel in filter(lambda c: c.name.startswith("221dm-"), guild.channels):
+            if msg := next(channel.history(limit=1), None):
+                if (now - msg.created_at).total_seconds() >= 86400:
                     await channel.delete()
+            else:
+                await channel.delete()
 
 
 @bot.event
@@ -119,10 +122,9 @@ async def on_guild_join(guild):
 
 @bot.event
 async def on_guild_remove(guild):
-    for channel in guild.channels:
-        if str(channel.id) in bot.poll_dict:
-            del bot.poll_dict[str(channel.id)]
-            bot.writeJSON(bot.poll_dict, "data/poll.json")
+    for channel in filter(lambda c: str(c.id) in bot.poll_dict, guild.channels):
+        del bot.poll_dict[str(channel.id)]
+        bot.writeJSON(bot.poll_dict, "data/poll.json")
 
 
 @bot.event
@@ -146,9 +148,10 @@ async def on_message_edit(before, after):
 
 @bot.event
 async def on_message(message):
-    if message.author.bot:
+    if isinstance(message.channel, discord.abc.PrivateChannel):
         return
-    else:
+
+    if not message.author.bot:
         # debugging
         # with open("messages.txt", "a") as f:
         # 	print(f"{message.guild.name}: {message.channel.name}: {message.author.name}: \"{message.content}\" @ {str(datetime.datetime.now())} \r\n", file = f)
@@ -166,14 +169,24 @@ async def on_message(message):
 if __name__ == "__main__":
     bot.loadJSON = loadJSON
     bot.writeJSON = writeJSON
-    bot.load_extension("commands")
-    print("commands module loaded")
+
+    # True if the bot should send notifications about new *unpublished* modules on Canvas; False otherwise.
+    # This only matters if the host of the bot has access to unpublished modules. If the host does
+    # not have access, then the bot won't know about any unpublished modules and won't send any info
+    # about them anyway.
+    bot.notify_unpublished = args.notify_unpublished
+
+    for extension in filter(lambda f: isfile(join("cogs", f)) and f != "__init__.py", os.listdir("cogs")):
+        bot.load_extension(f"cogs.{extension[:-3]}")
+        print(f"{extension} module loaded")
 
 
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound) or isinstance(error, discord.HTTPException) or isinstance(error, discord.NotFound):
         pass
+    elif isinstance(error, BadArgs) or str(type(error)) == "<class 'cogs.meta.BadArgs'>":
+        await error.print(ctx)
     elif isinstance(error, commands.CommandOnCooldown):
         await ctx.send(f"Oops! That command is on cooldown right now. Please wait **{round(error.retry_after, 3)}** seconds before trying again.", delete_after=error.retry_after)
     elif isinstance(error, commands.MissingRequiredArgument):
@@ -186,14 +199,15 @@ async def on_command_error(ctx, error):
         etype = type(error)
         trace = error.__traceback__
 
-        # prints full traceback
         try:
-            await ctx.send(("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```").replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
-        except:
-            print(("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```").replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\cs221bot\\", ""))
+            await ctx.send(("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```").replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\discordbot\\", ""))
+        except Exception:
+            print(("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```").replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\discordbot\\", ""))
 
-bot.loop.create_task(Main.track_inotes(bot.get_cog("Main")))
-bot.loop.create_task(Main.send_pupdate(bot.get_cog("Main")))
-bot.loop.create_task(Main.stream_tracking(bot.get_cog("Main")))
-bot.loop.create_task(Main.assignment_reminder(bot.get_cog("Main")))
+
+bot.loop.create_task(Piazza.track_inotes(bot.get_cog("Piazza")))
+bot.loop.create_task(Piazza.send_pupdate(bot.get_cog("Piazza")))
+bot.loop.create_task(Canvas.stream_tracking(bot.get_cog("Canvas")))
+bot.loop.create_task(Canvas.assignment_reminder(bot.get_cog("Canvas")))
+bot.loop.create_task(bot.get_cog("Canvas").update_modules_hourly())
 bot.run(CS221BOT_KEY)

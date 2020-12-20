@@ -1,7 +1,7 @@
 from typing import List
 
-from canvas_handler import CanvasHandler
-from piazza_handler import PiazzaHandler
+from util.canvas_handler import CanvasHandler
+from util.piazza_handler import PiazzaHandler
 
 
 class DiscordHandler:
@@ -17,7 +17,7 @@ class DiscordHandler:
     """
 
     def __init__(self):
-        self._canvas_handlers = []   # [c_handler1, ... ]
+        self._canvas_handlers = []  # [c_handler1, ... ]
         self._piazza_handler = None
 
     @property

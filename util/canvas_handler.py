@@ -1,14 +1,22 @@
+import os
 import re
+import shutil
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import dateutil.parser.isoparser
 import discord
 from bs4 import BeautifulSoup
 from canvasapi.canvas import Canvas
 from canvasapi.course import Course
+from canvasapi.paginated_list import PaginatedList
 
-from extra_func import get_course_stream, get_course_url
+from util import create_file
+from util.canvas_api_extension import get_course_stream, get_course_url
+
+# Stores course modules and channels that are live tracking courses
+# Do *not* put a slash at the end of this path
+COURSES_DIRECTORY = "./data/courses"
 
 
 class CanvasHandler(Canvas):
@@ -100,7 +108,7 @@ class CanvasHandler(Canvas):
         self._due_day = due_day
 
     @staticmethod
-    def _ids_converter(ids: Tuple[str, ...]) -> List[int]:
+    def _ids_converter(ids: Tuple[str, ...]) -> Set[int]:
         """
         Converts list of string to list of int, removes duplicates
 
@@ -115,13 +123,7 @@ class CanvasHandler(Canvas):
             List of int ids
         """
 
-        temp = []
-
-        for i in ids:
-            temp.append(int(i))
-
-        temp = list(dict.fromkeys(temp))
-        return temp
+        return set(int(i) for i in ids)
 
     def track_course(self, course_ids_str: Tuple[str, ...]):
         """
@@ -134,12 +136,10 @@ class CanvasHandler(Canvas):
         """
 
         course_ids = self._ids_converter(course_ids_str)
+        c_ids = {c.id for c in self.courses}
 
-        for i in course_ids:
-            c_ids = [c.id for c in self.courses]
-
-            if i not in c_ids:
-                self.courses.append(self.get_course(i))
+        new_courses = tuple(self.get_course(i) for i in course_ids if i not in c_ids)
+        self.courses.extend(new_courses)
 
         for c in course_ids_str:
             if c not in self.timings:
@@ -150,6 +150,66 @@ class CanvasHandler(Canvas):
 
             if c not in self.due_day:
                 self.due_day[c] = []
+
+        for c in new_courses:
+            modules_file = f"{COURSES_DIRECTORY}/{c.id}/modules.txt"
+            watchers_file = f"{COURSES_DIRECTORY}/{c.id}/watchers.txt"
+            self.store_channels_in_file(tuple(self._live_channels), watchers_file)
+
+            if self._live_channels:
+                create_file.create_file_if_not_exists(modules_file)
+
+                # Here, we will only download modules if modules_file is empty.
+                if os.stat(modules_file).st_size == 0:
+                    self.download_modules(c)
+
+    @staticmethod
+    def download_modules(course: Course):
+        """
+        Download all modules for a Canvas course, storing each module's URL (or name/title
+        if the url does not exist) in {COURSES_DIRECTORY}/{course.id}/modules.txt.
+
+        Assumption: {COURSES_DIRECTORY}/{course.id}/modules.txt exists.
+        """
+
+        modules_file = f"{COURSES_DIRECTORY}/{course.id}/modules.txt"
+
+        with open(modules_file, "w") as f:
+            for module in course.get_modules():
+                if hasattr(module, "name"):
+                    f.write(module.name + "\n")
+
+                for item in module.get_module_items():
+                    if hasattr(item, "title"):
+                        if hasattr(item, "html_url"):
+                            f.write(item.html_url + "\n")
+                        else:
+                            f.write(item.title + "\n")
+
+    @staticmethod
+    def store_channels_in_file(text_channels: Tuple[discord.TextChannel], file_path: str):
+        """
+        For each text channel provided, we add its id to the file with given path if the file does
+        not already contain the id.
+        """
+
+        if text_channels:
+            create_file.create_file_if_not_exists(file_path)
+
+            with open(file_path, "r") as f:
+                existing_ids = f.readlines()
+
+            ids_to_add = set(map(lambda channel: str(channel.id) + "\n", text_channels))
+
+            with open(file_path, "w") as f:
+                for channel_id in existing_ids:
+                    if channel_id in ids_to_add:
+                        ids_to_add.remove(channel_id)
+
+                    f.write(channel_id)
+
+                for channel_id in ids_to_add:
+                    f.write(channel_id)
 
     def untrack_course(self, course_ids_str: Tuple[str, ...]):
         """
@@ -162,24 +222,52 @@ class CanvasHandler(Canvas):
         """
 
         course_ids = self._ids_converter(course_ids_str)
+        c_ids = {c.id: c for c in self.courses}
 
-        for i in course_ids:
-            c_ids = [c.id for c in self.courses]
+        ids_of_removed_courses = []
 
-            if i in c_ids:
-                del self.courses[c_ids.index(i)]
+        for i in filter(c_ids.__contains__, course_ids):
+            self.courses.remove(c_ids[i])
+            ids_of_removed_courses.append(i)
 
         for c in course_ids_str:
             if c in self.timings:
-                self.timings.pop(c)
+                del self.timings[c]
 
             if c in self.due_week:
-                self.due_week.pop(c)
+                del self.due_week[c]
 
             if c in self.due_day:
-                self.due_day.pop(c)
+                del self.due_day[c]
 
-    def get_course_stream_ch(self, since: Optional[str], course_ids_str: Tuple[str, ...], base_url, access_token) -> List[List[str]]:
+        for i in ids_of_removed_courses:
+            watchers_file = f"{COURSES_DIRECTORY}/{i}/watchers.txt"
+            self.delete_channels_from_file(self.live_channels, watchers_file)
+
+            # If there are no more channels watching the course, we should delete that course's directory.
+            if os.stat(watchers_file).st_size == 0:
+                shutil.rmtree(f"{COURSES_DIRECTORY}/{i}")
+
+    @staticmethod
+    def delete_channels_from_file(text_channels: List[discord.TextChannel], file_path: str):
+        """
+        For each text channel provided, we remove its id from the file with given path
+        if the id is contained in the file.
+        """
+
+        create_file.create_file_if_not_exists(file_path)
+
+        with open(file_path, "r") as f:
+            channel_ids = f.readlines()
+
+        ids_to_remove = set(map(lambda channel: str(channel.id) + "\n", text_channels))
+
+        with open(file_path, "w") as f:
+            for channel_id in channel_ids:
+                if channel_id not in ids_to_remove:
+                    f.write(channel_id)
+
+    def get_course_stream_ch(self, since: Optional[str], course_ids_str: Tuple[str, ...], base_url: str, access_token: str) -> List[List[str]]:
         """
         Gets announcements for course(s)
 
@@ -204,50 +292,30 @@ class CanvasHandler(Canvas):
         """
 
         course_ids = self._ids_converter(course_ids_str)
-
-        course_stream_list = []
-
-        for c in self.courses:
-            if course_ids:
-                if c.id in course_ids:
-                    course_stream_list.append(get_course_stream(c.id, base_url, access_token))
-            else:
-                course_stream_list.append(get_course_stream(c.id, base_url, access_token))
-
+        course_stream_list = tuple(get_course_stream(c.id, base_url, access_token) for c in self.courses if (not course_ids) or c.id in course_ids)
         data_list = []
 
-        for course_stream in course_stream_list:
-            for item in course_stream:
-                if item["type"] in ["Conversation"]:
-                    course = self.get_course(item["course_id"])
+        for stream_iter in map(iter, course_stream_list):
+            for item in filter(lambda i: i["type"] == "Conversation", stream_iter):
+                course = self.get_course(item["course_id"])
+                course_url = get_course_url(course.id, base_url)
+                title = "Announcement: " + item["title"]
+                short_desc = "\n".join(item["latest_messages"][0]["message"].split("\n")[:4])
+                ctime_iso = item["created_at"]
 
-                    course_name = course.name
-                    course_url = get_course_url(course.id, base_url)
-
-                    title = "Announcement: " + item["title"]
-
-                    url = "https://canvas.ubc.ca/conversations?#filter=type=inbox&course=course_53540"
-
-                    desc = item["latest_messages"][0]["message"]
-                    short_desc = "\n".join(desc.split("\n")[:4])
-
-                    ctime_iso = item["created_at"]
+                if ctime_iso is None:
+                    ctime_text = "No info"
+                else:
                     time_shift = datetime.now() - datetime.utcnow()
+                    ctime_iso_parsed = (dateutil.parser.isoparse(ctime_iso) + time_shift).replace(tzinfo=None)
+                    ctime_timedelta = ctime_iso_parsed - datetime.now()
 
-                    if ctime_iso is None:
-                        ctime_text = "No info"
-                    else:
-                        ctime_iso_parsed = (dateutil.parser.isoparse(ctime_iso) + time_shift).replace(tzinfo=None)
-                        ctime_timedelta = ctime_iso_parsed - datetime.now()
+                    if since and ctime_timedelta <= -self._make_timedelta(since):
+                        break
 
-                        if since is not None:
-                            if ctime_timedelta < -self._make_timedelta(since):
-                                # since announcements are in order
-                                break
+                    ctime_text = ctime_iso_parsed.strftime("%Y-%m-%d %H:%M:%S")
 
-                        ctime_text = ctime_iso_parsed.strftime("%Y-%m-%d %H:%M:%S")
-
-                    data_list.append([course_name, course_url, title, url, short_desc, ctime_text, course.id])
+                data_list.append([course.name, course_url, title, item["html_url"], short_desc, ctime_text, course.id])
 
         return data_list
 
@@ -272,28 +340,21 @@ class CanvasHandler(Canvas):
             List of assignment data to be formatted and sent as embeds
         """
 
-        courses_assignments = []
         course_ids = self._ids_converter(course_ids_str)
-
-        for c in self.courses:
-            if course_ids:
-                if c.id in course_ids:
-                    courses_assignments.append([c, c.get_assignments()])
-            else:
-                courses_assignments.append([c, c.get_assignments()])
+        courses_assignments = {c: c.get_assignments() for c in self.courses if not course_ids or c.id in course_ids}
 
         return self._get_assignment_data(due, courses_assignments, base_url)
 
-    def _get_assignment_data(self, due: Optional[str], courses_assignments, base_url: str) -> List[List[str]]:
+    def _get_assignment_data(self, due: Optional[str], courses_assignments: Dict[Course, PaginatedList], base_url: str) -> List[List[str]]:
         """
-        Formats all courses assignments as separate assignments"
+        Formats all courses assignments as separate assignments
 
         Parameters
         ----------
         due : `None or str`
             Date/Time from due date of assignments
 
-        courses_assignments : `List[canvasapi.Course, PaginatedList[canvasapi.Assignment]]`
+        courses_assignments : `Dict[Course, PaginatedList of Assignments]`
             List of courses and their assignments
 
         base_url : `str`
@@ -307,26 +368,17 @@ class CanvasHandler(Canvas):
 
         data_list = []
 
-        for course_assignments in courses_assignments:
-            course = course_assignments[0]
+        for course, assignments in courses_assignments.items():
             course_name = course.name
+            course_url = get_course_url(course.id, base_url)
 
-            for assignment in course_assignments[1]:
-                course_url = get_course_url(course.id, base_url)
-
+            for assignment in filter(lambda asgn: asgn.published, assignments):
                 ass_id = assignment.__getattribute__("id")
-
                 title = "Assignment: " + assignment.__getattribute__("name")
-
                 url = assignment.__getattribute__("html_url")
+                desc_html = assignment.__getattribute__("description") or "No description"
 
-                desc_html = assignment.__getattribute__("description")
-
-                if desc_html is None:
-                    desc_html = "No description"
-
-                desc_soup = BeautifulSoup(desc_html, "html.parser")
-                short_desc = "\n".join(desc_soup.get_text().split("\n")[:4])
+                short_desc = "\n".join(BeautifulSoup(desc_html, "html.parser").get_text().split("\n")[:4])
 
                 ctime_iso = assignment.__getattribute__("created_at")
                 dtime_iso = assignment.__getattribute__("due_at")
@@ -344,13 +396,8 @@ class CanvasHandler(Canvas):
                     dtime_iso_parsed = (dateutil.parser.isoparse(dtime_iso) + time_shift).replace(tzinfo=None)
                     dtime_timedelta = dtime_iso_parsed - datetime.now()
 
-                    if dtime_timedelta < timedelta(0):
+                    if dtime_timedelta < timedelta(0) or (due and dtime_timedelta > self._make_timedelta(due)):
                         continue
-
-                    if due is not None:
-                        if dtime_timedelta > self._make_timedelta(due):
-                            # since assignments are not in order
-                            continue
 
                     dtime_text = dtime_iso_parsed.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -365,7 +412,7 @@ class CanvasHandler(Canvas):
 
         Parameters
         ----------
-        till : `str`
+        till_str : `str`
             Date/Time from due date of assignments
 
         Returns
@@ -376,30 +423,18 @@ class CanvasHandler(Canvas):
 
         till = re.split(r"[-:]", till_str)
 
-        if till[1] in ["hour", "day", "week", "month", "year"]:
-            num = float(till[0])
-            options = {
-                "hour": timedelta(hours=num),
-                "day": timedelta(days=num),
-                "week": timedelta(weeks=num),
-                "month": timedelta(days=30*num),
-                "year": timedelta(days=365*num)
-            }
+        if till[1] in ["hour", "day", "week"]:
+            return abs(timedelta(**{till[1] + "s": float(till[0])}))
+        elif till[1] in ["month", "year"]:
+            return abs(timedelta(days=(30 if till[1] == "month" else 365) * float(till[1])))
 
-            return abs(options[till[1]])
-        elif len(till) == 3:
-            year = int(till[0])
-            month = int(till[1])
-            day = int(till[2])
+        year, month, day = int(till[0]), int(till[1]), int(till[2])
+
+        if len(till) == 3:
             return abs(datetime(year, month, day) - datetime.now())
-        else:
-            year = int(till[0])
-            month = int(till[1])
-            day = int(till[2])
-            hour = int(till[3])
-            minute = int(till[4])
-            second = int(till[5])
-            return abs(datetime(year, month, day, hour, minute, second) - datetime.now())
+
+        hour, minute, second = int(till[3]), int(till[4]), int(till[5])
+        return abs(datetime(year, month, day, hour, minute, second) - datetime.now())
 
     def get_course_names(self, url) -> List[List[str]]:
         """
@@ -416,9 +451,4 @@ class CanvasHandler(Canvas):
             List of course names and their page urls
         """
 
-        course_names = []
-
-        for c in self.courses:
-            course_names.append([c.name, get_course_url(c.id, url)])
-
-        return course_names
+        return [[c.name, get_course_url(c.id, url)] for c in self.courses]

@@ -1,10 +1,21 @@
+import asyncio
 import datetime
 import html
 import re
 import typing
+from operator import itemgetter
 from typing import List
 
+import piazza_api.exceptions
 from piazza_api import Piazza
+
+
+# Exception for when a post ID is invalid or the post is private etc.
+class InvalidPostID(Exception):
+    """
+    Exception raised when a Piazza post ID is invalid, refers to a non-existent post, or refers to a private post.
+    """
+    pass
 
 
 class PiazzaHandler:
@@ -109,14 +120,17 @@ class PiazzaHandler:
             requested post ID
         """
 
-        post = self.network.get_post(postID)
+        try:
+            post = self.network.get_post(postID)
+        except Exception as ex:  # TODO: Find actual exception
+            raise InvalidPostID("Post not found.") from ex
 
         if self.checkIfPrivate(post):
-            raise Exception("Post not found.")
+            raise InvalidPostID("Post is Private.")
 
         return post
 
-    def fetch_recent_notes(self, lim=55) -> List[dict]:
+    async def fetch_recent_notes(self, lim=55) -> List[dict]:
         """
         Returns up to `lim` JSON objects representing instructor's notes that were posted today
 
@@ -126,7 +140,7 @@ class PiazzaHandler:
             Upper limit on posts fetched. Must be in range [FETCH_MIN, FETCH_MAX] (inclusive)
         """
 
-        posts = self.fetch_posts_in_range(seconds=60*60*5, lim=lim)
+        posts = await self.fetch_posts_in_range(days=0, seconds=60 * 60 * 5, lim=lim)
         response = []
 
         for post in posts:
@@ -158,15 +172,35 @@ class PiazzaHandler:
 
         return response
 
-    def fetch_posts_in_range(self, days=1, seconds=0, lim=55) -> List[dict]:
+    async def fetch_posts_in_range(self, days=1, seconds=0, lim=55) -> List[dict]:
         """
         Returns up to `lim` JSON objects that represent a Piazza post posted today
         """
 
         if lim < 0:
-            raise Exception(f"Invalid lim for fetch_posts_in_days(): {lim}")
+            raise ValueError(f"Invalid lim for fetch_posts_in_days(): {lim}")
 
-        posts = self.network.iter_all_posts(limit=min(self.max, lim))
+        posts = []
+
+        feed = self.network.get_feed(limit=lim, offset=0)
+
+        for cid in map(itemgetter('id'), feed["feed"]):
+            post = None
+            retries = 5
+
+            while not post and retries:
+                try:
+                    post = self.network.get_post(cid)
+                except piazza_api.exceptions.RequestError as ex:
+                    retries -= 1
+
+                    if "foo fast" in str(ex):
+                        await asyncio.sleep(1)
+                    else:
+                        break
+            if post:
+                posts.append(post)
+
         date = datetime.date.today()
         result = []
 
@@ -177,7 +211,7 @@ class PiazzaHandler:
 
             if self.checkIfPrivate(post):
                 continue
-            elif (date - created_at).days <= days and (date-created_at).seconds <= seconds:
+            elif (date - created_at).days <= days and (date - created_at).seconds <= seconds:
                 result.append(post)
 
         return result
@@ -192,9 +226,9 @@ class PiazzaHandler:
 
         for post in posts:
             post_details = {
-                "num": post["nr"],
+                "num"    : post["nr"],
                 "subject": post["history"][0]["subject"],
-                "url": f"{self.url}?cid={post['nr']}",
+                "url"    : f"{self.url}?cid={post['nr']}",
             }
             response.append(post_details)
 
@@ -215,15 +249,15 @@ class PiazzaHandler:
         if post:
             postType = "Note" if post["type"] == "note" else "Question"
             response = {
-                "subject": post["history"][0]["subject"],
-                "num": f"@{postID}",
-                "url": f"{self.url}?cid={postID}",
-                "post_type": postType,
-                "post_body": self.clean_response(self.get_body(post)),
-                "ans_type": "",
-                "ans_body": "",
+                "subject"     : self.clean_response(post["history"][0]["subject"]),
+                "num"         : f"@{postID}",
+                "url"         : f"{self.url}?cid={postID}",
+                "post_type"   : postType,
+                "post_body"   : self.clean_response(self.get_body(post)),
+                "ans_type"    : "",
+                "ans_body"    : "",
                 "more_answers": False,
-                "num_answers": 0
+                "num_answers" : 0
             }
 
             answers = post["children"]
@@ -232,9 +266,9 @@ class PiazzaHandler:
                 answer = answers[0]
 
                 if answer["type"] == "followup":
-                    if answers[1]["type"] == "followup":
+                    if len(answers) == 1 or answers[1]["type"] == "followup":
                         answerHeading = "Follow-up Post"
-                        answerBody = answer["subject"]
+                        answerBody = self.clean_response(answer["subject"])
                     else:
                         answerHeading = "Instructor Answer" if answer["type"] == "i_answer" else "Student Answer"
                         answerBody = self.clean_response(self.get_body(answers[1]))
@@ -251,25 +285,25 @@ class PiazzaHandler:
 
             response.update({"ans_type": answerHeading})
             response.update({"ans_body": answerBody})
-            response.update({"tags": ", ".join(post["tags"] if post["tags"] else "None")})
+            response.update({"tags": ", ".join(post["tags"] or "None")})
             return response
         else:
             return None
 
-    def get_posts_in_range(self, showLimit=10, days=1, seconds=0) -> List[List[dict]]:
+    async def get_posts_in_range(self, showLimit=10, days=1, seconds=0) -> List[List[dict]]:
         if showLimit < 1:
-            raise Exception(f"Invalid showLimit for get_posts_in_range(): {showLimit}")
+            raise ValueError(f"Invalid showLimit for get_posts_in_range(): {showLimit}")
 
-        posts = self.fetch_posts_in_range(days=days, seconds=seconds, lim=self.max)
+        posts = await self.fetch_posts_in_range(days=days, seconds=seconds, lim=self.max)
         instr, stud = [], []
         response = []
 
         def create_post_dict(post, tag) -> dict:
             return {
-                "type": tag,
-                "num": post["nr"],
+                "type"   : tag,
+                "num"    : post["nr"],
                 "subject": self.clean_response(post["history"][0]["subject"]),
-                "url": f"{self.url}?cid={post['nr']}"
+                "url"    : f"{self.url}?cid={post['nr']}"
             }
 
         def filter_tag(post, arr, tagged):
@@ -296,20 +330,20 @@ class PiazzaHandler:
         response.append(stud)
         return response
 
-    def get_recent_notes(self) -> List[dict]:
+    async def get_recent_notes(self) -> List[dict]:
         """
         Fetches `FETCH_MIN` posts, filters out non-important (not instructor notes or pinned) posts and
         returns an array of corresponding post details
         """
 
-        posts = self.fetch_recent_notes(lim=self.min)
+        posts = await self.fetch_recent_notes(lim=self.min)
         response = []
 
         for post in posts:
             post_details = {
-                "num": post["nr"],
+                "num"    : post["nr"],
                 "subject": self.clean_response(post["history"][0]["subject"]),
-                "url": f"{self.url}?cid={self.nid}"
+                "url"    : f"{self.url}?cid={post['nr']}"
             }
             response.append(post_details)
 
@@ -317,7 +351,7 @@ class PiazzaHandler:
 
     @staticmethod
     def checkIfPrivate(post) -> bool:
-        return post["status"] == "private" or post["change_log"][0]["v"] == "private"
+        return post["status"] == "private"
 
     @staticmethod
     def clean_response(res):
