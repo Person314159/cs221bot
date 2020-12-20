@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import operator
 import os
 import re
@@ -10,6 +11,7 @@ from typing import List, Optional, Set, TextIO, Tuple, Union
 import canvasapi
 import discord
 from canvasapi.module import Module, ModuleItem
+from canvasapi.paginated_list import PaginatedList
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -23,6 +25,8 @@ CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUef
 
 load_dotenv()
 CANVAS_API_URL = "https://canvas.ubc.ca"
+CANVAS_API_KEY = os.getenv("CANVAS_API_KEY")
+CANVAS_INSTANCE = canvasapi.Canvas(CANVAS_API_URL, CANVAS_API_KEY)
 
 # Used for updating Canvas modules
 EMBED_CHAR_LIMIT = 6000
@@ -32,7 +36,6 @@ MAX_MODULE_IDENTIFIER_LENGTH = 120
 class Canvas(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.canvas_instance = canvasapi.Canvas(CANVAS_API_URL, bot.canvas_api_key)
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
@@ -229,7 +232,8 @@ class Canvas(commands.Cog):
             since = "2-week"
             course_ids = args
 
-        for data in c_handler.get_course_stream_ch(since, course_ids, CANVAS_API_URL, self.bot.canvas_api_key):
+        # TODO: this is broken right now. Replacing "" with CANVAS_API_KEY causes private messages to be sent as announcements.
+        for data in c_handler.get_course_stream_ch(since, course_ids, CANVAS_API_URL, ""):
             embed_var = discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR)
             embed_var.set_author(name=data[0], url=data[1])
             embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
@@ -244,7 +248,7 @@ class Canvas(commands.Cog):
 
     def _add_guild(self, guild: discord.Guild):
         if guild not in (ch.guild for ch in self.bot.d_handler.canvas_handlers):
-            self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, self.bot.canvas_api_key, guild))
+            self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, CANVAS_API_KEY, guild))
             self.bot.canvas_dict[str(guild.id)] = {
                 "courses"      : [],
                 "live_channels": [],
@@ -276,7 +280,9 @@ class Canvas(commands.Cog):
                 for c in ch.courses:
                     since = ch.timings[str(c.id)]
                     since = re.sub(r"\s", "-", since)
-                    data_list = ch.get_course_stream_ch(since, (str(c.id),), CANVAS_API_URL, self.bot.canvas_api_key)
+                    
+                    # TODO: this is broken right now. Replacing "" with CANVAS_API_KEY causes private messages to be sent as announcements.
+                    data_list = ch.get_course_stream_ch(since, (str(c.id),), CANVAS_API_URL, "")
 
                     for data in data_list:
                         embed_var = discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR)
@@ -355,8 +361,12 @@ class Canvas(commands.Cog):
         For every folder in handler.canvas_handler.COURSES_DIRECTORY (abbreviated as CDIR) we will:
         - get the modules for the Canvas course with ID that matches the folder name
         - compare the modules we retrieved with the modules found in CDIR/{course_id}/modules.txt
-        - send the names of any modules not in the file to all channels in CDIR/{course_id}/watchers.txt
+        - send the names of any new modules (i.e. modules that are not in modules.txt) to all channels 
+          in CDIR/{course_id}/watchers.txt
         - update CDIR/{course_id}/modules.txt with the modules we retrieved from Canvas
+
+        NOTE: the Canvas API distinguishes between a Module and a ModuleItem. In our documentation, though,
+        the word "module" can refer to both; we do not distinguish between the two types.
         """
 
         def get_field_value(module: Union[Module, ModuleItem]) -> str:
@@ -381,95 +391,89 @@ class Canvas(commands.Cog):
 
             return field
 
-        def update_embed(embed: discord.Embed, module: Union[Module, ModuleItem],
-                         num_fields: int, embed_list: List[discord.Embed]) -> Tuple[discord.Embed, int]:
+        def update_embed(embed: discord.Embed, module: Union[Module, ModuleItem], embed_list: List[discord.Embed]):
             """
             Adds a field to embed containing information about given module. The field includes the module's name or title,
             as well as a hyperlink to the module if one exists.
 
-            If the module's identifier (its name or title) has over MAX_MODULE_IDENTIFIER_LENGTH characters, we truncate the identifier
-            and append an ellipsis (...) so that it has MAX_MODULE_IDENTIFIER_LENGTH characters.
+            If the module's identifier (its name or title) has over MAX_IDENTIFIER_LENGTH characters, we truncate the identifier
+            and append an ellipsis (...) so that the length does not exceed the maximum.
 
-            The embed object that is passed in must have at most 24 fields. Use the parameter `num_fields` to specify the number
-            of fields the embed object has.
+            The embed object that is passed in must have at most 24 fields.
 
-            The embed object is appended to embed_list in two cases:
-            - if adding the new field will cause the embed to exceed EMBED_CHAR_LIMIT characters in length, the embed is appended to embed_list first.
-                Then, we create a new embed and add the field to the new embed.
-            - if the embed has 25 fields after adding the new field, we append embed to embed_list.
-
-            Note that Python stores references in lists -- hence, modifying the content of the embed variable after calling
-            this function will modify embed_list if embed was added to embed_list.
-
-            This function returns a tuple (embed, num_fields) containing the updated values of embed and num_fields.
-
-            NOTE: changes to embed_list will persist outside this function, but changes to embed and num_fields
-            may not be reflected outside this function. The caller should update (reassign) the values that were passed
-            in to embed and num_fields using the tuple returned by this function. A reassignment of embed will not
-            change the contents of embed_list.
+            A deep copy of the embed object is appended to embed_list in two cases:
+            - if adding the new field will cause the embed to exceed EMBED_CHAR_LIMIT characters in length
+            - if the embed has 25 fields after adding the new field
+            In both cases, we clear all of the original embed's fields after adding the embed copy to embed_list.
+            
+            NOTE: changes to embed and embed_list will persist outside this function.
             """
 
             field_value = get_field_value(module)
 
             # Note: 11 is the length of the string "Module Item"
             if 11 + len(field_value) + len(embed) > EMBED_CHAR_LIMIT:
-                embed_list.append(embed)
-                embed = discord.Embed(title=f"New modules for {course.name} (continued):", color=CANVAS_COLOR)
-                embed.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
-                num_fields = 0
+                embed_list.append(copy.deepcopy(embed))
+                embed.clear_fields()
+                embed.title = f"New modules found for {course.name} (continued):"
 
             if isinstance(module, canvasapi.module.Module):
                 embed.add_field(name="Module", value=field_value, inline=False)
             else:
                 embed.add_field(name="Module Item", value=field_value, inline=False)
 
-            num_fields += 1
+            if len(embed.fields) == 25:
+                embed_list.append(copy.deepcopy(embed))
+                embed.clear_fields()
+                embed.title = f"New modules found for {course.name} (continued):"
 
-            if num_fields == 25:
+        def get_all_modules(course: canvasapi.course.Course) -> List[Union[Module, ModuleItem]]:
+            """
+            Returns a list of all modules for the given course. Includes unpublished modules if
+            self.bot.notify_unpublished is True.
+            """
+
+            all_modules = []
+
+            for module in course.get_modules():
+                # If module does not have the "published" attribute, then the host of the bot does
+                # not have access to unpublished modules. Reference: https://canvas.instructure.com/doc/api/modules.html
+                if self.bot.notify_unpublished or not hasattr(module, "published") or module.published:
+                    all_modules.append(module)
+                
+                    for item in module.get_module_items():
+                        # See comment about the "published" attribute above.
+                        if self.bot.notify_unpublished or not hasattr(item, "published") or item.published:
+                            all_modules.append(item)
+            
+            return all_modules
+
+        def write_modules(file_path: str, modules: List[Union[Module, ModuleItem]]):
+            """
+            Stores the ID of all modules in file with given path.
+            """
+
+            with open(file_path, "w") as f:
+                for module in modules:
+                    f.write(str(module.id) + "\n")
+        
+        def get_embeds(modules: List[Union[Module, ModuleItem]]) -> List[discord.Embed]:
+            """
+            Returns a list of Discord embeds to send to live channels.
+            """
+
+            embed = discord.Embed(title=f"New modules found for {course.name}:", color=CANVAS_COLOR)
+            embed.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
+            
+            embed_list = []
+            
+            for module in modules:
+                update_embed(embed, module, embed_list)
+            
+            if len(embed.fields) != 0:
                 embed_list.append(embed)
-                embed = discord.Embed(title=f"New modules for {course.name} (continued):", color=CANVAS_COLOR)
-                embed.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
-                num_fields = 0
-
-            return embed, num_fields
-
-        def handle_module(module: Union[Module, ModuleItem], modules_file: TextIO, existing_modules: Set[str],
-                          curr_embed: discord.Embed, curr_embed_num_fields: int,
-                          embed_list: List[discord.Embed]) -> Tuple[discord.Embed, int]:
-            """
-            Writes given module or module item to modules_file. This function assumes that:
-            - modules_file has already been opened in write/append mode.
-            - module has the "name" attribute if it is an instance of canvasapi.module.Module.
-            - module has the "html_url" attribute or the "title" attribute if it is an instance of canvasapi.module.ModuleItem.
-
-            existing_modules contains contents of the pre-existing modules file (or is empty if the modules file has just been created)
-
-            This function updates curr_embed, curr_embed_num_fields, and embed_list depending on whether existing_modules already
-            knows about the given module item.
-
-            The function returns a tuple (curr_embed, curr_embed_num_fields) containing the updated values of curr_embed and curr_embed_num_fields.
-
-            NOTE: changes to embed_list will persist outside this function, but changes to curr_embed and curr_embed_num_fields may not be
-            reflected outside this function. The caller should update the values that were passed in to curr_embed and curr_embed_num_fields
-            using the tuple returned by this function.
-            """
-
-            if isinstance(module, canvasapi.module.Module):
-                to_write = module.name
-            else:
-                if hasattr(module, "html_url"):
-                    to_write = module.html_url
-                else:
-                    to_write = module.title
-
-            modules_file.write(to_write + "\n")
-
-            if to_write not in existing_modules:
-                embed_num_fields_tuple = update_embed(curr_embed, module, curr_embed_num_fields, embed_list)
-                curr_embed = embed_num_fields_tuple[0]
-                curr_embed_num_fields = embed_num_fields_tuple[1]
-
-            return curr_embed, curr_embed_num_fields
+            
+            return embed_list
 
         if os.path.exists(util.canvas_handler.COURSES_DIRECTORY):
             courses = [name for name in os.listdir(util.canvas_handler.COURSES_DIRECTORY)]
@@ -480,7 +484,7 @@ class Canvas(commands.Cog):
                     course_id = int(course_id_str)
 
                     try:
-                        course = self.canvas_instance.get_course(course_id)
+                        course = CANVAS_INSTANCE.get_course(course_id)
                         modules_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course_id}/modules.txt"
                         watchers_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course_id}/watchers.txt"
 
@@ -490,27 +494,11 @@ class Canvas(commands.Cog):
                         with open(modules_file, "r") as m:
                             existing_modules = set(m.read().splitlines())
 
-                        embeds_to_send = []
+                        all_modules = get_all_modules(course)
+                        write_modules(modules_file, all_modules)
+                        differences = list(filter(lambda module: str(module.id) not in existing_modules, all_modules))
 
-                        curr_embed = discord.Embed(title=f"New modules found for {course.name}:", color=CANVAS_COLOR)
-                        curr_embed.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
-                        curr_num_fields = 0
-
-                        with open(modules_file, "w") as m:
-                            for module in course.get_modules():
-                                if hasattr(module, "name"):
-                                    embed_num_fields_tuple = handle_module(module, m, existing_modules, curr_embed, curr_num_fields, embeds_to_send)
-                                    curr_embed = embed_num_fields_tuple[0]
-                                    curr_num_fields = embed_num_fields_tuple[1]
-
-                                    for item in module.get_module_items():
-                                        if hasattr(item, "title"):
-                                            embed_num_fields_tuple = handle_module(item, m, existing_modules, curr_embed, curr_num_fields, embeds_to_send)
-                                            curr_embed = embed_num_fields_tuple[0]
-                                            curr_num_fields = embed_num_fields_tuple[1]
-
-                        if curr_num_fields:
-                            embeds_to_send.append(curr_embed)
+                        embeds_to_send = get_embeds(differences)
 
                         if embeds_to_send:
                             with open(watchers_file, "r") as w:
@@ -531,7 +519,7 @@ class Canvas(commands.Cog):
             guild = self.bot.guilds[[guild.id for guild in self.bot.guilds].index(int(c_handler_guild_id))]
 
             if guild not in (ch.guild for ch in self.bot.d_handler.canvas_handlers):
-                self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, self.bot.canvas_api_key, guild))
+                self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, CANVAS_API_KEY, guild))
 
             c_handler = self._get_canvas_handler(guild)
             c_handler.track_course(tuple(self.bot.canvas_dict[c_handler_guild_id]["courses"]))
