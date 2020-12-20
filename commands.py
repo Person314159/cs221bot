@@ -1199,28 +1199,32 @@ class Main(commands.Cog):
 
         if self.d_handler.piazza_handler:
             posts = self.d_handler.piazza_handler.get_posts_in_range()
-            response = f"**{self.d_handler.piazza_handler.course_name}'s posts for {datetime.today().strftime('%a. %B %d, %Y')}**\n"
-            response += "Instructor's Notes:\n"
 
-            if posts[0]:
-                for ipost in posts[0]:
-                    response += f"@{ipost['num']}: {ipost['subject']} <{ipost['url']}>\n"
-            else:
-                response += "None today!\n"
+            if posts:
+                response = f"**{self.d_handler.piazza_handler.course_name}'s posts for {datetime.today().strftime('%a. %B %d, %Y')}**\n"
+                response += "Instructor's Notes:\n"
 
-            response += "\nDiscussion posts: \n"
+                if posts[0]:
+                    for ipost in posts[0]:
+                        response += f"@{ipost['num']}: {ipost['subject']} <{ipost['url']}>\n"
+                else:
+                    response += "None today!\n"
 
-            if not posts[1]:
-                response += "None today!"
+                response += "\nDiscussion posts: \n"
 
-            for post in posts[1]:
-                response += f"@{post['num']}: {post['subject']} <{post['url']}>\n"
+                if not posts[1]:
+                    response += "None today!"
 
-            # await self.send_at_time()
+                for post in posts[1]:
+                    response += f"@{post['num']}: {post['subject']} <{post['url']}>\n"
 
-            for chnl in self.d_handler.piazza_handler.channels:
-                channel = self.bot.get_channel(chnl)
-                await channel.send(response)
+                # await self.send_at_time()
+
+                for chnl in self.d_handler.piazza_handler.channels:
+                    channel = self.bot.get_channel(chnl)
+                    await channel.send(response)
+        
+        print("Piazza test function finished")
 
     @staticmethod
     def create_post_embed(post):
@@ -1251,28 +1255,30 @@ class Main(commands.Cog):
         while True:
             if self.d_handler.piazza_handler:
                 posts = self.d_handler.piazza_handler.get_posts_in_range()
-                response = f"**{self.d_handler.piazza_handler.course_name}'s posts for {datetime.today().strftime('%a. %B %d, %Y')}**\n"
-                response += "Instructor's Notes:\n"
+                
+                if posts:
+                    response = f"**{self.d_handler.piazza_handler.course_name}'s posts for {datetime.today().strftime('%a. %B %d, %Y')}**\n"
+                    response += "Instructor's Notes:\n"
 
-                if posts[0]:
-                    for ipost in posts[0]:
-                        response += f"@{ipost['num']}: {ipost['subject']} <{ipost['url']}>\n"
-                else:
-                    response += "None today!\n"
+                    if posts[0]:
+                        for ipost in posts[0]:
+                            response += f"@{ipost['num']}: {ipost['subject']} <{ipost['url']}>\n"
+                    else:
+                        response += "None today!\n"
 
-                response += "\nDiscussion posts: \n"
+                    response += "\nDiscussion posts: \n"
 
-                if not posts[1]:
-                    response += "None today!"
+                    if not posts[1]:
+                        response += "None today!"
 
-                for post in posts[1]:
-                    response += f"@{post['num']}: {post['subject']} <{post['url']}>\n"
+                    for post in posts[1]:
+                        response += f"@{post['num']}: {post['subject']} <{post['url']}>\n"
 
-                await self.send_at_time()
+                    await self.send_at_time()
 
-                for chnl in self.d_handler.piazza_handler.channels:
-                    channel = self.bot.get_channel(chnl)
-                    await channel.send(response)
+                    for chnl in self.d_handler.piazza_handler.channels:
+                        channel = self.bot.get_channel(chnl)
+                        await channel.send(response)
 
             await asyncio.sleep(60*60*24)
 
