@@ -7,8 +7,10 @@ from typing import Dict, List, Optional, Set, Tuple
 import dateutil.parser.isoparser
 import discord
 from bs4 import BeautifulSoup
+from canvasapi.assignment import Assignment
 from canvasapi.canvas import Canvas
 from canvasapi.course import Course
+from canvasapi.paginated_list import PaginatedList
 
 from util import create_file
 from util.canvas_api_extension import get_course_stream, get_course_url
@@ -266,7 +268,7 @@ class CanvasHandler(Canvas):
                 if channel_id not in ids_to_remove:
                     f.write(channel_id)
 
-    def get_course_stream_ch(self, since: Optional[str], course_ids_str: Tuple[str, ...], base_url, access_token) -> List[List[str]]:
+    def get_course_stream_ch(self, since: Optional[str], course_ids_str: Tuple[str, ...], base_url: str, access_token: str) -> List[List[str]]:
         """
         Gets announcements for course(s)
 
@@ -293,9 +295,7 @@ class CanvasHandler(Canvas):
         course_ids = self._ids_converter(course_ids_str)
         course_stream_list = tuple(get_course_stream(c.id, base_url, access_token) for c in self.courses if (not course_ids) or c.id in course_ids)
         data_list = []
-
-        url = "https://canvas.ubc.ca/conversations?#filter=type=inbox&course=course_53540"
-
+        
         for item in (i for c_s in course_stream_list for i in c_s if i['type'] == "Conversation"):
             course = self.get_course(item["course_id"])
 
@@ -315,7 +315,7 @@ class CanvasHandler(Canvas):
 
                 ctime_text = ctime_iso_parsed.strftime("%Y-%m-%d %H:%M:%S")
 
-            data_list.append([course.name, course_url, title, url, short_desc, ctime_text, course.id])
+            data_list.append([course.name, course_url, title, item["html_url"], short_desc, ctime_text, course.id])
 
         return data_list
 
@@ -341,20 +341,20 @@ class CanvasHandler(Canvas):
         """
 
         course_ids = self._ids_converter(course_ids_str)
-        courses_assignments = [[c, c.get_assignments()] for c in self.courses if not course_ids or c.id in course_ids]
+        courses_assignments = {c: c.get_assignments() for c in self.courses if not course_ids or c.id in course_ids}
 
         return self._get_assignment_data(due, courses_assignments, base_url)
 
-    def _get_assignment_data(self, due: Optional[str], courses_assignments, base_url: str) -> List[List[str]]:
+    def _get_assignment_data(self, due: Optional[str], courses_assignments: Dict[Course, PaginatedList], base_url: str) -> List[List[str]]:
         """
-        Formats all courses assignments as separate assignments"
+        Formats all courses assignments as separate assignments
 
         Parameters
         ----------
         due : `None or str`
             Date/Time from due date of assignments
 
-        courses_assignments : `List[canvasapi.Course, PaginatedList[canvasapi.Assignment]]`
+        courses_assignments : `Dict[Course, PaginatedList of Assignments]`
             List of courses and their assignments
 
         base_url : `str`
@@ -368,12 +368,11 @@ class CanvasHandler(Canvas):
 
         data_list = []
 
-        for course_assignments in courses_assignments:
-            course = course_assignments[0]
+        for course, assignments in courses_assignments.items():
             course_name = course.name
             course_url = get_course_url(course.id, base_url)
 
-            for assignment in course_assignments[1]:
+            for assignment in filter(lambda asgn: asgn.published, assignments):
                 ass_id = assignment.__getattribute__("id")
                 title = "Assignment: " + assignment.__getattribute__("name")
                 url = assignment.__getattribute__("html_url")

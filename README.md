@@ -31,6 +31,6 @@ You can install all of them using `pip install -r requirements.txt`.
 Start the bot by using `python3 cs221bot.py`. 
 View the list of commands by typing `!help` in a server where the bot is in.
 
-If you are tracking non-public Canvas courses with the bot, you will need to set a Canvas-generated user token as
-the environmental variable `CANVAS_API_KEY` in the `.env` file. When starting the bot, you need to use the `-t` flag,
-i.e. run the command `python3 cs221bot.py -t`.
+The bot's Canvas module-tracking functionality only notifies you of new *published* modules by default.
+If you want the bot to notify you when it sees a new *unpublished* module, run the bot with the
+`--cnu` flag, i.e. run `python3 cs221bot.py --cnu`. You need to have access to unpublished modules, though.

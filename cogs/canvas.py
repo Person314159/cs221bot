@@ -25,6 +25,8 @@ CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUef
 
 load_dotenv()
 CANVAS_API_URL = "https://canvas.ubc.ca"
+CANVAS_API_KEY = os.getenv("CANVAS_API_KEY")
+CANVAS_INSTANCE = canvasapi.Canvas(CANVAS_API_URL, CANVAS_API_KEY)
 
 # Used for updating Canvas modules
 EMBED_CHAR_LIMIT = 6000
@@ -34,7 +36,6 @@ MAX_MODULE_IDENTIFIER_LENGTH = 120
 class Canvas(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.canvas_instance = canvasapi.Canvas(CANVAS_API_URL, bot.canvas_api_key)
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
@@ -231,7 +232,8 @@ class Canvas(commands.Cog):
             since = "2-week"
             course_ids = args
 
-        for data in c_handler.get_course_stream_ch(since, course_ids, CANVAS_API_URL, self.bot.canvas_api_key):
+        # TODO: Issue: this causes private messages to be sent as announcements.
+        for data in c_handler.get_course_stream_ch(since, course_ids, CANVAS_API_URL, CANVAS_API_KEY):
             embed_var = discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR)
             embed_var.set_author(name=data[0], url=data[1])
             embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
@@ -246,7 +248,7 @@ class Canvas(commands.Cog):
 
     def _add_guild(self, guild: discord.Guild):
         if guild not in (ch.guild for ch in self.bot.d_handler.canvas_handlers):
-            self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, self.bot.canvas_api_key, guild))
+            self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, CANVAS_API_KEY, guild))
             self.bot.canvas_dict[str(guild.id)] = {
                 "courses"      : [],
                 "live_channels": [],
@@ -278,7 +280,9 @@ class Canvas(commands.Cog):
                 for c in ch.courses:
                     since = ch.timings[str(c.id)]
                     since = re.sub(r"\s", "-", since)
-                    data_list = ch.get_course_stream_ch(since, (str(c.id),), CANVAS_API_URL, self.bot.canvas_api_key)
+                    
+                    # TODO: Issue: this causes private messages to be sent as announcements.
+                    data_list = ch.get_course_stream_ch(since, (str(c.id),), CANVAS_API_URL, CANVAS_API_KEY)
 
                     for data in data_list:
                         embed_var = discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR)
@@ -425,16 +429,22 @@ class Canvas(commands.Cog):
 
         def get_all_modules(course: canvasapi.course.Course) -> List[Union[Module, ModuleItem]]:
             """
-            Returns a list of all modules for the given course.
+            Returns a list of all modules for the given course. Includes unpublished modules if
+            self.bot.notify_unpublished is True.
             """
 
             all_modules = []
 
             for module in course.get_modules():
-                all_modules.append(module)
-                    
-                for item in module.get_module_items():
-                        all_modules.append(item)
+                # If module does not have the "published" attribute, then the host of the bot does
+                # not have access to unpublished modules. Reference: https://canvas.instructure.com/doc/api/modules.html
+                if self.bot.notify_unpublished or not hasattr(module, "published") or module.published:
+                    all_modules.append(module)
+                
+                    for item in module.get_module_items():
+                        # See comment about the "published" attribute above.
+                        if self.bot.notify_unpublished or not hasattr(item, "published") or item.published:
+                            all_modules.append(item)
             
             return all_modules
 
@@ -474,7 +484,7 @@ class Canvas(commands.Cog):
                     course_id = int(course_id_str)
 
                     try:
-                        course = self.canvas_instance.get_course(course_id)
+                        course = CANVAS_INSTANCE.get_course(course_id)
                         modules_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course_id}/modules.txt"
                         watchers_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course_id}/watchers.txt"
 
@@ -509,7 +519,7 @@ class Canvas(commands.Cog):
             guild = self.bot.guilds[[guild.id for guild in self.bot.guilds].index(int(c_handler_guild_id))]
 
             if guild not in (ch.guild for ch in self.bot.d_handler.canvas_handlers):
-                self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, self.bot.canvas_api_key, guild))
+                self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, CANVAS_API_KEY, guild))
 
             c_handler = self._get_canvas_handler(guild)
             c_handler.track_course(tuple(self.bot.canvas_dict[c_handler_guild_id]["courses"]))
