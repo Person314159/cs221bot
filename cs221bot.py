@@ -111,6 +111,11 @@ async def on_ready():
     print("Logged in successfully")
     bot.loop.create_task(status_task())
     bot.loop.create_task(wipe_dms())
+    bot.loop.create_task(Piazza.track_inotes(bot.get_cog("Piazza")))
+    bot.loop.create_task(Piazza.send_pupdate(bot.get_cog("Piazza")))
+    bot.loop.create_task(Canvas.stream_tracking(bot.get_cog("Canvas")))
+    bot.loop.create_task(Canvas.assignment_reminder(bot.get_cog("Canvas")))
+    bot.loop.create_task(bot.get_cog("Canvas").update_modules_hourly())
 
 
 @bot.event
@@ -204,10 +209,4 @@ async def on_command_error(ctx, error):
         except Exception:
             print(("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```").replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\discordbot\\", ""))
 
-
-bot.loop.create_task(Piazza.track_inotes(bot.get_cog("Piazza")))
-bot.loop.create_task(Piazza.send_pupdate(bot.get_cog("Piazza")))
-bot.loop.create_task(Canvas.stream_tracking(bot.get_cog("Canvas")))
-bot.loop.create_task(Canvas.assignment_reminder(bot.get_cog("Canvas")))
-bot.loop.create_task(bot.get_cog("Canvas").update_modules_hourly())
 bot.run(CS221BOT_KEY)
