@@ -274,10 +274,12 @@ class CanvasHandler(Canvas):
         Parameters
         ----------
         since : `None or str`
-            Date/Time from announcement creation to now
+            Date/Time from announcement creation to now. If None, then all announcements are returned, 
+            regardless of date of creation.
 
         course_ids_str : `Tuple[str, ...]`
-            Tuple of course ids
+            Tuple of course ids. If this parameter is an empty tuple, then this function gets announcements 
+            for *all* courses being tracked by this CanvasHandler.
 
         base_url : `str`
             Base URL of the Canvas instance's API
@@ -292,10 +294,10 @@ class CanvasHandler(Canvas):
         """
 
         course_ids = self._ids_converter(course_ids_str)
-        course_stream_list = tuple(get_course_stream(c.id, base_url, access_token) for c in self.courses if (not course_ids) or c.id in course_ids)
+        course_streams = tuple(get_course_stream(c.id, base_url, access_token) for c in self.courses if (not course_ids) or c.id in course_ids)
         data_list = []
 
-        for stream_iter in map(iter, course_stream_list):
+        for stream_iter in map(iter, course_streams):
             for item in filter(lambda i: i["type"] == "Conversation", stream_iter):
                 course = self.get_course(item["course_id"])
                 course_url = get_course_url(course.id, base_url)
@@ -308,9 +310,11 @@ class CanvasHandler(Canvas):
                 else:
                     time_shift = datetime.now() - datetime.utcnow()
                     ctime_iso_parsed = (dateutil.parser.isoparse(ctime_iso) + time_shift).replace(tzinfo=None)
-                    ctime_timedelta = ctime_iso_parsed - datetime.now()
 
-                    if since and ctime_timedelta <= -self._make_timedelta(since):
+                    # A timedelta representing how long ago the conversation was created.
+                    ctime_timedelta = datetime.now() - ctime_iso_parsed
+
+                    if since and ctime_timedelta >= self._make_timedelta(since):
                         break
 
                     ctime_text = ctime_iso_parsed.strftime("%Y-%m-%d %H:%M:%S")
@@ -426,7 +430,7 @@ class CanvasHandler(Canvas):
         if till[1] in ["hour", "day", "week"]:
             return abs(timedelta(**{till[1] + "s": float(till[0])}))
         elif till[1] in ["month", "year"]:
-            return abs(timedelta(days=(30 if till[1] == "month" else 365) * float(till[1])))
+            return abs(timedelta(days=(30 if till[1] == "month" else 365) * float(till[0])))
 
         year, month, day = int(till[0]), int(till[1]), int(till[2])
 
