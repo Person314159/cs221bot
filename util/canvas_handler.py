@@ -35,10 +35,10 @@ class CanvasHandler(Canvas):
     timings : `Dict[str, str]`
         Contains course and its last announcement date and time.
 
-    due_week : `Dict[str, List[str]]`
+    due_week : `Dict[str, List[int]]`
         Contains course and assignment ids due in less than a week.
 
-    due_day : `Dict[str, List[str]]`
+    due_day : `Dict[str, List[int]]`
         Contains course and assignment ids due in less than a day.
     """
 
@@ -61,8 +61,8 @@ class CanvasHandler(Canvas):
         self._guild = guild
         self._live_channels: List[discord.TextChannel] = []
         self._timings: Dict[str, str] = {}
-        self._due_week: Dict[str, List[str]] = {}
-        self._due_day: Dict[str, List[str]] = {}
+        self._due_week: Dict[str, List[int]] = {}
+        self._due_day: Dict[str, List[int]] = {}
 
     @property
     def courses(self) -> List[Course]:
