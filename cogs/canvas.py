@@ -38,7 +38,7 @@ class Canvas(commands.Cog):
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
-    async def track(self, ctx: commands.Context, *course_ids: Tuple[str]):
+    async def track(self, ctx: commands.Context, *course_ids):
         """
         `!track <course IDs...>`
 
@@ -62,7 +62,11 @@ class Canvas(commands.Cog):
         Sends an embed to ctx that lists the Canvas courses being tracked by c_handler.
         """
 
-        self.bot.canvas_dict[str(ctx.message.guild.id)]["courses"] = [str(c.id) for c in c_handler.courses]
+        guild_dict = self.bot.canvas_dict[str(ctx.message.guild.id)]
+        guild_dict["courses"] = [str(c.id) for c in c_handler.courses]
+        guild_dict["due_week"] = c_handler.due_week
+        guild_dict["due_day"] = c_handler.due_day
+        
         self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
 
         embed_var = self._get_tracking_courses(c_handler, CANVAS_API_URL)
@@ -71,7 +75,7 @@ class Canvas(commands.Cog):
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
-    async def untrack(self, ctx: commands.Context, *course_ids: Tuple[str]):
+    async def untrack(self, ctx: commands.Context, *course_ids):
         """
         `!untrack <course IDs...>`
 
