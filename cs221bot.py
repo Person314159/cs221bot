@@ -209,4 +209,5 @@ async def on_command_error(ctx, error):
         except Exception:
             print(("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```").replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\discordbot\\", ""))
 
+
 bot.run(CS221BOT_KEY)

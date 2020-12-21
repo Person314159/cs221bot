@@ -133,15 +133,15 @@ class CanvasHandler(Canvas):
 
         For each course, if the bot is tracking the course for the first time,
         the course's modules will be downloaded from Canvas and saved in the course's
-        directory (located in /data/courses/). If `get_unpublished_modules` is `True`, and 
-        we have access to unpublished modules for the course, then we will save both published and 
+        directory (located in /data/courses/). If `get_unpublished_modules` is `True`, and
+        we have access to unpublished modules for the course, then we will save both published and
         unpublished modules to file. Otherwise, we will only save published modules.
 
         Parameters
         ----------
         course_ids_str : `Tuple[str]`
             Tuple of course ids
-        
+
         get_unpublished_modules: `bool`
             True if we should attempt to store unpublished modules for the courses in `course_ids_str`;
             False otherwise
@@ -178,7 +178,7 @@ class CanvasHandler(Canvas):
     @staticmethod
     def download_modules(course: Course, incl_unpublished: bool):
         """
-        Download all modules for a Canvas course, storing each module's ID 
+        Download all modules for a Canvas course, storing each module's ID
         in `{COURSES_DIRECTORY}/{course.id}/modules.txt`. Includes unpublished modules if
         `incl_unpublished` is `True` and we have access to unpublished modules for the course.
 
@@ -190,7 +190,7 @@ class CanvasHandler(Canvas):
         with open(modules_file, "w") as m:
             for module in CanvasHandler.get_all_modules(course, incl_unpublished):
                 m.write(f"{str(module.id)}\n")
-        
+
     @staticmethod
     def get_all_modules(course: Course, incl_unpublished: bool) -> List[Union[Module, ModuleItem]]:
         """
@@ -301,11 +301,11 @@ class CanvasHandler(Canvas):
         Parameters
         ----------
         since : `None or str`
-            Date/Time from announcement creation to now. If None, then all announcements are returned, 
+            Date/Time from announcement creation to now. If None, then all announcements are returned,
             regardless of date of creation.
 
         course_ids_str : `Tuple[str, ...]`
-            Tuple of course ids. If this parameter is an empty tuple, then this function gets announcements 
+            Tuple of course ids. If this parameter is an empty tuple, then this function gets announcements
             for *all* courses being tracked by this CanvasHandler.
 
         base_url : `str`

@@ -6,7 +6,7 @@ import re
 import shutil
 import traceback
 from datetime import datetime
-from typing import List, Optional, Union, Tuple
+from typing import List, Optional, Union
 
 import canvasapi
 import discord
@@ -66,7 +66,7 @@ class Canvas(commands.Cog):
         guild_dict["courses"] = [str(c.id) for c in c_handler.courses]
         guild_dict["due_week"] = c_handler.due_week
         guild_dict["due_day"] = c_handler.due_day
-        
+
         self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
 
         embed_var = self._get_tracking_courses(c_handler, CANVAS_API_URL)
