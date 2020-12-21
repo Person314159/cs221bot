@@ -109,26 +109,27 @@ class CanvasHandler(Canvas):
         self._due_day = due_day
 
     @staticmethod
-    def _ids_converter(ids: Tuple[str, ...]) -> Set[int]:
+    def _ids_converter(ids: Tuple[str]) -> Set[int]:
         """
-        Converts list of string to list of int, removes duplicates
+        Converts tuple of string to set of int, removing duplicates. Each string
+        must be parsable to an int.
 
         Parameters
         ----------
-        ids : `Tuple[str, ...]`
+        ids : `Tuple[str]`
             Tuple of string ids
 
         Returns
         -------
-        `List[int]`
+        `Set[int]`
             List of int ids
         """
 
         return set(int(i) for i in ids)
 
-    def track_course(self, course_ids_str: Tuple[str, ...], get_unpublished_modules: bool):
+    def track_course(self, course_ids_str: Tuple[str], get_unpublished_modules: bool):
         """
-        Cause this CanvasHandler to start tracking the given courses.
+        Cause this CanvasHandler to start tracking the courses with given IDs.
 
         For each course, if the bot is tracking the course for the first time,
         the course's modules will be downloaded from Canvas and saved in the course's
@@ -138,8 +139,12 @@ class CanvasHandler(Canvas):
 
         Parameters
         ----------
-        course_ids_str : `Tuple[str, ...]`
+        course_ids_str : `Tuple[str]`
             Tuple of course ids
+        
+        get_unpublished_modules: `bool`
+            True if we should attempt to store unpublished modules for the courses in `course_ids_str`;
+            False otherwise
         """
 
         course_ids = self._ids_converter(course_ids_str)
@@ -233,9 +238,9 @@ class CanvasHandler(Canvas):
                 for channel_id in ids_to_add:
                     f.write(channel_id)
 
-    def untrack_course(self, course_ids_str: Tuple[str, ...]):
+    def untrack_course(self, course_ids_str: Tuple[str]):
         """
-        Untracks course(s)
+        Cause this CanvasHandler to stop tracking the courses with given IDs.
 
         Parameters
         ----------

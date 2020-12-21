@@ -38,7 +38,7 @@ def loadJSON(jsonfile):
 
 def writeJSON(data, jsonfile):
     with open(jsonfile, "w") as f:
-        json.dump(data, f)
+        json.dump(data, f, indent=4)
 
 
 async def status_task():

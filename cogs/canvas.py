@@ -6,7 +6,7 @@ import re
 import shutil
 import traceback
 from datetime import datetime
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Tuple
 
 import canvasapi
 import discord
@@ -38,9 +38,9 @@ class Canvas(commands.Cog):
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
-    async def track(self, ctx: commands.Context, *course_ids: str):
+    async def track(self, ctx: commands.Context, *course_ids: Tuple[str]):
         """
-        `!track <course IDs...>
+        `!track <course IDs...>`
 
         Add the courses with given IDs to the list of courses being tracked. Note that you will
         only receive course updates in channels that you have typed `!live` in.
@@ -57,7 +57,11 @@ class Canvas(commands.Cog):
 
         await self.send_canvas_track_msg(c_handler, ctx)
 
-    async def send_canvas_track_msg(self, c_handler, ctx):
+    async def send_canvas_track_msg(self, c_handler: CanvasHandler, ctx: commands.Context):
+        """
+        Sends an embed to ctx that lists the Canvas courses being tracked by c_handler.
+        """
+
         self.bot.canvas_dict[str(ctx.message.guild.id)]["courses"] = [str(c.id) for c in c_handler.courses]
         self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
 
@@ -67,9 +71,9 @@ class Canvas(commands.Cog):
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
-    async def untrack(self, ctx: commands.Context, *course_ids: str):
+    async def untrack(self, ctx: commands.Context, *course_ids: Tuple[str]):
         """
-        `!untrack <course IDs...>
+        `!untrack <course IDs...>`
 
         Remove the courses with given IDs from the list of courses being tracked.
         """
