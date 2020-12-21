@@ -2,13 +2,14 @@ import os
 import re
 import shutil
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 import dateutil.parser.isoparser
 import discord
 from bs4 import BeautifulSoup
 from canvasapi.canvas import Canvas
 from canvasapi.course import Course
+from canvasapi.module import Module, ModuleItem
 from canvasapi.paginated_list import PaginatedList
 
 from util import create_file
@@ -34,10 +35,10 @@ class CanvasHandler(Canvas):
     timings : `Dict[str, str]`
         Contains course and its last announcement date and time.
 
-    due_week : `Dict[str, List[str]]`
+    due_week : `Dict[str, List[int]]`
         Contains course and assignment ids due in less than a week.
 
-    due_day : `Dict[str, List[str]]`
+    due_day : `Dict[str, List[int]]`
         Contains course and assignment ids due in less than a day.
     """
 
@@ -60,8 +61,8 @@ class CanvasHandler(Canvas):
         self._guild = guild
         self._live_channels: List[discord.TextChannel] = []
         self._timings: Dict[str, str] = {}
-        self._due_week: Dict[str, List[str]] = {}
-        self._due_day: Dict[str, List[str]] = {}
+        self._due_week: Dict[str, List[int]] = {}
+        self._due_day: Dict[str, List[int]] = {}
 
     @property
     def courses(self) -> List[Course]:
@@ -108,31 +109,42 @@ class CanvasHandler(Canvas):
         self._due_day = due_day
 
     @staticmethod
-    def _ids_converter(ids: Tuple[str, ...]) -> Set[int]:
+    def _ids_converter(ids: Tuple[str]) -> Set[int]:
         """
-        Converts list of string to list of int, removes duplicates
+        Converts tuple of string to set of int, removing duplicates. Each string
+        must be parsable to an int.
 
         Parameters
         ----------
-        ids : `Tuple[str, ...]`
+        ids : `Tuple[str]`
             Tuple of string ids
 
         Returns
         -------
-        `List[int]`
+        `Set[int]`
             List of int ids
         """
 
         return set(int(i) for i in ids)
 
-    def track_course(self, course_ids_str: Tuple[str, ...]):
+    def track_course(self, course_ids_str: Tuple[str], get_unpublished_modules: bool):
         """
-        Adds course(s) to track
+        Cause this CanvasHandler to start tracking the courses with given IDs.
+
+        For each course, if the bot is tracking the course for the first time,
+        the course's modules will be downloaded from Canvas and saved in the course's
+        directory (located in /data/courses/). If `get_unpublished_modules` is `True`, and
+        we have access to unpublished modules for the course, then we will save both published and
+        unpublished modules to file. Otherwise, we will only save published modules.
 
         Parameters
         ----------
-        course_ids_str : `Tuple[str, ...]`
+        course_ids_str : `Tuple[str]`
             Tuple of course ids
+
+        get_unpublished_modules: `bool`
+            True if we should attempt to store unpublished modules for the courses in `course_ids_str`;
+            False otherwise
         """
 
         course_ids = self._ids_converter(course_ids_str)
@@ -154,40 +166,55 @@ class CanvasHandler(Canvas):
         for c in new_courses:
             modules_file = f"{COURSES_DIRECTORY}/{c.id}/modules.txt"
             watchers_file = f"{COURSES_DIRECTORY}/{c.id}/watchers.txt"
-            self.store_channels_in_file(tuple(self._live_channels), watchers_file)
+            self.store_channels_in_file(self._live_channels, watchers_file)
 
             if self._live_channels:
                 create_file.create_file_if_not_exists(modules_file)
 
                 # Here, we will only download modules if modules_file is empty.
                 if os.stat(modules_file).st_size == 0:
-                    self.download_modules(c)
+                    self.download_modules(c, get_unpublished_modules)
 
     @staticmethod
-    def download_modules(course: Course):
+    def download_modules(course: Course, incl_unpublished: bool):
         """
-        Download all modules for a Canvas course, storing each module's URL (or name/title
-        if the url does not exist) in {COURSES_DIRECTORY}/{course.id}/modules.txt.
+        Download all modules for a Canvas course, storing each module's ID
+        in `{COURSES_DIRECTORY}/{course.id}/modules.txt`. Includes unpublished modules if
+        `incl_unpublished` is `True` and we have access to unpublished modules for the course.
 
         Assumption: {COURSES_DIRECTORY}/{course.id}/modules.txt exists.
         """
 
         modules_file = f"{COURSES_DIRECTORY}/{course.id}/modules.txt"
 
-        with open(modules_file, "w") as f:
-            for module in course.get_modules():
-                if hasattr(module, "name"):
-                    f.write(module.name + "\n")
-
-                for item in module.get_module_items():
-                    if hasattr(item, "title"):
-                        if hasattr(item, "html_url"):
-                            f.write(item.html_url + "\n")
-                        else:
-                            f.write(item.title + "\n")
+        with open(modules_file, "w") as m:
+            for module in CanvasHandler.get_all_modules(course, incl_unpublished):
+                m.write(f"{str(module.id)}\n")
 
     @staticmethod
-    def store_channels_in_file(text_channels: Tuple[discord.TextChannel], file_path: str):
+    def get_all_modules(course: Course, incl_unpublished: bool) -> List[Union[Module, ModuleItem]]:
+        """
+        Returns a list of all modules for the given course. Includes unpublished modules if
+        `incl_unpublished` is `True` and we have access to unpublished modules for the course.
+        """
+
+        all_modules = []
+
+        for module in course.get_modules():
+            # If module does not have the "published" attribute, then the host of the bot does
+            # not have access to unpublished modules. Reference: https://canvas.instructure.com/doc/api/modules.html
+            if incl_unpublished or not hasattr(module, "published") or module.published:
+                all_modules.append(module)
+
+                for item in module.get_module_items():
+                    # See comment about the "published" attribute above.
+                    if incl_unpublished or not hasattr(item, "published") or item.published:
+                        all_modules.append(item)
+
+        return all_modules
+
+    @staticmethod
+    def store_channels_in_file(text_channels: List[discord.TextChannel], file_path: str):
         """
         For each text channel provided, we add its id to the file with given path if the file does
         not already contain the id.
@@ -211,9 +238,9 @@ class CanvasHandler(Canvas):
                 for channel_id in ids_to_add:
                     f.write(channel_id)
 
-    def untrack_course(self, course_ids_str: Tuple[str, ...]):
+    def untrack_course(self, course_ids_str: Tuple[str]):
         """
-        Untracks course(s)
+        Cause this CanvasHandler to stop tracking the courses with given IDs.
 
         Parameters
         ----------
@@ -274,10 +301,12 @@ class CanvasHandler(Canvas):
         Parameters
         ----------
         since : `None or str`
-            Date/Time from announcement creation to now
+            Date/Time from announcement creation to now. If None, then all announcements are returned,
+            regardless of date of creation.
 
         course_ids_str : `Tuple[str, ...]`
-            Tuple of course ids
+            Tuple of course ids. If this parameter is an empty tuple, then this function gets announcements
+            for *all* courses being tracked by this CanvasHandler.
 
         base_url : `str`
             Base URL of the Canvas instance's API
@@ -292,10 +321,10 @@ class CanvasHandler(Canvas):
         """
 
         course_ids = self._ids_converter(course_ids_str)
-        course_stream_list = tuple(get_course_stream(c.id, base_url, access_token) for c in self.courses if (not course_ids) or c.id in course_ids)
+        course_streams = tuple(get_course_stream(c.id, base_url, access_token) for c in self.courses if (not course_ids) or c.id in course_ids)
         data_list = []
 
-        for stream_iter in map(iter, course_stream_list):
+        for stream_iter in map(iter, course_streams):
             for item in filter(lambda i: i["type"] == "Conversation", stream_iter):
                 course = self.get_course(item["course_id"])
                 course_url = get_course_url(course.id, base_url)
@@ -308,9 +337,11 @@ class CanvasHandler(Canvas):
                 else:
                     time_shift = datetime.now() - datetime.utcnow()
                     ctime_iso_parsed = (dateutil.parser.isoparse(ctime_iso) + time_shift).replace(tzinfo=None)
-                    ctime_timedelta = ctime_iso_parsed - datetime.now()
 
-                    if since and ctime_timedelta <= -self._make_timedelta(since):
+                    # A timedelta representing how long ago the conversation was created.
+                    ctime_timedelta = datetime.now() - ctime_iso_parsed
+
+                    if since and ctime_timedelta >= self._make_timedelta(since):
                         break
 
                     ctime_text = ctime_iso_parsed.strftime("%Y-%m-%d %H:%M:%S")
@@ -426,7 +457,7 @@ class CanvasHandler(Canvas):
         if till[1] in ["hour", "day", "week"]:
             return abs(timedelta(**{till[1] + "s": float(till[0])}))
         elif till[1] in ["month", "year"]:
-            return abs(timedelta(days=(30 if till[1] == "month" else 365) * float(till[1])))
+            return abs(timedelta(days=(30 if till[1] == "month" else 365) * float(till[0])))
 
         year, month, day = int(till[0]), int(till[1]), int(till[2])
 
