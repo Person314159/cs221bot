@@ -218,31 +218,32 @@ class Piazza(commands.Cog):
 
         posts = await self.bot.d_handler.piazza_handler.get_posts_in_range()
 
-        response = f"**{self.bot.d_handler.piazza_handler.course_name}'s posts for {datetime.today().strftime('%a. %B %d, %Y')}**\n"
+        if posts:
+            response = f"**{self.bot.d_handler.piazza_handler.course_name}'s posts for {datetime.today().strftime('%a. %B %d, %Y')}**\n"
 
-        response += "Instructor's Notes:\n"
+            response += "Instructor's Notes:\n"
 
-        if posts[0]:
-            for ipost in posts[0]:
-                response += f"@{ipost['num']}: {ipost['subject']} <{ipost['url']}>\n"
-        else:
-            response += "None today!\n"
+            if posts[0]:
+                for ipost in posts[0]:
+                    response += f"@{ipost['num']}: {ipost['subject']} <{ipost['url']}>\n"
+            else:
+                response += "None today!\n"
 
-        response += "\nDiscussion posts: \n"
+            response += "\nDiscussion posts: \n"
 
-        if not posts[1]:
-            response += "None today!"
+            if not posts[1]:
+                response += "None today!"
 
-        for post in posts[1]:
-            response += f"@{post['num']}: {post['subject']} <{post['url']}>\n"
+            for post in posts[1]:
+                response += f"@{post['num']}: {post['subject']} <{post['url']}>\n"
 
-        if wait:
-            # Sends at midnight if it is not called by the test function
-            await self.send_at_time()
+            if wait:
+                # Sends at midnight if it is not called by the test function
+                await self.send_at_time()
 
-        for ch in self.bot.d_handler.piazza_handler.channels:
-            channel = self.bot.get_channel(ch)
-            await channel.send(response)
+            for ch in self.bot.d_handler.piazza_handler.channels:
+                channel = self.bot.get_channel(ch)
+                await channel.send(response)
 
     @staticmethod
     async def track_inotes(self):
