@@ -184,7 +184,7 @@ class PiazzaHandler:
 
         feed = self.network.get_feed(limit=lim, offset=0)
 
-        for cid in map(itemgetter('id'), feed["feed"]):
+        for cid in map(itemgetter("id"), feed["feed"]):
             post = None
             retries = 5
 

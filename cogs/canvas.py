@@ -38,7 +38,7 @@ class Canvas(commands.Cog):
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
-    async def track(self, ctx: commands.Context, *course_ids):
+    async def track(self, ctx: commands.Context, *course_ids: str):
         """
         `!track <course IDs...>`
 
@@ -75,7 +75,7 @@ class Canvas(commands.Cog):
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
-    async def untrack(self, ctx: commands.Context, *course_ids):
+    async def untrack(self, ctx: commands.Context, *course_ids: str):
         """
         `!untrack <course IDs...>`
 
