@@ -2,13 +2,14 @@ import os
 import re
 import shutil
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 import dateutil.parser.isoparser
 import discord
 from bs4 import BeautifulSoup
 from canvasapi.canvas import Canvas
 from canvasapi.course import Course
+from canvasapi.module import Module, ModuleItem
 from canvasapi.paginated_list import PaginatedList
 
 from util import create_file
@@ -125,9 +126,15 @@ class CanvasHandler(Canvas):
 
         return set(int(i) for i in ids)
 
-    def track_course(self, course_ids_str: Tuple[str, ...]):
+    def track_course(self, course_ids_str: Tuple[str, ...], get_unpublished_modules: bool):
         """
-        Adds course(s) to track
+        Cause this CanvasHandler to start tracking the given courses.
+
+        For each course, if the bot is tracking the course for the first time,
+        the course's modules will be downloaded from Canvas and saved in the course's
+        directory (located in /data/courses/). If `get_unpublished_modules` is `True`, and 
+        we have access to unpublished modules for the course, then we will save both published and 
+        unpublished modules to file. Otherwise, we will only save published modules.
 
         Parameters
         ----------
@@ -154,40 +161,55 @@ class CanvasHandler(Canvas):
         for c in new_courses:
             modules_file = f"{COURSES_DIRECTORY}/{c.id}/modules.txt"
             watchers_file = f"{COURSES_DIRECTORY}/{c.id}/watchers.txt"
-            self.store_channels_in_file(tuple(self._live_channels), watchers_file)
+            self.store_channels_in_file(self._live_channels, watchers_file)
 
             if self._live_channels:
                 create_file.create_file_if_not_exists(modules_file)
 
                 # Here, we will only download modules if modules_file is empty.
                 if os.stat(modules_file).st_size == 0:
-                    self.download_modules(c)
+                    self.download_modules(c, get_unpublished_modules)
 
     @staticmethod
-    def download_modules(course: Course):
+    def download_modules(course: Course, incl_unpublished: bool):
         """
-        Download all modules for a Canvas course, storing each module's URL (or name/title
-        if the url does not exist) in {COURSES_DIRECTORY}/{course.id}/modules.txt.
+        Download all modules for a Canvas course, storing each module's ID 
+        in `{COURSES_DIRECTORY}/{course.id}/modules.txt`. Includes unpublished modules if
+        `incl_unpublished` is `True` and we have access to unpublished modules for the course.
 
         Assumption: {COURSES_DIRECTORY}/{course.id}/modules.txt exists.
         """
 
         modules_file = f"{COURSES_DIRECTORY}/{course.id}/modules.txt"
 
-        with open(modules_file, "w") as f:
-            for module in course.get_modules():
-                if hasattr(module, "name"):
-                    f.write(module.name + "\n")
+        with open(modules_file, "w") as m:
+            for module in CanvasHandler.get_all_modules(course, incl_unpublished):
+                m.write(f"{str(module.id)}\n")
+        
+    @staticmethod
+    def get_all_modules(course: Course, incl_unpublished: bool) -> List[Union[Module, ModuleItem]]:
+        """
+        Returns a list of all modules for the given course. Includes unpublished modules if
+        `incl_unpublished` is `True` and we have access to unpublished modules for the course.
+        """
+
+        all_modules = []
+
+        for module in course.get_modules():
+            # If module does not have the "published" attribute, then the host of the bot does
+            # not have access to unpublished modules. Reference: https://canvas.instructure.com/doc/api/modules.html
+            if incl_unpublished or not hasattr(module, "published") or module.published:
+                all_modules.append(module)
 
                 for item in module.get_module_items():
-                    if hasattr(item, "title"):
-                        if hasattr(item, "html_url"):
-                            f.write(item.html_url + "\n")
-                        else:
-                            f.write(item.title + "\n")
+                    # See comment about the "published" attribute above.
+                    if incl_unpublished or not hasattr(item, "published") or item.published:
+                        all_modules.append(item)
+
+        return all_modules
 
     @staticmethod
-    def store_channels_in_file(text_channels: Tuple[discord.TextChannel], file_path: str):
+    def store_channels_in_file(text_channels: List[discord.TextChannel], file_path: str):
         """
         For each text channel provided, we add its id to the file with given path if the file does
         not already contain the id.

@@ -53,7 +53,7 @@ class Canvas(commands.Cog):
         if not isinstance(c_handler, CanvasHandler):
             raise BadArgs("Canvas Handler doesn't exist.")
 
-        c_handler.track_course(course_ids)
+        c_handler.track_course(course_ids, self.bot.notify_unpublished)
 
         await self.send_canvas_track_msg(c_handler, ctx)
 
@@ -152,13 +152,13 @@ class Canvas(commands.Cog):
             for course in c_handler.courses:
                 modules_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course.id}/modules.txt"
                 watchers_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course.id}/watchers.txt"
-                CanvasHandler.store_channels_in_file((ctx.message.channel,), watchers_file)
+                CanvasHandler.store_channels_in_file([ctx.message.channel], watchers_file)
 
                 create_file.create_file_if_not_exists(modules_file)
 
                 # Here, we will only download modules if modules_file is empty.
                 if os.stat(modules_file).st_size == 0:
-                    CanvasHandler.download_modules(course)
+                    CanvasHandler.download_modules(course, self.bot.notify_unpublished)
 
             self.bot.canvas_dict[str(ctx.message.guild.id)]["live_channels"] = [channel.id for channel in c_handler.live_channels]
             self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
@@ -430,27 +430,6 @@ class Canvas(commands.Cog):
                 embed.clear_fields()
                 embed.title = f"New modules found for {course.name} (continued):"
 
-        def get_all_modules(course: canvasapi.course.Course) -> List[Union[Module, ModuleItem]]:
-            """
-            Returns a list of all modules for the given course. Includes unpublished modules if
-            self.bot.notify_unpublished is True.
-            """
-
-            all_modules = []
-
-            for module in course.get_modules():
-                # If module does not have the "published" attribute, then the host of the bot does
-                # not have access to unpublished modules. Reference: https://canvas.instructure.com/doc/api/modules.html
-                if self.bot.notify_unpublished or not hasattr(module, "published") or module.published:
-                    all_modules.append(module)
-
-                    for item in module.get_module_items():
-                        # See comment about the "published" attribute above.
-                        if self.bot.notify_unpublished or not hasattr(item, "published") or item.published:
-                            all_modules.append(item)
-
-            return all_modules
-
         def write_modules(file_path: str, modules: List[Union[Module, ModuleItem]]):
             """
             Stores the ID of all modules in file with given path.
@@ -497,7 +476,7 @@ class Canvas(commands.Cog):
                         with open(modules_file, "r") as m:
                             existing_modules = set(m.read().splitlines())
 
-                        all_modules = get_all_modules(course)
+                        all_modules = CanvasHandler.get_all_modules(course, self.bot.notify_unpublished)
                         write_modules(modules_file, all_modules)
                         differences = list(filter(lambda module: str(module.id) not in existing_modules, all_modules))
 
@@ -524,7 +503,7 @@ class Canvas(commands.Cog):
                 self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, CANVAS_API_KEY, guild))
 
             c_handler = self._get_canvas_handler(guild)
-            c_handler.track_course(tuple(self.bot.canvas_dict[c_handler_guild_id]["courses"]))
+            c_handler.track_course(tuple(self.bot.canvas_dict[c_handler_guild_id]["courses"]), self.bot.notify_unpublished)
             live_channels_ids = self.bot.canvas_dict[c_handler_guild_id]["live_channels"]
             live_channels = list(filter(lambda channel: channel.id in live_channels_ids, guild.text_channels))
             c_handler.live_channels = live_channels
