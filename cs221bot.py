@@ -50,7 +50,7 @@ async def status_task():
         play = ["with the \"help\" command", " ", "with your mind", "ƃuᴉʎɐlԀ", "...something?",
                 "a game? Or am I?", "¯\_(ツ)_/¯", f"with {len(online_members)} people", "with image manipulation"]
         listen = ["smart music", "... wait I can't hear anything",
-                  "rush 🅱", "C++ short course"]
+                  "rush 🅱", "C++ short course"]v
         watch = ["TV", "YouTube vids", "over you",
                  "how to make a bot", "C++ tutorials", "I, Robot"]
 
@@ -133,14 +133,14 @@ async def on_guild_remove(guild):
 
 
 @bot.event
-async def on_channel_create(channel):
+async def on_guild_channel_create(channel):
     if isinstance(channel, discord.TextChannel):
         bot.poll_dict.update({str(channel.id): ""})
         bot.writeJSON(bot.poll_dict, "data/poll.json")
 
 
 @bot.event
-async def on_channel_delete(channel):
+async def on_guild_channel_delete(channel):
     if str(channel.id) in bot.poll_dict:
         del bot.poll_dict[str(channel.id)]
         bot.writeJSON(bot.poll_dict, "data/poll.json")
