@@ -372,10 +372,10 @@ class Commands(commands.Cog):
         **Usage:** !join [role name]
 
         **Examples:**
-        `!join L1A` adds the L1A role to yourself
+        `!join Study Group` adds the Study Group role to yourself
 
         **Valid Roles:**
-        Looking for Partners, Study Group, L1A, L1B, L1C, L1D, L1E, L1F, L1G, L1H, L1J, L1K, L1N, L1P, L1R, L1S, L1T, He/Him/His, She/Her/Hers, They/Them/Theirs, Ze/Zir/Zirs, notify
+        Looking for Partners, Study Group, He/Him/His, She/Her/Hers, They/Them/Theirs, Ze/Zir/Zirs, notify
         """
 
         # case where role name is space separated
@@ -386,16 +386,12 @@ class Commands(commands.Cog):
             raise BadArgs("", show_help=True)
 
         # make sure that you can't add roles like "prof" or "ta"
-        valid_roles = ["Looking for Partners", "Study Group", "L1A", "L1B", "L1C", "L1D", "L1E", "L1F", "L1G", "L1H", "L1J", "L1K", "L1N", "L1P", "L1R", "L1S", "L1T", "He/Him/His", "She/Her/Hers", "They/Them/Theirs", "Ze/Zir/Zirs", "notify"]
+        valid_roles = ["Looking for Partners", "Study Group", "He/Him/His", "She/Her/Hers", "They/Them/Theirs", "Ze/Zir/Zirs", "notify"]
         aliases = {"he": "He/Him/His", "she": "She/Her/Hers", "ze": "Ze/Zir/Zirs", "they": "They/Them/Theirs"}
 
         # Convert alias to proper name
         if name.lower() in aliases:
             name = aliases[name].lower()
-
-        # Ensure that people only add one lab role
-        if name.startswith("l1") and any(role.name.startswith("L1") for role in ctx.author.roles):
-            raise BadArgs("You already have a lab role!")
 
         # Grab the role that the user selected
         role = next((r for r in ctx.guild.roles if name == r.name.lower()), None)
@@ -478,7 +474,7 @@ class Commands(commands.Cog):
         **Usage:** !leave [role name]
 
         **Examples:**
-        `!leave L1A` removes the L1A role from yourself
+        `!leave Study Group` removes the Study Group role from yourself
         """
 
         # case where role name is space separated
@@ -613,7 +609,7 @@ class Commands(commands.Cog):
     async def shut(self, ctx):
         change = ""
 
-        for role in self.bot.get_guild(745503628479037492).roles[:-6]:
+        for role in self.bot.get_guild(796523378894831627).roles[:6]:
             if role.permissions.value == 104187456:
                 change = "enabled messaging permissions"
                 await role.edit(permissions=discord.Permissions(permissions=104189504))

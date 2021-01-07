@@ -58,7 +58,7 @@ class Meta(commands.Cog):
             await ctx.message.delete()
 
         if not modules:
-            modules = [f[:-3] for f in os.listdir("cogs") if isfile(join("cogs", f) and f != "__init__.py")]
+            modules = list(i.lower() for i in self.bot.cogs)
 
         for extension in modules:
             Reload = await ctx.send(f"Reloading the {extension} module")
