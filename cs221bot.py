@@ -50,7 +50,7 @@ async def status_task():
         play = ["with the \"help\" command", " ", "with your mind", "ƃuᴉʎɐlԀ", "...something?",
                 "a game? Or am I?", "¯\_(ツ)_/¯", f"with {len(online_members)} people", "with image manipulation"]
         listen = ["smart music", "... wait I can't hear anything",
-                  "rush 🅱", "C++ short course"]v
+                  "rush 🅱", "C++ short course"]
         watch = ["TV", "YouTube vids", "over you",
                  "how to make a bot", "C++ tutorials", "I, Robot"]
 
