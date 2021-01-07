@@ -673,6 +673,38 @@ class Commands(commands.Cog):
 
             await ctx.send(embed=embed)
 
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def votes(self, ctx):
+        """
+        `!votes` __`Top votes for server icon`__
+        **Usage:** !votes
+        **Examples:**
+        `!votes` returns top 5 icons sorted by score
+        """
+
+        async with ctx.channel.typing():
+            images = []
+
+            async for message in self.bot.get_channel(796523380920680454).history():
+                if message.attachments or message.embeds:
+                    count = 0
+
+                    for reaction in message.reactions:
+                        if reaction.emoji == "⬆️":
+                            count += reaction.count - (message.author in await reaction.users().flatten())
+
+                    images.append([message.attachments[0].url, count])
+
+            images.sort(key=lambda image: image[1], reverse=True)
+            images = images[:5]
+
+            for image in images:
+                embed = discord.Embed(colour=random.randint(0, 0xFFFFFF))
+                embed.add_field(name="Score", value=image[1], inline=True)
+                embed.set_thumbnail(url=image[0])
+                await ctx.send(embed=embed)
+
     # add more commands here with the same syntax
     # also just look up the docs lol i can't do everything
 

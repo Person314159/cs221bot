@@ -1,10 +1,9 @@
-import os
 import random
 from datetime import datetime
-from os.path import isfile, join
 
 import discord
 from discord.ext import commands
+from discord.ext.commands import ExtensionError
 
 from util.badargs import BadArgs
 
@@ -65,8 +64,9 @@ class Meta(commands.Cog):
 
             try:
                 self.bot.reload_extension(f"cogs.{extension}")
-            except Exception as exc:
+            except ExtensionError as exc:
                 return await ctx.send(exc)
+
             await Reload.edit(content=f"{extension} module reloaded.")
 
         self.bot.reload_extension("cogs.meta")
