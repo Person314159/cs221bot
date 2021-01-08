@@ -15,6 +15,7 @@ import requests
 import requests.models
 import webcolors
 from discord.ext import commands
+from discord.ext.commands import MemberConverter
 from googletrans import constants, Translator
 
 from util.badargs import BadArgs
@@ -378,6 +379,8 @@ class Commands(commands.Cog):
         Looking for Partners, Study Group, He/Him/His, She/Her/Hers, They/Them/Theirs, Ze/Zir/Zirs, notify
         """
 
+        await ctx.message.delete()
+
         # case where role name is space separated
         name = " ".join(arg).lower()
 
@@ -602,6 +605,117 @@ class Commands(commands.Cog):
 
         self.bot.poll_dict[str(ctx.channel.id)] = react_message.id
         self.bot.writeJSON(self.bot.poll_dict, "data/poll.json")
+
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def purge(self, ctx: commands.Context, amount: int, *arg):
+        """
+        `!purge` __`purges all messages satisfying conditions from the last specified number of messages in channel.`__
+
+        Usage: !purge <amount of messages to look through> [user | string <containing string> | reactions | type]
+
+        **Options:**
+        `user` - Only deletes messages sent by this user
+        `string` - Will delete messages containing following string
+        `reactions` - Will remove all reactions from messages
+        `type` - One of valid types
+
+        **Valid Types:**
+        `text` - Is text only? (ignores image or embeds)
+        `links` - Contains links?
+        `bots` - Was send by bots?
+        `images` - Contains images?
+        `embeds` - Contains embeds?
+        `mentions` - Contains user, role or everyone/here mentions?
+
+        **Examples:**
+        `!purge 100` deletes last 100 messages in channel
+        `!purge 50 abc#1234` deletes all messages sent by abc#1234 in last 50 messages
+        `!purge 30 string asdf ghjk` deletes all messages containing "asdf ghjk" in last 30 messages
+        """
+
+        await ctx.message.delete()
+
+        if not ctx.author.guild_permissions.manage_messages:
+            return await ctx.send("Oops! It looks like you don't have the permission to purge.", delete_after=5)
+
+        if amount > 100:
+            raise BadArgs("Please enter a smaller number to purge.")
+
+        if not arg:
+            total_messages = await ctx.channel.purge(limit=amount)
+
+            await ctx.send(f"**{len(total_messages)}** message{'s' if len(total_messages) > 1 else ''} cleared.", delete_after=5)
+        elif arg[0] == "reactions":
+            messages = await ctx.channel.history(limit=amount).flatten()
+
+            for i in messages:
+                if i.reactions:
+                    await i.clear_reactions()
+
+            await ctx.send(f"Reactions removed from the last {'' if amount == 1 else '**' + str(amount) + '**'} message{'s' if amount > 1 else ''}.", delete_after=5)
+        elif arg[0] == "text":
+            def no_image(m):
+                return not m.embeds and not m.attachments
+
+            total_messages = await ctx.channel.purge(limit=amount, check=no_image)
+
+            await ctx.send(f"**{len(total_messages)}** text message{'s' if len(total_messages) > 1 else ''} purged.")
+        elif arg[0] == "bots":
+            def is_bot(m):
+                return m.author.bot
+
+            total_messages = await ctx.channel.purge(limit=amount, check=is_bot)
+
+            await ctx.send(f"**{len(total_messages)}** bot message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
+        elif arg[0] == "images":
+            def has_image(m):
+                return m.attachments != []
+
+            total_messages = await ctx.channel.purge(limit=amount, check=has_image)
+
+            await ctx.send(f"**{len(total_messages)}** image message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
+        elif arg[0] == "embeds":
+            def has_embed(m):
+                return m.embeds != []
+
+            total_messages = await ctx.channel.purge(limit=amount, check=has_embed)
+
+            await ctx.send(f"**{len(total_messages)}** embed message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
+        elif arg[0] == "mentions":
+            def has_mention(m):
+                return m.mentions != []
+
+            total_messages = await ctx.channel.purge(limit=amount, check=has_mention)
+
+            await ctx.send(f"**{len(total_messages)}** mention message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
+        elif arg[0] == "links":
+            def has_link(m):
+                return bool(re.search(r"https?://[a-zA-Z0-9-]+\.[a-zA-Z0-9-]+", m.content))
+
+            total_messages = await ctx.channel.purge(limit=amount, check=has_link)
+
+            await ctx.send(f"**{len(total_messages)}** link message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
+        elif arg[0] == "string":
+
+            def has_string(m):
+                return " ".join(arg[1:]) in m.content
+
+            total_messages = await ctx.channel.purge(limit=amount, check=has_string)
+
+            await ctx.send(f"**{len(total_messages)}** message{'s' if len(total_messages) > 1 else ''} containing \"{' '.join(arg[1:])}\" purged.")
+        else:
+            try:
+                user = await MemberConverter().convert(ctx, " ".join(arg))
+
+                def check(m):
+                    return m.author == user
+
+                total_messages = await ctx.channel.purge(limit=amount, check=check)
+
+                await ctx.send(f"**{len(total_messages)}** message{'s' if len(total_messages) > 1 else ''} from {user.display_name} purged.", delete_after=5)
+            except Exception:
+                await ctx.send("That user doesn't exist.", delete_after=5)
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
