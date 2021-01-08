@@ -133,14 +133,14 @@ async def on_guild_remove(guild):
 
 
 @bot.event
-async def on_channel_create(channel):
+async def on_guild_channel_create(channel):
     if isinstance(channel, discord.TextChannel):
         bot.poll_dict.update({str(channel.id): ""})
         bot.writeJSON(bot.poll_dict, "data/poll.json")
 
 
 @bot.event
-async def on_channel_delete(channel):
+async def on_guild_channel_delete(channel):
     if str(channel.id) in bot.poll_dict:
         del bot.poll_dict[str(channel.id)]
         bot.writeJSON(bot.poll_dict, "data/poll.json")
@@ -167,6 +167,13 @@ async def on_message(message):
         if re.findall(r"<<@&457618814058758146>&?\d{18}>", message.content):
             new = message.content.replace("<@&457618814058758146>", "@")
             await message.channel.send(new)
+
+        if message.channel.id == 796523380920680454 and (message.attachments or message.embeds):
+            if (message.attachments[0].height, message.attachments[0].width) < (512, 512):
+                await message.delete()
+                await message.channel.send("Please submit an image with at least 512x512 dimensions!", delete_after=5)
+            else:
+                await message.add_reaction("⬆️")
 
         await bot.process_commands(message)
 

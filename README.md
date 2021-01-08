@@ -1,6 +1,6 @@
 # CS221Bot
 
-CS221Bot is a [Discord](discord.com/) [bot](https://discord.com/developers/docs/intro) using [Discord.py](https://discordpy.readthedocs.io/en/latest/) for managing the official [UBC CS221](https://www.ubc.ca/) class server.
+CS221Bot is a [Discord](https://discord.com/) [bot](https://discord.com/developers/docs/intro) using [Discord.py](https://discordpy.readthedocs.io/en/latest/) for managing the official [UBC CS221](https://www.ubc.ca/) class server.
 
 ## Installation
 
@@ -11,7 +11,7 @@ Additionally, you will need a Piazza email + password and a Canvas API key set a
 ## Dependencies
 
 The bot requires the following pip packages: 
-- `discord` 
+- `discord.py` 
 - `requests` 
 - `webcolors` 
 - `googletrans`

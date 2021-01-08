@@ -372,10 +372,10 @@ class Commands(commands.Cog):
         **Usage:** !join [role name]
 
         **Examples:**
-        `!join L1A` adds the L1A role to yourself
+        `!join Study Group` adds the Study Group role to yourself
 
         **Valid Roles:**
-        Looking for Partners, Study Group, L1A, L1B, L1C, L1D, L1E, L1F, L1G, L1H, L1J, L1K, L1N, L1P, L1R, L1S, L1T, He/Him/His, She/Her/Hers, They/Them/Theirs, Ze/Zir/Zirs, notify
+        Looking for Partners, Study Group, He/Him/His, She/Her/Hers, They/Them/Theirs, Ze/Zir/Zirs, notify
         """
 
         # case where role name is space separated
@@ -386,16 +386,12 @@ class Commands(commands.Cog):
             raise BadArgs("", show_help=True)
 
         # make sure that you can't add roles like "prof" or "ta"
-        valid_roles = ["Looking for Partners", "Study Group", "L1A", "L1B", "L1C", "L1D", "L1E", "L1F", "L1G", "L1H", "L1J", "L1K", "L1N", "L1P", "L1R", "L1S", "L1T", "He/Him/His", "She/Her/Hers", "They/Them/Theirs", "Ze/Zir/Zirs", "notify"]
+        valid_roles = ["Looking for Partners", "Study Group", "He/Him/His", "She/Her/Hers", "They/Them/Theirs", "Ze/Zir/Zirs", "notify"]
         aliases = {"he": "He/Him/His", "she": "She/Her/Hers", "ze": "Ze/Zir/Zirs", "they": "They/Them/Theirs"}
 
         # Convert alias to proper name
         if name.lower() in aliases:
             name = aliases[name].lower()
-
-        # Ensure that people only add one lab role
-        if name.startswith("l1") and any(role.name.startswith("L1") for role in ctx.author.roles):
-            raise BadArgs("You already have a lab role!")
 
         # Grab the role that the user selected
         role = next((r for r in ctx.guild.roles if name == r.name.lower()), None)
@@ -424,7 +420,7 @@ class Commands(commands.Cog):
                 raise BadArgs("you cannot add an instructor/invalid role!", show_help=True)
 
         await ctx.author.add_roles(role)
-        await ctx.send("role added!", delte_after=5)
+        await ctx.send("role added!", delete_after=5)
 
     @commands.command()
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -478,7 +474,7 @@ class Commands(commands.Cog):
         **Usage:** !leave [role name]
 
         **Examples:**
-        `!leave L1A` removes the L1A role from yourself
+        `!leave Study Group` removes the Study Group role from yourself
         """
 
         # case where role name is space separated
@@ -613,7 +609,7 @@ class Commands(commands.Cog):
     async def shut(self, ctx):
         change = ""
 
-        for role in self.bot.get_guild(745503628479037492).roles[:-6]:
+        for role in self.bot.get_guild(796523378894831627).roles[:6]:
             if role.permissions.value == 104187456:
                 change = "enabled messaging permissions"
                 await role.edit(permissions=discord.Permissions(permissions=104189504))
@@ -676,6 +672,38 @@ class Commands(commands.Cog):
             embed.add_field(name="Total messages sent in last 24 h", value=str(cum_message_count), inline=True)
 
             await ctx.send(embed=embed)
+
+    @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def votes(self, ctx):
+        """
+        `!votes` __`Top votes for server icon`__
+        **Usage:** !votes
+        **Examples:**
+        `!votes` returns top 5 icons sorted by score
+        """
+
+        async with ctx.channel.typing():
+            images = []
+
+            async for message in self.bot.get_channel(796523380920680454).history():
+                if message.attachments or message.embeds:
+                    count = 0
+
+                    for reaction in message.reactions:
+                        if reaction.emoji == "⬆️":
+                            count += reaction.count - (message.author in await reaction.users().flatten())
+
+                    images.append([message.attachments[0].url, count])
+
+            images.sort(key=lambda image: image[1], reverse=True)
+            images = images[:5]
+
+            for image in images:
+                embed = discord.Embed(colour=random.randint(0, 0xFFFFFF))
+                embed.add_field(name="Score", value=image[1], inline=True)
+                embed.set_thumbnail(url=image[0])
+                await ctx.send(embed=embed)
 
     # add more commands here with the same syntax
     # also just look up the docs lol i can't do everything
