@@ -11,7 +11,7 @@ Additionally, you will need a Piazza email + password and a Canvas API key set a
 ## Dependencies
 
 The bot requires the following pip packages: 
-- `discord` 
+- `discord.py` 
 - `requests` 
 - `webcolors` 
 - `googletrans`
