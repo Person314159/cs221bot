@@ -239,8 +239,7 @@ class Canvas(commands.Cog):
             since = "2-week"
             course_ids = args
 
-        # TODO: this is broken right now. Replacing "" with CANVAS_API_KEY causes private messages to be sent as announcements.
-        for data in c_handler.get_course_stream_ch(since, course_ids, CANVAS_API_URL, ""):
+        for data in c_handler.get_course_stream_ch(since, course_ids, CANVAS_API_URL, CANVAS_API_KEY):
             embed_var = discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR)
             embed_var.set_author(name=data[0], url=data[1])
             embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
@@ -288,8 +287,7 @@ class Canvas(commands.Cog):
                     since = ch.timings[str(c.id)]
                     since = re.sub(r"\s", "-", since)
 
-                    # TODO: this is broken right now. Replacing "" with CANVAS_API_KEY causes private messages to be sent as announcements.
-                    data_list = ch.get_course_stream_ch(since, (str(c.id),), CANVAS_API_URL, "")
+                    data_list = ch.get_course_stream_ch(since, (str(c.id),), CANVAS_API_URL, CANVAS_API_KEY)
 
                     for data in data_list:
                         embed_var = discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR)
@@ -344,7 +342,11 @@ class Canvas(commands.Cog):
                 await channel.send(notify_role.mention)
 
         for data in not_recorded:
-            embed_var = discord.Embed(title=f"Due in one {time}: {data[2]}", url=data[3], description=data[4][:2045].rsplit(maxsplit=1)[0] + "...", color=CANVAS_COLOR, timestamp=datetime.strptime(data[5], "%Y-%m-%d %H:%M:%S"))
+            embed_var = discord.Embed(title=f"Due in one {time}: {data[2]}",
+                                      url=data[3],
+                                      description=data[4][:2045].rsplit(maxsplit=1)[0] + "...",
+                                      color=CANVAS_COLOR,
+                                      timestamp=datetime.strptime(data[5], "%Y-%m-%d %H:%M:%S"))
             embed_var.set_author(name=data[0], url=data[1])
             embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
             embed_var.add_field(name="Due at", value=data[6], inline=True)
@@ -385,8 +387,8 @@ class Canvas(commands.Cog):
             This function returns a string that can be added to a Discord embed as a field's value. The returned
             string contains the module's name/title attribute (depending on which one it has), as well
             as a hyperlink to the module (if the module has the html_url attribute). If the module's name/title exceeds
-            MAX_MODULE_IDENTIFIER_LENGTH characters, we truncate it and append an ellipsis (...) so that the name/title has
-            MAX_MODULE_IDENTIFIER_LENGTH characters.
+            MAX_MODULE_IDENTIFIER_LENGTH characters, we truncate it and append an ellipsis (...) so that the name/title
+            has MAX_MODULE_IDENTIFIER_LENGTH characters.
             """
 
             if hasattr(module, "title"):
@@ -404,11 +406,11 @@ class Canvas(commands.Cog):
 
         def update_embed(embed: discord.Embed, module: Union[Module, ModuleItem], embed_list: List[discord.Embed]):
             """
-            Adds a field to embed containing information about given module. The field includes the module's name or title,
-            as well as a hyperlink to the module if one exists.
+            Adds a field to embed containing information about given module. The field includes the module's name or
+            title, as well as a hyperlink to the module if one exists.
 
-            If the module's identifier (its name or title) has over MAX_IDENTIFIER_LENGTH characters, we truncate the identifier
-            and append an ellipsis (...) so that the length does not exceed the maximum.
+            If the module's identifier (its name or title) has over MAX_IDENTIFIER_LENGTH characters, we truncate the
+            identifier and append an ellipsis (...) so that the length does not exceed the maximum.
 
             The embed object that is passed in must have at most 24 fields.
 
@@ -428,7 +430,7 @@ class Canvas(commands.Cog):
                 embed.clear_fields()
                 embed.title = f"New modules found for {course.name} (continued):"
 
-            if isinstance(module, canvasapi.module.Module):
+            if isinstance(module, Module):
                 embed.add_field(name="Module", value=field_value, inline=False)
             else:
                 embed.add_field(name="Module Item", value=field_value, inline=False)

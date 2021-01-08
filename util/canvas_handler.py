@@ -19,6 +19,7 @@ from util.canvas_api_extension import get_course_stream, get_course_url
 # Do *not* put a slash at the end of this path
 COURSES_DIRECTORY = "./data/courses"
 
+CINDA_CANVAS_ID = 1073
 
 class CanvasHandler(Canvas):
     """
@@ -325,28 +326,40 @@ class CanvasHandler(Canvas):
         data_list = []
 
         for stream_iter in map(iter, course_streams):
-            for item in filter(lambda i: i["type"] == "Conversation", stream_iter):
-                course = self.get_course(item["course_id"])
-                course_url = get_course_url(course.id, base_url)
-                title = "Announcement: " + item["title"]
-                short_desc = "\n".join(item["latest_messages"][0]["message"].split("\n")[:4])
-                ctime_iso = item["created_at"]
+            for item in filter(lambda i: i["type"] == "Conversation" and i["participant_count"] == 2, stream_iter):
+                messages = item.get("latest_messages")
 
-                if ctime_iso is None:
-                    ctime_text = "No info"
-                else:
-                    time_shift = datetime.now() - datetime.utcnow()
-                    ctime_iso_parsed = (dateutil.parser.isoparse(ctime_iso) + time_shift).replace(tzinfo=None)
+                # Idea behind this hack:
+                # If we assume that any message from Cinda is an announcement, then
+                # we can just treat all such messages as announcements.
+                # Below are the conditions necessary to consider a message as an announcement:
+                # 1. The message cannot have any replies (no one replies to announcements).
+                # 2. The number of participants is 2. This is checked in the filter condition above.
+                # 3. Cinda is the author of the message.
 
-                    # A timedelta representing how long ago the conversation was created.
-                    ctime_timedelta = datetime.now() - ctime_iso_parsed
+                if messages and len(messages) == 1:
+                    if messages[0].get("author_id") == CINDA_CANVAS_ID:
+                        course = self.get_course(item["course_id"])
+                        course_url = get_course_url(course.id, base_url)
+                        title = "Announcement: " + item["title"]
+                        short_desc = "\n".join(item["latest_messages"][0]["message"].split("\n")[:4])
+                        ctime_iso = item["created_at"]
 
-                    if since and ctime_timedelta >= self._make_timedelta(since):
-                        break
+                        if ctime_iso is None:
+                            ctime_text = "No info"
+                        else:
+                            time_shift = datetime.now() - datetime.utcnow()
+                            ctime_iso_parsed = (dateutil.parser.isoparse(ctime_iso) + time_shift).replace(tzinfo=None)
 
-                    ctime_text = ctime_iso_parsed.strftime("%Y-%m-%d %H:%M:%S")
+                            # A timedelta representing how long ago the conversation was created.
+                            ctime_timedelta = datetime.now() - ctime_iso_parsed
 
-                data_list.append([course.name, course_url, title, item["html_url"], short_desc, ctime_text, course.id])
+                            if since and ctime_timedelta >= self._make_timedelta(since):
+                                break
+
+                            ctime_text = ctime_iso_parsed.strftime("%Y-%m-%d %H:%M:%S")
+
+                        data_list.append([course.name, course_url, title, item["html_url"], short_desc, ctime_text, course.id])
 
         return data_list
 

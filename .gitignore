@@ -5,3 +5,4 @@ __pycache__/
 testing.py
 .idea/
 package-lock.json
+venv/
