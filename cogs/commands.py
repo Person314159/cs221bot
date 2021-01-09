@@ -697,7 +697,6 @@ class Commands(commands.Cog):
 
             await ctx.send(f"**{len(total_messages)}** link message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
         elif arg[0] == "string":
-
             def has_string(m):
                 return " ".join(arg[1:]) in m.content
 

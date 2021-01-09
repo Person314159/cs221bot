@@ -211,10 +211,8 @@ async def on_command_error(ctx, error):
         etype = type(error)
         trace = error.__traceback__
 
-        try:
-            await ctx.send(("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```").replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\discordbot\\", ""))
-        except Exception:
-            print(("```" + "".join(traceback.format_exception(etype, error, trace, 999)) + "```").replace("C:\\Users\\William\\anaconda3\\lib\\site-packages\\", "").replace("D:\\my file of stuff\\discordbot\\", ""))
+        await ctx.send(error)
+        print("".join(traceback.format_exception(etype, error, trace, 999)))
 
 
 bot.run(CS221BOT_KEY)

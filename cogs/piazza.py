@@ -261,7 +261,7 @@ class Piazza(commands.Cog):
                         channel = self.bot.get_channel(chnl)
                         await channel.send(response)
 
-                await asyncio.sleep(60 * 60 * 5)
+                await asyncio.sleep(60 * 60 * 24)
             else:
                 await asyncio.sleep(60)
 

@@ -21,6 +21,7 @@ COURSES_DIRECTORY = "./data/courses"
 
 CINDA_CANVAS_ID = 1073
 
+
 class CanvasHandler(Canvas):
     """
     Represents a handler for Canvas information for a guild
