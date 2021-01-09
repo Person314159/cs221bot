@@ -195,24 +195,16 @@ if __name__ == "__main__":
 
 @bot.event
 async def on_command_error(ctx, error):
-    if isinstance(error, commands.CommandNotFound) or isinstance(error, discord.HTTPException) or isinstance(error, discord.NotFound):
+    if isinstance(error, commands.CommandNotFound) or isinstance(error, discord.HTTPException):
         pass
-    elif isinstance(error, BadArgs) or str(type(error)) == "<class 'cogs.meta.BadArgs'>":
+    elif isinstance(error, BadArgs):
         await error.print(ctx)
     elif isinstance(error, commands.CommandOnCooldown):
-        await ctx.send(f"Oops! That command is on cooldown right now. Please wait **{round(error.retry_after, 3)}** seconds before trying again.", delete_after=error.retry_after)
-    elif isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send(f"The required argument(s) {error.param} is/are missing.", delete_after=5)
-    elif isinstance(error, commands.DisabledCommand):
-        await ctx.send("This command is disabled.", delete_after=5)
+        await ctx.send(error, delete_after=error.retry_after)
     elif isinstance(error, commands.MissingPermissions) or isinstance(error, commands.BotMissingPermissions):
         await ctx.send(error, delete_after=5)
     else:
-        etype = type(error)
-        trace = error.__traceback__
-
         await ctx.send(error)
-        print("".join(traceback.format_exception(etype, error, trace, 999)))
 
 
 bot.run(CS221BOT_KEY)

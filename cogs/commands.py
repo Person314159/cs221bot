@@ -19,6 +19,7 @@ from discord.ext.commands import MemberConverter
 from googletrans import constants, Translator
 
 from util.badargs import BadArgs
+from util.CustomRoleConverter import Role
 from util.discord_handler import DiscordHandler
 
 
@@ -39,6 +40,7 @@ class Commands(commands.Cog):
         self.bot = bot
         self.add_instructor_role_counter = 0
         self.bot.d_handler = DiscordHandler()
+        self.role_converter = Role()
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -241,66 +243,67 @@ class Commands(commands.Cog):
         else:
             raise BadArgs("You inputted an invalid colour. Please try again.", show_help=True)
 
-    @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    async def dm(self, ctx):
-        """
-        `!dm` __`221DM Generator`__
-
-        **Usage:** !dm <user | close> [user] [...]
-
-        **Examples:**
-        `!dm @blankuser#1234` creates 221DM with TAs and blankuser
-        `!dm @blankuser#1234 @otheruser#5678` creates 221DM with TAs, blankuser and otheruser
-        `!dm close` closes 221DM
-        """
-
-        # meant for 221 server
-        guild = self.bot.get_guild(745503628479037492)
-
-        if "close" in ctx.message.content.lower():
-            if not ctx.channel.name.startswith("221dm-"):
-                raise BadArgs("This is not a 221DM.")
-
-            await ctx.send("Closing 221DM.")
-            await next(i for i in guild.roles if i.name == ctx.channel.name).delete()
-            return await ctx.channel.delete()
-
-        if not ctx.message.mentions:
-            raise BadArgs("You need to specify a user or users to add!", show_help=True)
-
-        # check that nobody is already in a 221dm before going and creating everything
-        for user in ctx.message.mentions:
-            for role in user.roles:
-                if role.name.startswith("221dm"):
-                    raise BadArgs(f"{user.name} is already in a 221DM.")
-
-        # generate customized channel name to allow customized role
-        nam = int(str((datetime.now() - datetime(1970, 1, 1)).total_seconds()).replace(".", "")) + ctx.author.id
-        nam = f"221dm-{nam}"
-        # create custom role
-        role = await guild.create_role(name=nam, colour=discord.Colour(0x2f3136))
-
-        for user in ctx.message.mentions:
-            try:
-                await user.add_roles(role)
-            except (discord.Forbidden, discord.HTTPException):
-                pass  # if for whatever reason one of the people doesn't exist, just ignore and keep going
-
-        access = discord.PermissionOverwrite(read_messages=True, send_messages=True, read_message_history=True)
-        noaccess = discord.PermissionOverwrite(read_messages=False, read_message_history=False, send_messages=False)
-        overwrites = {
-            # allow Computers and the new role, deny everyone else including Fake TA
-            guild.default_role                : noaccess,
-            guild.get_role(748035942945914920): access,
-            role                              : access
-        }
-        # this id is id of group dm category
-        channel = await guild.create_text_channel(nam, overwrites=overwrites, category=guild.get_channel(764672304793255986))
-        await ctx.send("Opened channel.")
-        users = (f"<@{usr.id}>" for usr in ctx.message.mentions)
-        await channel.send(f"<@{ctx.author.id}> {' '.join(users)}\n" +
-                           f"Welcome to 221 private DM. Type `!dm close` to exit when you are finished.")
+    # only works on old 221 server, disabling for now
+    # @commands.command()
+    # @commands.cooldown(1, 5, commands.BucketType.user)
+    # async def dm(self, ctx):
+    #     """
+    #     `!dm` __`221DM Generator`__
+    #
+    #     **Usage:** !dm <user | close> [user] [...]
+    #
+    #     **Examples:**
+    #     `!dm @blankuser#1234` creates 221DM with TAs and blankuser
+    #     `!dm @blankuser#1234 @otheruser#5678` creates 221DM with TAs, blankuser and otheruser
+    #     `!dm close` closes 221DM
+    #     """
+    #
+    #     # meant for 221 server
+    #     guild = self.bot.get_guild(745503628479037492)
+    #
+    #     if "close" in ctx.message.content.lower():
+    #         if not ctx.channel.name.startswith("221dm-"):
+    #             raise BadArgs("This is not a 221DM.")
+    #
+    #         await ctx.send("Closing 221DM.")
+    #         await next(i for i in guild.roles if i.name == ctx.channel.name).delete()
+    #         return await ctx.channel.delete()
+    #
+    #     if not ctx.message.mentions:
+    #         raise BadArgs("You need to specify a user or users to add!", show_help=True)
+    #
+    #     # check that nobody is already in a 221dm before going and creating everything
+    #     for user in ctx.message.mentions:
+    #         for role in user.roles:
+    #             if role.name.startswith("221dm"):
+    #                 raise BadArgs(f"{user.name} is already in a 221DM.")
+    #
+    #     # generate customized channel name to allow customized role
+    #     nam = int(str((datetime.now() - datetime(1970, 1, 1)).total_seconds()).replace(".", "")) + ctx.author.id
+    #     nam = f"221dm-{nam}"
+    #     # create custom role
+    #     role = await guild.create_role(name=nam, colour=discord.Colour(0x2f3136))
+    #
+    #     for user in ctx.message.mentions:
+    #         try:
+    #             await user.add_roles(role)
+    #         except (discord.Forbidden, discord.HTTPException):
+    #             pass  # if for whatever reason one of the people doesn't exist, just ignore and keep going
+    #
+    #     access = discord.PermissionOverwrite(read_messages=True, send_messages=True, read_message_history=True)
+    #     noaccess = discord.PermissionOverwrite(read_messages=False, read_message_history=False, send_messages=False)
+    #     overwrites = {
+    #         # allow Computers and the new role, deny everyone else including Fake TA
+    #         guild.default_role                : noaccess,
+    #         guild.get_role(748035942945914920): access,
+    #         role                              : access
+    #     }
+    #     # this id is id of group dm category
+    #     channel = await guild.create_text_channel(nam, overwrites=overwrites, category=guild.get_channel(764672304793255986))
+    #     await ctx.send("Opened channel.")
+    #     users = (f"<@{usr.id}>" for usr in ctx.message.mentions)
+    #     await channel.send(f"<@{ctx.author.id}> {' '.join(users)}\n" +
+    #                        f"Welcome to 221 private DM. Type `!dm close` to exit when you are finished.")
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -341,9 +344,8 @@ class Commands(commands.Cog):
         if limit == "all":
             limit = len(lang_list)
         elif not (limit.isdecimal() and 1 < (limit := int(limit)) < len(constants.LANGUAGES)):
-            return await ctx.send(
-                f"Please send a positive integer number of languages less than {len(constants.LANGUAGES)} to cycle.",
-                delete_after=5)
+            raise BadArgs(
+                f"Please send a positive integer number of languages less than {len(constants.LANGUAGES)} to cycle.")
 
         lang_list = ["en"] + lang_list[:limit] + ["en"]
         translator = Translator()
@@ -382,7 +384,7 @@ class Commands(commands.Cog):
         await ctx.message.delete()
 
         # case where role name is space separated
-        name = " ".join(arg).lower()
+        name = " ".join(arg)
 
         # Display help if given no argument
         if not name:
@@ -390,17 +392,12 @@ class Commands(commands.Cog):
 
         # make sure that you can't add roles like "prof" or "ta"
         valid_roles = ["Looking for Partners", "Study Group", "He/Him/His", "She/Her/Hers", "They/Them/Theirs", "Ze/Zir/Zirs", "notify"]
-        aliases = {"he": "He/Him/His", "she": "She/Her/Hers", "ze": "Ze/Zir/Zirs", "they": "They/Them/Theirs"}
-
-        # Convert alias to proper name
-        if name.lower() in aliases:
-            name = aliases[name].lower()
 
         # Grab the role that the user selected
-        role = next((r for r in ctx.guild.roles if name == r.name.lower()), None)
-
-        # Check that the role actually exists
-        if not role:
+        # Converters! this also makes aliases unnecessary
+        try:
+            role = await self.role_converter.convert(ctx, name)
+        except commands.RoleNotFound:
             raise BadArgs("You can't add that role!", show_help=True)
 
         # Ensure that the author does not already have the role
@@ -486,16 +483,10 @@ class Commands(commands.Cog):
         if not name:
             raise BadArgs("", show_help=True)
 
-        aliases = {"he": "he/him/his", "she": "she/her/hers", "ze": "ze/zir/zirs", "they": "they/them/theirs"}
-
-        # Convert alias to proper name
-        if name.lower() in aliases:
-            name = aliases[name]
-
-        role = next((r for r in ctx.guild.roles if name == r.name.lower()), None)
-
-        if not role:
-            raise BadArgs("that role doesn't exist!")
+        try:
+            role = await self.role_converter.convert(ctx, name)
+        except commands.RoleNotFound:
+            raise BadArgs("You can't add that role!", show_help=True)
 
         if role not in ctx.author.roles:
             raise BadArgs("you don't have that role!")
@@ -722,7 +713,7 @@ class Commands(commands.Cog):
     async def shut(self, ctx):
         change = ""
 
-        for role in self.bot.get_guild(796523378894831627).roles[:6]:
+        for role in ctx.guild.roles[:6]:
             if role.permissions.value == 104187456:
                 change = "enabled messaging permissions"
                 await role.edit(permissions=discord.Permissions(permissions=104189504))
@@ -734,27 +725,14 @@ class Commands(commands.Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def userstats(self, ctx, *userid):
+    async def userstats(self, ctx, user: discord.Member):
         """
         `!userstats` __`Check user profile and stats`__
 
-        **Usage:** !userstats <USER ID>
+        **Usage:** !userstats <USER>
 
-        **Examples:** `!userstats 226878658013298690` [embed]
+        **Examples:** `!userstats abc#1234` [embed]
         """
-
-        if not userid:
-            user = ctx.author
-        else:
-            try:
-                userid = int(userid[0])
-            except ValueError:
-                raise BadArgs("Please enter a user id", show_help=True)
-
-            user = ctx.guild.get_member(userid)
-
-        if not user:
-            raise BadArgs("That user does not exist")
 
         # we use both user and member objects, since some stats can only be obtained
         # from either user or member object
