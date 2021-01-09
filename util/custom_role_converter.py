@@ -1,7 +1,7 @@
 from discord.ext import commands
 
 
-class Role(commands.Converter):
+class CustomRoleConverter(commands.Converter):
     async def convert(self, ctx, argument):
         for role in ctx.guild.roles:
             if argument.lower() in role.name.lower():

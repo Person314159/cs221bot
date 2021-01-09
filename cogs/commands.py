@@ -19,7 +19,7 @@ from discord.ext.commands import MemberConverter
 from googletrans import constants, Translator
 
 from util.badargs import BadArgs
-from util.CustomRoleConverter import Role
+from util.custom_role_converter import CustomRoleConverter
 from util.discord_handler import DiscordHandler
 
 
@@ -40,7 +40,7 @@ class Commands(commands.Cog):
         self.bot = bot
         self.add_instructor_role_counter = 0
         self.bot.d_handler = DiscordHandler()
-        self.role_converter = Role()
+        self.role_converter = CustomRoleConverter()
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
