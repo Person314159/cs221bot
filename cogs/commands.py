@@ -477,6 +477,8 @@ class Commands(commands.Cog):
         `!leave Study Group` removes the Study Group role from yourself
         """
 
+        await ctx.message.delete()
+
         # case where role name is space separated
         name = " ".join(arg).lower()
 
