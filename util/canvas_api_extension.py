@@ -1,3 +1,6 @@
+from typing import List
+
+from canvasapi.course import Course
 from canvasapi.requester import Requester
 from canvasapi.util import combine_kwargs, get_institution_url
 
@@ -50,3 +53,22 @@ def get_course_url(course_id: str, base_url) -> str:
 
     base_url = get_institution_url(base_url)
     return "{}/courses/{}".format(base_url, course_id)
+
+
+def get_staff_ids(course: Course) -> List[int]:
+    """
+    Parameters
+    ----------
+    course : `Course`
+        The course to get staff IDs for
+
+    Returns
+    -------
+    `List[int]`
+        A list of the IDs of all professors and TAs in the given course.
+    """
+
+    staff = course.get_users(enrollment_type=["teacher", "ta"])
+    staff_ids = list(map(lambda user: user.id, staff))
+
+    return staff_ids

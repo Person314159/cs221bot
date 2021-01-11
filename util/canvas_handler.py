@@ -13,13 +13,11 @@ from canvasapi.module import Module, ModuleItem
 from canvasapi.paginated_list import PaginatedList
 
 from util import create_file
-from util.canvas_api_extension import get_course_stream, get_course_url
+from util.canvas_api_extension import get_course_stream, get_course_url, get_staff_ids
 
 # Stores course modules and channels that are live tracking courses
 # Do *not* put a slash at the end of this path
 COURSES_DIRECTORY = "./data/courses"
-
-CINDA_CANVAS_ID = 1073
 
 
 class CanvasHandler(Canvas):
@@ -331,16 +329,20 @@ class CanvasHandler(Canvas):
                 messages = item.get("latest_messages")
 
                 # Idea behind this hack:
-                # If we assume that any message from Cinda is an announcement, then
-                # we can just treat all such messages as announcements.
+                # If we assume that any message from any course staff is an announcement, then
+                # we can just treat all such messages as announcements. This assumption is safe
+                # because a TA runs this bot, and TAs are not going to be sending PMs to each
+                # other through Canvas.
+                #
                 # Below are the conditions necessary to consider a message as an announcement:
                 # 1. The message cannot have any replies (no one replies to announcements).
                 # 2. The number of participants is 2. This is checked in the filter condition above.
-                # 3. Cinda is the author of the message.
+                # 3. The message is authored by a professor or a TA.
 
                 if messages and len(messages) == 1:
-                    if messages[0].get("author_id") == CINDA_CANVAS_ID:
-                        course = self.get_course(item["course_id"])
+                    course = self.get_course(item["course_id"])
+
+                    if messages[0].get("author_id") in get_staff_ids(course):
                         course_url = get_course_url(course.id, base_url)
                         title = "Announcement: " + item["title"]
                         short_desc = "\n".join(item["latest_messages"][0]["message"].split("\n")[:4])
