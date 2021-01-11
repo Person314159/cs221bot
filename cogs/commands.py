@@ -14,7 +14,6 @@ import pytz
 import requests
 import requests.models
 import webcolors
-from discord import Permissions
 from discord.ext import commands
 from discord.ext.commands import MemberConverter
 from googletrans import constants, Translator
@@ -718,8 +717,6 @@ class Commands(commands.Cog):
         change = ""
 
         for role in ctx.guild.roles:
-            print(role.name)
-
             if role.permissions.administrator:
                 continue
 
