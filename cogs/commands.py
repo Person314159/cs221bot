@@ -14,6 +14,7 @@ import pytz
 import requests
 import requests.models
 import webcolors
+from discord import Permissions
 from discord.ext import commands
 from discord.ext.commands import MemberConverter
 from googletrans import constants, Translator
@@ -713,15 +714,25 @@ class Commands(commands.Cog):
     @commands.has_permissions(administrator=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def shut(self, ctx):
+        await ctx.message.delete()
         change = ""
 
-        for role in ctx.guild.roles[:6]:
-            if role.permissions.value == 104187456:
+        for role in ctx.guild.roles:
+            print(role.name)
+
+            if role.permissions.administrator:
+                continue
+
+            new_perms = role.permissions
+
+            if not role.permissions.send_messages:
                 change = "enabled messaging permissions"
-                await role.edit(permissions=discord.Permissions(permissions=104189504))
-            elif role.permissions.value == 104189504:
+                new_perms.update(send_messages=True)
+            else:
                 change = "disabled messaging permissions"
-                await role.edit(permissions=discord.Permissions(permissions=104187456))
+                new_perms.update(send_messages=False)
+
+            await role.edit(permissions=new_perms)
 
         await ctx.send(change)
 
