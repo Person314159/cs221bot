@@ -93,7 +93,7 @@ async def on_ready():
     startup()
     print("Logged in successfully")
     bot.loop.create_task(status_task())
-    bot.loop.create_task(Piazza.track_inotes(bot.get_cog("Piazza")))
+    bot.loop.create_task(Piazza.track_inotes(bot.get_cog("Piazza"), True))
     bot.loop.create_task(Piazza.send_pupdate(bot.get_cog("Piazza")))
     bot.loop.create_task(Canvas.stream_tracking(bot.get_cog("Canvas")))
     bot.loop.create_task(Canvas.assignment_reminder(bot.get_cog("Canvas")))

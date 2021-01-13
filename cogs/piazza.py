@@ -193,7 +193,7 @@ class Piazza(commands.Cog):
 
     @staticmethod
     async def send_at_time():
-        # default set to midnight PST (7/8am UTC)
+        # default set to midnight PT (7/8am UTC)
         today = datetime.utcnow()
         hours = round((datetime.utcnow() - datetime.now()).seconds / 3600)
         post_time = datetime(today.year, today.month, today.day, hour=hours, minute=0, tzinfo=today.tzinfo)
@@ -246,16 +246,20 @@ class Piazza(commands.Cog):
                 await channel.send(response)
 
     @staticmethod
-    async def track_inotes(self):
+    async def track_inotes(self, wait: bool):
         while True:
             if self.bot.d_handler.piazza_handler:
                 posts = await self.bot.d_handler.piazza_handler.get_recent_notes()
 
-                if len(posts) > 1:
+                if posts:
                     response = "Instructor Update:\n"
 
                     for post in posts:
                         response += f"@{post['num']}: {post['subject']} <{post['url']}>\n"
+
+                    if wait:
+                        # Sends at midnight if it is not called by the test function
+                        await self.send_at_time()
 
                     for chnl in self.bot.d_handler.piazza_handler.channels:
                         channel = self.bot.get_channel(chnl)
