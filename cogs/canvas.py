@@ -266,8 +266,7 @@ class Canvas(commands.Cog):
     def _get_canvas_handler(self, guild: discord.Guild) -> Optional[CanvasHandler]:
         return next((ch for ch in self.bot.d_handler.canvas_handlers if ch.guild == guild), None)
 
-    @staticmethod
-    def _get_tracking_courses(c_handler: CanvasHandler, CANVAS_API_URL) -> discord.Embed:
+    def _get_tracking_courses(self, c_handler: CanvasHandler, CANVAS_API_URL) -> discord.Embed:
         course_names = c_handler.get_course_names(CANVAS_API_URL)
         embed_var = discord.Embed(title="Tracking Courses:", color=CANVAS_COLOR, timestamp=datetime.utcnow())
         embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
@@ -277,7 +276,6 @@ class Canvas(commands.Cog):
 
         return embed_var
 
-    @staticmethod
     async def stream_tracking(self):
         while True:
             for ch in filter(operator.attrgetter("live_channels"), self.bot.d_handler.canvas_handlers):
@@ -304,7 +302,6 @@ class Canvas(commands.Cog):
 
             await asyncio.sleep(3600)
 
-    @staticmethod
     async def assignment_reminder(self):
         while True:
             for ch in filter(operator.attrgetter("live_channels"), self.bot.d_handler.canvas_handlers):
@@ -332,8 +329,7 @@ class Canvas(commands.Cog):
 
             await asyncio.sleep(3600)
 
-    @staticmethod
-    async def _assignment_sender(ch, data_list, recorded_ass_ids, notify_role, time):
+    async def _assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role, time):
         ass_ids = [data[-1] for data in data_list]
         not_recorded = tuple(data_list[i] for i, j in enumerate(ass_ids) if j not in recorded_ass_ids)
 
@@ -504,7 +500,6 @@ class Canvas(commands.Cog):
                     except Exception:
                         print(traceback.format_exc(), flush=True)
 
-    @staticmethod
     def canvas_init(self):
         for c_handler_guild_id in self.bot.canvas_dict:
             guild = self.bot.guilds[[guild.id for guild in self.bot.guilds].index(int(c_handler_guild_id))]

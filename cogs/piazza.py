@@ -191,8 +191,7 @@ class Piazza(commands.Cog):
             post_embed.set_footer(text=f"tags: {post['tags']}")
             return post_embed
 
-    @staticmethod
-    async def send_at_time():
+    async def send_at_time(self):
         # default set to midnight PT (7/8am UTC)
         today = datetime.utcnow()
         hours = round((datetime.utcnow() - datetime.now()).seconds / 3600)
@@ -202,7 +201,6 @@ class Piazza(commands.Cog):
         if time_until_post.total_seconds():
             await asyncio.sleep(time_until_post.total_seconds())
 
-    @staticmethod
     async def send_pupdate(self):
         while True:
             await self.send_piazza_posts(True)
@@ -245,7 +243,6 @@ class Piazza(commands.Cog):
                 channel = self.bot.get_channel(ch)
                 await channel.send(response)
 
-    @staticmethod
     async def track_inotes(self, wait: bool):
         while True:
             if self.bot.d_handler.piazza_handler:
@@ -269,7 +266,6 @@ class Piazza(commands.Cog):
             else:
                 await asyncio.sleep(60)
 
-    @staticmethod
     def piazza_start(self):
         if all(field in self.bot.piazza_dict for field in ("course_name", "piazza_id", "guild_id")):
             self.bot.d_handler.piazza_handler = PiazzaHandler(self.bot.piazza_dict["course_name"], self.bot.piazza_dict["piazza_id"], PIAZZA_EMAIL, PIAZZA_PASSWORD, self.bot.piazza_dict["guild_id"])

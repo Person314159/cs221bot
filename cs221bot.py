@@ -84,8 +84,8 @@ def startup():
 
     bot.writeJSON(bot.poll_dict, "data/poll.json")
 
-    Canvas.canvas_init(bot.get_cog("Canvas"))
-    Piazza.piazza_start(bot.get_cog("Piazza"))
+    bot.get_cog("Canvas").canvas_init()
+    bot.get_cog("Piazza").piazza_start()
 
 
 @bot.event
@@ -93,10 +93,10 @@ async def on_ready():
     startup()
     print("Logged in successfully")
     bot.loop.create_task(status_task())
-    bot.loop.create_task(Piazza.track_inotes(bot.get_cog("Piazza"), True))
-    bot.loop.create_task(Piazza.send_pupdate(bot.get_cog("Piazza")))
-    bot.loop.create_task(Canvas.stream_tracking(bot.get_cog("Canvas")))
-    bot.loop.create_task(Canvas.assignment_reminder(bot.get_cog("Canvas")))
+    bot.loop.create_task(bot.get_cog("Piazza").track_inotes(True))
+    bot.loop.create_task(bot.get_cog("Piazza").send_pupdate())
+    bot.loop.create_task(bot.get_cog("Canvas").stream_tracking())
+    bot.loop.create_task(bot.get_cog("Canvas").assignment_reminder())
     bot.loop.create_task(bot.get_cog("Canvas").update_modules_hourly())
 
 
