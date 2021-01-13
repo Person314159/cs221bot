@@ -243,68 +243,6 @@ class Commands(commands.Cog):
         else:
             raise BadArgs("You inputted an invalid colour. Please try again.", show_help=True)
 
-    # only works on old 221 server, disabling for now
-    # @commands.command()
-    # @commands.cooldown(1, 5, commands.BucketType.user)
-    # async def dm(self, ctx):
-    #     """
-    #     `!dm` __`221DM Generator`__
-    #
-    #     **Usage:** !dm <user | close> [user] [...]
-    #
-    #     **Examples:**
-    #     `!dm @blankuser#1234` creates 221DM with TAs and blankuser
-    #     `!dm @blankuser#1234 @otheruser#5678` creates 221DM with TAs, blankuser and otheruser
-    #     `!dm close` closes 221DM
-    #     """
-    #
-    #     # meant for 221 server
-    #     guild = self.bot.get_guild(745503628479037492)
-    #
-    #     if "close" in ctx.message.content.lower():
-    #         if not ctx.channel.name.startswith("221dm-"):
-    #             raise BadArgs("This is not a 221DM.")
-    #
-    #         await ctx.send("Closing 221DM.")
-    #         await next(i for i in guild.roles if i.name == ctx.channel.name).delete()
-    #         return await ctx.channel.delete()
-    #
-    #     if not ctx.message.mentions:
-    #         raise BadArgs("You need to specify a user or users to add!", show_help=True)
-    #
-    #     # check that nobody is already in a 221dm before going and creating everything
-    #     for user in ctx.message.mentions:
-    #         for role in user.roles:
-    #             if role.name.startswith("221dm"):
-    #                 raise BadArgs(f"{user.name} is already in a 221DM.")
-    #
-    #     # generate customized channel name to allow customized role
-    #     nam = int(str((datetime.now() - datetime(1970, 1, 1)).total_seconds()).replace(".", "")) + ctx.author.id
-    #     nam = f"221dm-{nam}"
-    #     # create custom role
-    #     role = await guild.create_role(name=nam, colour=discord.Colour(0x2f3136))
-    #
-    #     for user in ctx.message.mentions:
-    #         try:
-    #             await user.add_roles(role)
-    #         except (discord.Forbidden, discord.HTTPException):
-    #             pass  # if for whatever reason one of the people doesn't exist, just ignore and keep going
-    #
-    #     access = discord.PermissionOverwrite(read_messages=True, send_messages=True, read_message_history=True)
-    #     noaccess = discord.PermissionOverwrite(read_messages=False, read_message_history=False, send_messages=False)
-    #     overwrites = {
-    #         # allow Computers and the new role, deny everyone else including Fake TA
-    #         guild.default_role                : noaccess,
-    #         guild.get_role(748035942945914920): access,
-    #         role                              : access
-    #     }
-    #     # this id is id of group dm category
-    #     channel = await guild.create_text_channel(nam, overwrites=overwrites, category=guild.get_channel(764672304793255986))
-    #     await ctx.send("Opened channel.")
-    #     users = (f"<@{usr.id}>" for usr in ctx.message.mentions)
-    #     await channel.send(f"<@{ctx.author.id}> {' '.join(users)}\n" +
-    #                        f"Welcome to 221 private DM. Type `!dm close` to exit when you are finished.")
-
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def emojify(self, ctx):

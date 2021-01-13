@@ -4,8 +4,6 @@ import json
 import os
 import random
 import re
-import traceback
-from datetime import datetime
 from os.path import isfile, join
 
 import discord
@@ -90,27 +88,11 @@ def startup():
     Piazza.piazza_start(bot.get_cog("Piazza"))
 
 
-async def wipe_dms():
-    guild = bot.get_guild(745503628479037492)
-
-    while True:
-        await asyncio.sleep(300)
-        now = datetime.utcnow()
-
-        for channel in filter(lambda c: c.name.startswith("221dm-"), guild.channels):
-            if msg := next(channel.history(limit=1), None):
-                if (now - msg.created_at).total_seconds() >= 86400:
-                    await channel.delete()
-            else:
-                await channel.delete()
-
-
 @bot.event
 async def on_ready():
     startup()
     print("Logged in successfully")
     bot.loop.create_task(status_task())
-    bot.loop.create_task(wipe_dms())
     bot.loop.create_task(Piazza.track_inotes(bot.get_cog("Piazza")))
     bot.loop.create_task(Piazza.send_pupdate(bot.get_cog("Piazza")))
     bot.loop.create_task(Canvas.stream_tracking(bot.get_cog("Canvas")))
