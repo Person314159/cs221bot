@@ -256,7 +256,6 @@ class PiazzaHandler:
                 "post_body"   : self.clean_response(self.get_body(post)),
                 "i_answer"    : None,
                 "s_answer"    : None,
-                "more_answers": False,
                 "num_answers" : 0
             }
 
@@ -273,9 +272,7 @@ class PiazzaHandler:
                     else:
                         num_answers += self.get_num_follow_ups(answer)
 
-                if len(answers) > 1:
-                    response.update({"more_answers": True})
-                    response.update({"num_answers": num_answers})
+                response.update({"num_answers": num_answers})
 
             response.update({"tags": ", ".join(post["tags"] or "None")})
             return response

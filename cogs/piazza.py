@@ -186,8 +186,7 @@ class Piazza(commands.Cog):
 
             post_embed.set_thumbnail(url=PIAZZA_THUMBNAIL_URL)
 
-            if post["more_answers"]:
-                post_embed.add_field(name=f"{post['num_answers']} more contributions hidden", value="Click the title above to access the rest of the post.", inline=False)
+            post_embed.add_field(name=f"{post['num_answers']} more contributions hidden", value="Click the title above to access the rest of the post.", inline=False)
 
             post_embed.set_footer(text=f"tags: {post['tags']}")
             return post_embed
