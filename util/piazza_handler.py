@@ -256,13 +256,13 @@ class PiazzaHandler:
                 "post_body"   : self.clean_response(self.get_body(post)),
                 "i_answer"    : None,
                 "s_answer"    : None,
-                "num_answers" : 0
+                "num_followups" : 0
             }
 
             answers = post["children"]
 
             if answers:
-                num_answers = 0
+                num_followups = 0
 
                 for answer in answers:
                     if answer["type"] == "i_answer":
@@ -270,9 +270,9 @@ class PiazzaHandler:
                     elif answer["type"] == "s_answer":
                         response["s_answer"] = self.clean_response(self.get_body(answer))
                     else:
-                        num_answers += self.get_num_follow_ups(answer)
+                        num_followups += self.get_num_follow_ups(answer)
 
-                response.update({"num_answers": num_answers})
+                response.update({"num_followups": num_followups})
 
             response.update({"tags": ", ".join(post["tags"] or "None")})
             return response
