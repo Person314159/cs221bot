@@ -254,8 +254,8 @@ class PiazzaHandler:
                 "url"         : f"{self.url}?cid={postID}",
                 "post_type"   : postType,
                 "post_body"   : self.clean_response(self.get_body(post)),
-                "ans_type"    : "",
-                "ans_body"    : "",
+                "i_answer"    : None,
+                "s_answer"    : None,
                 "more_answers": False,
                 "num_answers" : 0
             }
@@ -263,32 +263,27 @@ class PiazzaHandler:
             answers = post["children"]
 
             if answers:
-                answer = answers[0]
+                num_answers = 0
 
-                if answer["type"] == "followup":
-                    if len(answers) == 1 or answers[1]["type"] == "followup":
-                        answerHeading = "Follow-up Post"
-                        answerBody = self.clean_response(answer["subject"])
+                for answer in answers:
+                    if answer["type"] == "i_answer":
+                        response["i_answer"] = self.clean_response(self.get_body(answer))
+                    elif answer["type"] == "s_answer":
+                        response["s_answer"] = self.clean_response(self.get_body(answer))
                     else:
-                        answerHeading = "Instructor Answer" if answer["type"] == "i_answer" else "Student Answer"
-                        answerBody = self.clean_response(self.get_body(answers[1]))
-                else:
-                    answerHeading = "Instructor Answer" if answer["type"] == "i_answer" else "Student Answer"
-                    answerBody = self.clean_response(self.get_body(answer))
+                        num_answers += self.get_num_follow_ups(answer)
 
                 if len(answers) > 1:
                     response.update({"more_answers": True})
-                    response.update({"num_answers": len(answers)})
-            else:
-                answerHeading = "Answers"
-                answerBody = "No answers yet :("
+                    response.update({"num_answers": num_answers})
 
-            response.update({"ans_type": answerHeading})
-            response.update({"ans_body": answerBody})
             response.update({"tags": ", ".join(post["tags"] or "None")})
             return response
         else:
             return None
+
+    def get_num_follow_ups(self, answer):
+        return 1 + sum(self.get_num_follow_ups(i) for i in answer["children"])
 
     async def get_posts_in_range(self, showLimit=10, days=1, seconds=0) -> List[List[dict]]:
         if showLimit < 1:

@@ -4,14 +4,13 @@ import json
 import os
 import random
 import re
+import traceback
 from os.path import isfile, join
 
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from cogs.canvas import Canvas
-from cogs.piazza import Piazza
 from util.badargs import BadArgs
 from util.create_file import create_file_if_not_exists
 
@@ -93,7 +92,6 @@ async def on_ready():
     startup()
     print("Logged in successfully")
     bot.loop.create_task(status_task())
-    bot.loop.create_task(bot.get_cog("Piazza").track_inotes(True))
     bot.loop.create_task(bot.get_cog("Piazza").send_pupdate())
     bot.loop.create_task(bot.get_cog("Canvas").stream_tracking())
     bot.loop.create_task(bot.get_cog("Canvas").assignment_reminder())
@@ -186,7 +184,9 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.MissingPermissions) or isinstance(error, commands.BotMissingPermissions):
         await ctx.send(error, delete_after=5)
     else:
-        await ctx.send(error)
+        etype = type(error)
+        trace = error.__traceback__
+        await ctx.send("```" + "".join(traceback.format_exception(etype, error, trace)) + "```")
 
 
 bot.run(CS221BOT_KEY)
