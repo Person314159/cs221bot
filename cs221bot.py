@@ -168,6 +168,9 @@ if __name__ == "__main__":
     # about them anyway.
     bot.notify_unpublished = args.notify_unpublished
 
+    if bot.notify_unpublished:
+        print("Warning: bot will send notifications about unpublished modules (if you have access).")
+
     for extension in filter(lambda f: isfile(join("cogs", f)) and f != "__init__.py", os.listdir("cogs")):
         bot.load_extension(f"cogs.{extension[:-3]}")
         print(f"{extension} module loaded")
