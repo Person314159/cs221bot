@@ -46,6 +46,58 @@ class Commands(commands.Cog):
         self.add_instructor_role_counter = 0
         self.bot.d_handler = DiscordHandler()
         self.role_converter = CustomRoleConverter()
+        
+    @commands.command(name="checkservers")
+    @commands.cooldown(1, 60, commands.BucketType.user)
+    async def check_servers(self, ctx, *args):
+        """
+        `!checkservers` __`Check if the remote CS servers are online`__
+
+        **Usage** `!checkservers [server names]`
+
+        **Valid server names**
+        thetis, remote, annacis, anvil, bowen, lulu, valdes
+        
+        **Examples:**
+        `!checkservers` checks all server statuses
+        `!checkservers thetis` checks status of thetis server
+        `!checkservers thetis remote` checks status of thetis and remote servers
+        """
+
+        async def check_server(server_ip: str) -> str:
+            """
+            Checks if the server with given IP can be connected to with SSH.
+
+            Parameters
+            ----------
+            server_ip: `str`
+                The IP of the server to check
+
+            Returns
+            -------
+            `str`
+                "online" if we can connect to the server using SSH; "offline" otherwise
+            """
+
+            can_connect = await can_connect_ssh(server_ip)
+            return "online" if can_connect else "offline"
+
+        msg = ""
+
+        if not args:
+            for server_name in SERVER_LIST:
+                ip = f"{server_name}.students.cs.ubc.ca"
+                msg += f"{server_name} is {await check_server(ip)}\n"
+        else:
+            for server_name in set(map(lambda arg: SERVER_ALIASES.get(arg.lower(), arg.lower()), args)):
+                ip = f"{server_name}.students.cs.ubc.ca"
+
+                if server_name in SERVER_LIST:
+                    msg += f"{server_name} is {await check_server(ip)}\n"
+                else:
+                    msg += f"{server_name} is not a valid server name.\n"
+
+        await ctx.send(msg)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -684,7 +736,8 @@ class Commands(commands.Cog):
 
         **Usage:** !userstats <USER>
 
-        **Examples:** `!userstats abc#1234` [embed]
+        **Examples:**
+        `!userstats abc#1234` [embed]
         """
 
         # we use both user and member objects, since some stats can only be obtained
@@ -722,7 +775,9 @@ class Commands(commands.Cog):
     async def votes(self, ctx):
         """
         `!votes` __`Top votes for server icon`__
+
         **Usage:** !votes
+
         **Examples:**
         `!votes` returns top 5 icons sorted by score
         """
@@ -748,80 +803,6 @@ class Commands(commands.Cog):
                 embed.add_field(name="Score", value=image[1], inline=True)
                 embed.set_thumbnail(url=image[0])
                 await ctx.send(embed=embed)
-
-    @commands.command(name="checkservers")
-    async def check_servers(self, ctx, *args):
-        """
-        `!checkservers` __`Check if the remote CS servers are online`__
-
-        **Usage** `!checkservers [server names]`
-
-        **Valid server names**
-        thetis, remote, annacis, anvil, bowen, lulu, valdes
-
-        If no arguments are given, the bot checks all known remote CS servers.
-        """
-
-        async def send_status(server_ip: str, can_connect: bool):
-            """
-            Sends a message in Discord indicating whether we can or cannot establish
-            an SSH connection to the server with given IP.
-
-            Parameters
-            ----------
-            server_ip: `str`
-                The server IP
-            can_connect: `bool`
-                True if we can connect to the server with IP server_ip; False otherwise.
-            """
-
-            if can_connect:
-                await ctx.send(f"{server_ip} is online.")
-            else:
-                await ctx.send(f"{server_ip} is down.")
-
-        async def check_server(server_ip: str) -> bool:
-            """
-            Checks if the server with given IP can be connected to with SSH.
-            The bot sends a Discord message to inform users of the server's status.
-
-            Parameters
-            ----------
-            server_ip: `str`
-                The IP of the server to check
-
-            Returns
-            -------
-            `bool`
-                True if we can connect to the server using SSH; False otherwise
-            """
-
-            can_connect = await can_connect_ssh(server_ip)
-            await send_status(server_ip, can_connect)
-
-            return can_connect
-
-        if len(args) == 0:
-            for server_name in SERVER_LIST:
-                await check_server(server_name + ".students.cs.ubc.ca")
-        else:
-            server_statuses = dict()
-
-            for server_name in map(lambda arg: arg.lower(), args):
-                ip = server_name + ".students.cs.ubc.ca"
-
-                if server_name in SERVER_ALIASES:
-                    # Thankfully, strings are immutable, so the ip string does not get changed.
-                    server_name = SERVER_ALIASES[server_name]
-
-                if server_name in SERVER_LIST:
-                    if server_name not in server_statuses:
-                        status = await check_server(ip)
-                        server_statuses[server_name] = status
-                    else:
-                        await send_status(ip, server_statuses[server_name])
-                else:
-                    await ctx.send(f"{server_name} is not a valid server name.")
 
     # add more commands here with the same syntax
     # also just look up the docs lol i can't do everything
