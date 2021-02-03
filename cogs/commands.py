@@ -21,6 +21,7 @@ from googletrans import constants, Translator
 from util.badargs import BadArgs
 from util.custom_role_converter import CustomRoleConverter
 from util.discord_handler import DiscordHandler
+from util.server_checker import can_connect_ssh
 
 
 # This is a huge hack but it technically works
@@ -743,6 +744,45 @@ class Commands(commands.Cog):
                 embed.add_field(name="Score", value=image[1], inline=True)
                 embed.set_thumbnail(url=image[0])
                 await ctx.send(embed=embed)
+
+    @commands.command()
+    async def checkservers(self, ctx, *args):
+        """
+        `!checkservers` __`Check if the remote CS servers are online`__
+
+        **Usage** `!checkservers [server names]`
+
+        **Valid server names**
+        thetis, remote, annacis, anvil, bowen, lulu, valdes
+
+        If no arguments are given, the bot checks all known remote CS servers.
+        """
+
+        server_list = ("thetis", "remote", "annacis", "anvil", "bowen", "lulu")
+
+        async def check(server_ip):
+            can_connect = await can_connect_ssh(server_ip)
+
+            if can_connect:
+                await ctx.send(f"{server_ip} is online.")
+            else:
+                await ctx.send(f"{server_ip} is down.")
+
+        if len(args) == 0:
+            for server_name in server_list:
+                await check(server_name + ".students.cs.ubc.ca")
+        else:
+            # We prevent a server from being checked more than once by keeping track
+            # of the servers we have checked already.
+            servers_checked = set()
+
+            for server_name in map(lambda arg: arg.lower(), args):
+                # valdes is another name for remote
+                if server_name != "valdes" and server_name not in server_list:
+                    await ctx.send(f"{server_name} is not a valid server name.")
+                elif server_name not in servers_checked:
+                    servers_checked.add(server_name)
+                    await check(server_name + ".students.cs.ubc.ca")
 
     # add more commands here with the same syntax
     # also just look up the docs lol i can't do everything
