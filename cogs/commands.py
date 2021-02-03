@@ -25,7 +25,6 @@ from util.server_checker import can_connect_ssh
 
 
 SERVER_LIST = ("thetis", "valdes", "annacis", "anvil", "bowen", "lulu")
-SERVER_ALIASES = {"remote": "valdes"}
 
 
 # This is a huge hack but it technically works
@@ -89,7 +88,7 @@ class Commands(commands.Cog):
                 ip = f"{server_name}.students.cs.ubc.ca"
                 msg += f"{server_name} is {await check_server(ip)}\n"
         else:
-            for server_name in set(map(lambda arg: SERVER_ALIASES.get(arg.lower(), arg.lower()), args)):
+            for server_name in set(map(lambda arg: arg.lower(), args)):
                 ip = f"{server_name}.students.cs.ubc.ca"
 
                 if server_name in SERVER_LIST:
