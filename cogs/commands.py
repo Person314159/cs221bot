@@ -772,7 +772,7 @@ class Commands(commands.Cog):
             server_ip: `str`
                 The server IP
             can_connect: `bool`
-                True if we can connect to the server with server_ip; False otherwise.
+                True if we can connect to the server with IP server_ip; False otherwise.
             """
 
             if can_connect:
