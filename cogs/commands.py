@@ -763,6 +763,18 @@ class Commands(commands.Cog):
         """
 
         async def send_status(server_ip: str, can_connect: bool):
+            """
+            Sends a message in Discord indicating whether we can or cannot establish
+            an SSH connection to the server with given IP.
+
+            Parameters
+            ----------
+            server_ip: `str`
+                The server IP
+            can_connect: `bool`
+                True if we can connect to the server with server_ip; False otherwise.
+            """
+
             if can_connect:
                 await ctx.send(f"{server_ip} is online.")
             else:
@@ -775,13 +787,13 @@ class Commands(commands.Cog):
 
             Parameters
             ----------
-            server_ip
+            server_ip: `str`
                 The IP of the server to check
 
             Returns
             -------
             `bool`
-                True if we can connect to the server with SSH; False otherwise
+                True if we can connect to the server using SSH; False otherwise
             """
 
             can_connect = await can_connect_ssh(server_ip)
