@@ -81,22 +81,22 @@ class Commands(commands.Cog):
             can_connect = await can_connect_ssh(server_ip)
             return "online" if can_connect else "offline"
 
-        msg = ""
+        msgs = []
 
         if not args:
             for server_name in SERVER_LIST:
                 ip = f"{server_name}.students.cs.ubc.ca"
-                msg += f"{server_name} is {await check_server(ip)}\n"
+                msgs.append(f"{server_name} is {await check_server(ip)}")
         else:
             for server_name in set(map(lambda arg: arg.lower(), args)):
                 ip = f"{server_name}.students.cs.ubc.ca"
 
                 if server_name in SERVER_LIST:
-                    msg += f"{server_name} is {await check_server(ip)}\n"
+                    msgs.append(f"{server_name} is {await check_server(ip)}")
                 else:
-                    msg += f"{server_name} is not a valid server name.\n"
+                    msgs.append(f"{server_name} is not a valid server name.")
 
-        await ctx.send(msg)
+        await ctx.send("\n".join(msgs))
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
