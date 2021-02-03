@@ -24,6 +24,10 @@ from util.discord_handler import DiscordHandler
 from util.server_checker import can_connect_ssh
 
 
+SERVER_LIST = ("thetis", "remote", "annacis", "anvil", "bowen", "lulu")
+SERVER_ALIASES = {"valdes": "remote"}
+
+
 # This is a huge hack but it technically works
 def _urlencode(*args, **kwargs):
     kwargs.update(quote_via=urllib.parse.quote)
@@ -745,8 +749,8 @@ class Commands(commands.Cog):
                 embed.set_thumbnail(url=image[0])
                 await ctx.send(embed=embed)
 
-    @commands.command()
-    async def checkservers(self, ctx, *args):
+    @commands.command(name="checkservers")
+    async def check_servers(self, ctx, *args):
         """
         `!checkservers` __`Check if the remote CS servers are online`__
 
@@ -758,31 +762,54 @@ class Commands(commands.Cog):
         If no arguments are given, the bot checks all known remote CS servers.
         """
 
-        server_list = ("thetis", "remote", "annacis", "anvil", "bowen", "lulu")
-
-        async def check(server_ip):
-            can_connect = await can_connect_ssh(server_ip)
-
+        async def send_status(server_ip: str, can_connect: bool):
             if can_connect:
                 await ctx.send(f"{server_ip} is online.")
             else:
                 await ctx.send(f"{server_ip} is down.")
 
+        async def check_server(server_ip: str) -> bool:
+            """
+            Checks if the server with given IP can be connected to with SSH.
+            The bot sends a Discord message to inform users of the server's status.
+
+            Parameters
+            ----------
+            server_ip
+                The IP of the server to check
+
+            Returns
+            -------
+            `bool`
+                True if we can connect to the server with SSH; False otherwise
+            """
+
+            can_connect = await can_connect_ssh(server_ip)
+            await send_status(server_ip, can_connect)
+
+            return can_connect
+
         if len(args) == 0:
-            for server_name in server_list:
-                await check(server_name + ".students.cs.ubc.ca")
+            for server_name in SERVER_LIST:
+                await check_server(server_name + ".students.cs.ubc.ca")
         else:
-            # We prevent a server from being checked more than once by keeping track
-            # of the servers we have checked already.
-            servers_checked = set()
+            server_statuses = dict()
 
             for server_name in map(lambda arg: arg.lower(), args):
-                # valdes is another name for remote
-                if server_name != "valdes" and server_name not in server_list:
+                ip = server_name + ".students.cs.ubc.ca"
+
+                if server_name in SERVER_ALIASES:
+                    # Thankfully, strings are immutable, so the ip string does not get changed.
+                    server_name = SERVER_ALIASES[server_name]
+
+                if server_name in SERVER_LIST:
+                    if server_name not in server_statuses:
+                        status = await check_server(ip)
+                        server_statuses[server_name] = status
+                    else:
+                        await send_status(ip, server_statuses[server_name])
+                else:
                     await ctx.send(f"{server_name} is not a valid server name.")
-                elif server_name not in servers_checked:
-                    servers_checked.add(server_name)
-                    await check(server_name + ".students.cs.ubc.ca")
 
     # add more commands here with the same syntax
     # also just look up the docs lol i can't do everything
