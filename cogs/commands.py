@@ -24,8 +24,8 @@ from util.discord_handler import DiscordHandler
 from util.server_checker import can_connect_ssh
 
 
-SERVER_LIST = ("thetis", "remote", "annacis", "anvil", "bowen", "lulu")
-SERVER_ALIASES = {"valdes": "remote"}
+SERVER_LIST = ("thetis", "valdes", "annacis", "anvil", "bowen", "lulu")
+SERVER_ALIASES = {"remote": "valdes"}
 
 
 # This is a huge hack but it technically works
