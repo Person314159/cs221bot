@@ -21,6 +21,10 @@ from googletrans import constants, Translator
 from util.badargs import BadArgs
 from util.custom_role_converter import CustomRoleConverter
 from util.discord_handler import DiscordHandler
+from util.server_checker import can_connect_ssh
+
+
+SERVER_LIST = ("thetis", "valdes", "remote", "annacis", "anvil", "bowen", "lulu")
 
 
 # This is a huge hack but it technically works
@@ -41,6 +45,58 @@ class Commands(commands.Cog):
         self.add_instructor_role_counter = 0
         self.bot.d_handler = DiscordHandler()
         self.role_converter = CustomRoleConverter()
+        
+    @commands.command(name="checkservers")
+    @commands.cooldown(1, 60, commands.BucketType.user)
+    async def check_servers(self, ctx, *args):
+        """
+        `!checkservers` __`Check if the remote CS servers are online`__
+
+        **Usage** `!checkservers [server names]`
+
+        **Valid server names**
+        thetis, remote, annacis, anvil, bowen, lulu, valdes
+        
+        **Examples:**
+        `!checkservers` checks all server statuses
+        `!checkservers thetis` checks status of thetis server
+        `!checkservers thetis remote` checks status of thetis and remote servers
+        """
+
+        async def check_server(server_ip: str) -> str:
+            """
+            Checks if the server with given IP can be connected to with SSH.
+
+            Parameters
+            ----------
+            server_ip: `str`
+                The IP of the server to check
+
+            Returns
+            -------
+            `str`
+                "online" if we can connect to the server using SSH; "offline" otherwise
+            """
+
+            can_connect = await can_connect_ssh(server_ip)
+            return "online" if can_connect else "offline"
+
+        msgs = []
+
+        if not args:
+            for server_name in SERVER_LIST:
+                ip = f"{server_name}.students.cs.ubc.ca"
+                msgs.append(f"{server_name} is {await check_server(ip)}")
+        else:
+            for server_name in set(map(lambda arg: arg.lower(), args)):
+                ip = f"{server_name}.students.cs.ubc.ca"
+
+                if server_name in SERVER_LIST:
+                    msgs.append(f"{server_name} is {await check_server(ip)}")
+                else:
+                    msgs.append(f"{server_name} is not a valid server name.")
+
+        await ctx.send("\n".join(msgs))
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -679,7 +735,8 @@ class Commands(commands.Cog):
 
         **Usage:** !userstats <USER>
 
-        **Examples:** `!userstats abc#1234` [embed]
+        **Examples:**
+        `!userstats abc#1234` [embed]
         """
 
         # we use both user and member objects, since some stats can only be obtained
@@ -717,7 +774,9 @@ class Commands(commands.Cog):
     async def votes(self, ctx):
         """
         `!votes` __`Top votes for server icon`__
+
         **Usage:** !votes
+
         **Examples:**
         `!votes` returns top 5 icons sorted by score
         """

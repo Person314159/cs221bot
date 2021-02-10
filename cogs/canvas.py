@@ -338,9 +338,10 @@ class Canvas(commands.Cog):
                 await channel.send(notify_role.mention)
 
         for data in not_recorded:
+            desc = data[4][:2045].rsplit(maxsplit=1)
             embed_var = discord.Embed(title=f"Due in one {time}: {data[2]}",
                                       url=data[3],
-                                      description=data[4][:2045].rsplit(maxsplit=1)[0] + "...",
+                                      description=desc[0] + "..." if desc else "[No description]",
                                       color=CANVAS_COLOR,
                                       timestamp=datetime.strptime(data[5], "%Y-%m-%d %H:%M:%S"))
             embed_var.set_author(name=data[0], url=data[1])
