@@ -10,21 +10,23 @@ Additionally, you will need a Piazza email + password and a Canvas API key set a
 
 ## Dependencies
 
-The bot requires the following pip packages: 
-- `discord.py` 
-- `requests` 
-- `webcolors` 
-- `googletrans`
-- `beautifulsoup` 
-- `python-dotenv`
-- `python-dateutil`
-- `canvasapi`
-- `piazza-api`
-- `pytz`
-- `Pillow`
+The bot requires the following pip packages:
+- `beautifulsoup`
 - `binarytree`
+- `canvasapi`
+- `discord.py`
+- `googletrans`
+- `piazza-api`
+- `Pillow`
+- `python-dateutil`
+- `python-dotenv`
+- `pytz`
+- `requests`
+- `webcolors`
 
 You can install all of them using `pip install -r requirements.txt`.
+
+The bot also requires GraphViz, which can be installed with `conda install -c anaconda graphviz`
 
 ## Usage
 

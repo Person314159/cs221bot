@@ -1,13 +1,13 @@
 import asyncio
 import math
+import os
 import random
+import glob
 import re
-from io import BytesIO
 
 import discord
 from binarytree import Node
 from discord.ext import commands
-from PIL import Image, ImageDraw, ImageFont
 
 from util.badargs import BadArgs
 
@@ -62,34 +62,22 @@ class Tree(commands.Cog):
         root = Node(numbers[0])
 
         nodes = [root]
-        highlighted = []
 
-        def insert(subroot, num, highlight=False):
-            if highlight:
-                highlighted.append(subroot.val)
-
+        def insert(subroot, num):
             if num < subroot.val:
                 if not subroot.left:
                     node = Node(num)
                     subroot.left = node
-
-                    if highlight:
-                        highlighted.append(num)
-
                     nodes.append(node)
                 else:
-                    insert(subroot.left, num, highlight)
+                    insert(subroot.left, num)
             else:
                 if not subroot.right:
                     node = Node(num)
                     subroot.right = node
-
-                    if highlight:
-                        highlighted.append(num)
-
                     nodes.append(node)
                 else:
-                    insert(subroot.right, num, highlight)
+                    insert(subroot.right, num)
 
         def delete(subroot, num):
             if subroot:
@@ -143,89 +131,16 @@ class Tree(commands.Cog):
 
         timeout = 60
         display = True
-        filex = None
 
-        async def draw_bst(highlighted, root):
-            entries = list(filter(lambda x: x[0] is not None, [[b, i] for b, i in zip(root.values, range(1, len(root.values) + 1))]))
-            levels = root.height + 1
-            fsize = max(10, 60 - 7 * root.height)
-            font = ImageFont.truetype("boxfont_round.ttf", fsize)
-            radius = max(10, 100 - 10 * root.height)
-            width = 2 * radius * (2 ** (root.height + 1))
-            height = 2 * radius * (root.height + 2)
-            basey = height // (levels + 1)
-            smallest = [math.inf, 1]
-
-            for entry in entries:
-                if entry[0] < smallest[0]:
-                    smallest = entry
-
-            reflevel = math.floor(math.log(smallest[1], 2))
-            basex = width // (2 ** reflevel + 1)
-            refx = int(basex - 2 * radius)
-
-            if basex != width // 2:
-                refx = 0
-                offset = 0
-            else:
-                offset = radius
-
-            image = Image.new("RGBA", (width - refx - offset, height), (255, 255, 255, 255))
-            layer = Image.new("RGBA", (width - refx - offset, height), (0, 0, 0, 0))
-            drawing = ImageDraw.Draw(image)
-            drawing2 = ImageDraw.Draw(layer)
-            currentlevel = 2
-            x = width // 2
-            y = basey * currentlevel
-
-            if root.val in highlighted:
-                col = (0, 128, 128, 255)
-            else:
-                col = (0, 0, 255, 255)
-
-            drawing2.ellipse([(x - radius - refx, basey - radius), (x + radius - refx, basey + radius)], fill=col, outline=(0, 0, 0, 255))
-            ln = drawing2.textsize(str(root.val), font=font)[0] / 2
-            drawing2.text((x - refx - fsize // 2 - ln, basey - fsize // 2), str(root.val), fill=(255, 168, 0, 255), font=font)
-
-            for entry in entries[1:]:
-                await asyncio.sleep(0)
-
-                if math.floor(math.log(entry[1], 2)) > currentlevel - 1:
-                    currentlevel += 1
-                    y = basey * currentlevel
-
-                multiplier = entry[1] - 2 ** (currentlevel - 1) + 1
-                basex = width // (2 ** (currentlevel - 1) + 1)
-                x = basex * multiplier
-                prevx = width // (2 ** (currentlevel - 2) + 1)
-                prevx *= (multiplier + 1) // 2
-
-                if entry[0] in highlighted:
-                    col = (0, 128, 128, 255)
-                    linecol = col
-                else:
-                    col = (0, 0, 255, 255)
-                    linecol = (0, 0, 0, 255)
-
-                drawing.line([(prevx - refx, basey * (currentlevel - 1)), (x - refx, y)], fill=linecol, width=7)
-                drawing2.ellipse([(x - radius - refx, y - radius), (x + radius - refx, y + radius)], fill=col, outline=(0, 0, 0, 255))
-                ln = drawing2.textsize(str(entry[0]), font=font)[0] / 2
-                drawing2.text((x - refx - fsize // 2 - ln, y - fsize // 2), str(entry[0]), fill=(255, 168, 0, 255), font=font)
-
-            image.alpha_composite(layer)
-            filex = BytesIO()
-            image.save(filex, "PNG", optimize=True)
-            filex.seek(0)
-            return filex
+        def draw_bst(root):
+            graph = root.graphviz()
+            graph.render("bst", format="png")
 
         while True:
-            if root.height <= 8:
-                filex = await draw_bst(highlighted, root)
-                highlighted = []
-
             if display:
+                draw_bst(root)
                 text = f"```{root}\n```"
-                await ctx.send(text, file=discord.File(filex, "bst.png") if filex else None)
+                await ctx.send(text, file=discord.File("bst.png"))
                 display = False
 
             def check(m):
@@ -234,10 +149,12 @@ class Tree(commands.Cog):
             try:
                 message = await self.bot.wait_for("message", timeout=timeout, check=check)
             except asyncio.exceptions.TimeoutError:
-                return
+                for f in glob.glob("bst*"):
+                    os.remove(f)
+
+                return await ctx.send("Timed out.", delete_after=5)
 
             command = message.content.replace(",", "").replace("!", "").lower()
-            timeout = 60
 
             if command.startswith("level"):
                 await ctx.send("Level-Order Traversal:\n**" + "  ".join([str(n.val) for n in root.levelorder]) + "**")
@@ -271,8 +188,7 @@ class Tree(commands.Cog):
                 if root.right:
                     embed.add_field(name="In-Order Successor:", value=min(filter(lambda x: x is not None, root.right.values)))
 
-                filex.seek(0)
-                await ctx.send(embed=embed, file=discord.File(filex, "bst.png"))
+                await ctx.send(embed=embed, file=discord.File("bst.png"))
             elif command.startswith("pause"):
                 timeout = 86400
                 await ctx.send("Timeout paused.")
@@ -296,7 +212,7 @@ class Tree(commands.Cog):
                     add.append(str(num))
 
                     if not get_node(num):
-                        insert(root, num, highlight=True)
+                        insert(root, num)
 
                 await ctx.send(f"Inserted {','.join(add)}.")
                 display = True
@@ -325,6 +241,9 @@ class Tree(commands.Cog):
                 await ctx.send(f"Deleted {','.join(remove)}.")
                 display = True
             elif command.startswith("exit"):
+                for f in glob.glob("bst*"):
+                    os.remove(f)
+
                 return await ctx.send("Exiting.")
             elif command.startswith("bst"):
                 return

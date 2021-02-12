@@ -189,7 +189,10 @@ async def on_command_error(ctx, error):
     else:
         etype = type(error)
         trace = error.__traceback__
-        await ctx.send("```" + "".join(traceback.format_exception(etype, error, trace)) + "```")
 
+        try:
+            await ctx.send("```" + "".join(traceback.format_exception(etype, error, trace)) + "```")
+        except Exception:
+            print("".join(traceback.format_exception(etype, error, trace)))
 
 bot.run(CS221BOT_KEY)
