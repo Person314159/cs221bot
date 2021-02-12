@@ -10,7 +10,8 @@ from discord.ext import commands
 from util import create_file
 
 
-SERVER_LIST = ("thetis", "valdes", "remote", "annacis", "anvil", "bowen", "lulu")
+SERVER_LIST = ("thetis", "remote", "annacis", "anvil", "bowen", "lulu")
+OTHER_SERVER_NAMES = ("valdes",)
 SERVER_TRACKERS_FILE = "data/server_trackers.json"
 
 
@@ -75,7 +76,7 @@ class ServerChecker(commands.Cog, name="server_checker"):
             for server_name in set(map(lambda arg: arg.lower(), args)):
                 ip = f"{server_name}.students.cs.ubc.ca"
 
-                if server_name in SERVER_LIST:
+                if server_name in SERVER_LIST or server_name in OTHER_SERVER_NAMES:
                     msgs.append(f"{server_name} is {await check_server(ip)}")
                 else:
                     msgs.append(f"{server_name} is not a valid server name.")
