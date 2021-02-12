@@ -60,14 +60,14 @@ class Meta(commands.Cog):
             modules = list(i.lower() for i in self.bot.cogs)
 
         for extension in modules:
-            Reload = await ctx.send(f"Reloading the {extension} module")
+            reload_msg = await ctx.send(f"Reloading the {extension} module")
 
             try:
                 self.bot.reload_extension(f"cogs.{extension}")
             except ExtensionError as exc:
                 return await ctx.send(exc)
 
-            await Reload.edit(content=f"{extension} module reloaded.")
+            await reload_msg.edit(content=f"{extension} module reloaded.")
 
         self.bot.reload_extension("cogs.meta")
 

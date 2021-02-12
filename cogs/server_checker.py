@@ -14,7 +14,7 @@ SERVER_LIST = ("thetis", "valdes", "remote", "annacis", "anvil", "bowen", "lulu"
 SERVER_TRACKERS_FILE = "data/server_trackers.json"
 
 
-class ServerChecker(commands.Cog):
+class ServerChecker(commands.Cog, name="server_checker"):
     def __init__(self, bot):
         def hook(dct):
             return {int(key): dct[key] for key in dct}
