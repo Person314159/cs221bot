@@ -109,7 +109,8 @@ class ServerChecker(commands.Cog, name="server_checker"):
         `!untrackservers`
 
         Causes the bot to stop sending CS server updates to the channel where
-        this command is invoked.
+        this command is invoked. The bot also deletes the live status message
+        in the channel, if that message exists.
         """
 
         if ctx.channel.id in self.server_trackers_dict:
