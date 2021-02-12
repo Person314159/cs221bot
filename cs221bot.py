@@ -96,6 +96,7 @@ async def on_ready():
     bot.loop.create_task(bot.get_cog("Canvas").stream_tracking())
     bot.loop.create_task(bot.get_cog("Canvas").assignment_reminder())
     bot.loop.create_task(bot.get_cog("Canvas").update_modules_hourly())
+    bot.loop.create_task(bot.get_cog("ServerChecker").check_servers_periodically())
 
 
 @bot.event
