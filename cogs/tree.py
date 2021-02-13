@@ -1,8 +1,8 @@
 import asyncio
+import glob
 import math
 import os
 import random
-import glob
 import re
 
 import discord

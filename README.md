@@ -11,6 +11,7 @@ Additionally, you will need a Piazza email + password and a Canvas API key set a
 ## Dependencies
 
 The bot requires the following pip packages:
+
 - `beautifulsoup`
 - `binarytree`
 - `canvasapi`
@@ -30,9 +31,7 @@ The bot also requires GraphViz, which can be installed with `conda install -c an
 
 ## Usage
 
-Start the bot by using `python3 cs221bot.py`. 
-View the list of commands by typing `!help` in a server where the bot is in.
+Start the bot by using `python3 cs221bot.py`. View the list of commands by typing `!help` in a server where the bot is in.
 
-The bot's Canvas module-tracking functionality only notifies you of new *published* modules by default.
-If you want the bot to notify you when it sees a new *unpublished* module, run the bot with the
+The bot's Canvas module-tracking functionality only notifies you of new *published* modules by default. If you want the bot to notify you when it sees a new *unpublished* module, run the bot with the
 `--cnu` flag, i.e. run `python3 cs221bot.py --cnu`. You need to have access to unpublished modules, though.

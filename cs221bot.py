@@ -1,6 +1,5 @@
 import argparse
 import asyncio
-import json
 import os
 import random
 import re
@@ -13,9 +12,11 @@ from dotenv import load_dotenv
 
 from util.badargs import BadArgs
 from util.create_file import create_file_if_not_exists
+from util.json import readJSON, writeJSON
 
 CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
+POLL_FILE = "data/poll.json"
 
 load_dotenv()
 CS221BOT_KEY = os.getenv("CS221BOT_KEY")
@@ -26,16 +27,6 @@ parser = argparse.ArgumentParser(description="Run CS221Bot")
 parser.add_argument("--cnu", dest="notify_unpublished", action="store_true",
                     help="Allow the bot to send notifications about unpublished Canvas modules (if you have access) as well as published ones.")
 args = parser.parse_args()
-
-
-def loadJSON(jsonfile):
-    with open(jsonfile, "r") as f:
-        return json.load(f)
-
-
-def writeJSON(data, jsonfile):
-    with open(jsonfile, "w") as f:
-        json.dump(data, f, indent=4)
 
 
 async def status_task():
@@ -64,25 +55,6 @@ async def status_task():
 
 
 def startup():
-    files = ("data/poll.json", "data/canvas.json", "data/piazza.json")
-
-    for f in files:
-        if not isfile(f):
-            create_file_if_not_exists(f)
-            bot.writeJSON({}, f)
-
-    bot.poll_dict = bot.loadJSON("data/poll.json")
-    bot.canvas_dict = bot.loadJSON("data/canvas.json")
-    bot.piazza_dict = bot.loadJSON("data/piazza.json")
-
-    for channel in filter(lambda ch: not bot.get_channel(int(ch)), list(bot.poll_dict)):
-        del bot.poll_dict[channel]
-
-    for channel in (c for g in bot.guilds for c in g.text_channels if str(c.id) not in bot.poll_dict):
-        bot.poll_dict.update({str(channel.id): ""})
-
-    bot.writeJSON(bot.poll_dict, "data/poll.json")
-
     bot.get_cog("Canvas").canvas_init()
     bot.get_cog("Piazza").piazza_start()
 
@@ -95,36 +67,8 @@ async def on_ready():
     bot.loop.create_task(bot.get_cog("Piazza").send_pupdate())
     bot.loop.create_task(bot.get_cog("Canvas").stream_tracking())
     bot.loop.create_task(bot.get_cog("Canvas").assignment_reminder())
-    bot.loop.create_task(bot.get_cog("Canvas").update_modules_hourly())
+    bot.loop.create_task(bot.get_cog("Canvas").update_modules())
     bot.loop.create_task(bot.get_cog("server_checker").check_servers_periodically())
-
-
-@bot.event
-async def on_guild_join(guild):
-    for channel in guild.text_channels:
-        bot.poll_dict.update({str(channel.id): ""})
-        bot.writeJSON(bot.poll_dict, "data/poll.json")
-
-
-@bot.event
-async def on_guild_remove(guild):
-    for channel in filter(lambda c: str(c.id) in bot.poll_dict, guild.channels):
-        del bot.poll_dict[str(channel.id)]
-        bot.writeJSON(bot.poll_dict, "data/poll.json")
-
-
-@bot.event
-async def on_guild_channel_create(channel):
-    if isinstance(channel, discord.TextChannel):
-        bot.poll_dict.update({str(channel.id): ""})
-        bot.writeJSON(bot.poll_dict, "data/poll.json")
-
-
-@bot.event
-async def on_guild_channel_delete(channel):
-    if str(channel.id) in bot.poll_dict:
-        del bot.poll_dict[str(channel.id)]
-        bot.writeJSON(bot.poll_dict, "data/poll.json")
 
 
 @bot.event
@@ -160,9 +104,6 @@ async def on_message(message):
 
 
 if __name__ == "__main__":
-    bot.loadJSON = loadJSON
-    bot.writeJSON = writeJSON
-
     # True if the bot should send notifications about new *unpublished* modules on Canvas; False otherwise.
     # This only matters if the host of the bot has access to unpublished modules. If the host does
     # not have access, then the bot won't know about any unpublished modules and won't send any info
@@ -195,5 +136,6 @@ async def on_command_error(ctx, error):
             await ctx.send("```" + "".join(traceback.format_exception(etype, error, trace)) + "```")
         except Exception:
             print("".join(traceback.format_exception(etype, error, trace)))
+
 
 bot.run(CS221BOT_KEY)

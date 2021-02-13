@@ -1,15 +1,19 @@
 import asyncio
 import os
 from datetime import datetime
+from os.path import isfile
 
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
 from util.badargs import BadArgs
+from util.create_file import create_file_if_not_exists
+from util.json import readJSON, writeJSON
 from util.piazza_handler import InvalidPostID, PiazzaHandler
 
 PIAZZA_THUMBNAIL_URL = "https://store-images.s-microsoft.com/image/apps.25584.554ac7a6-231b-46e2-9960-a059f3147dbe.727eba5c-763a-473f-981d-ffba9c91adab.4e76ea6a-bd74-487f-bf57-3612e43ca795.png"
+PIAZZA_FILE = "data/piazza.json"
 
 load_dotenv()
 PIAZZA_EMAIL = os.getenv("PIAZZA_EMAIL")
@@ -19,6 +23,12 @@ PIAZZA_PASSWORD = os.getenv("PIAZZA_PASSWORD")
 class Piazza(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+        if not isfile(PIAZZA_FILE):
+            create_file_if_not_exists(PIAZZA_FILE)
+            writeJSON({}, PIAZZA_FILE)
+
+        self.piazza_dict = readJSON(PIAZZA_FILE)
 
     # # start of Piazza functions # #
     # didn't want to support multiple PiazzaHandler instances because it's associated with
@@ -43,13 +53,13 @@ class Piazza(commands.Cog):
         self.bot.d_handler.piazza_handler = PiazzaHandler(name, pid, PIAZZA_EMAIL, PIAZZA_PASSWORD, ctx.guild)
 
         # dict.get defaults to None so KeyError is never thrown
-        for channel in self.bot.piazza_dict.get("channels"):
+        for channel in self.piazza_dict.get("channels"):
             self.bot.d_handler.piazza_handler.add_channel(channel)
 
-        self.bot.piazza_dict["course_name"] = name
-        self.bot.piazza_dict["piazza_id"] = pid
-        self.bot.piazza_dict["guild_id"] = ctx.guild.id
-        self.bot.writeJSON(self.bot.piazza_dict, "data/piazza.json")
+        self.piazza_dict["course_name"] = name
+        self.piazza_dict["piazza_id"] = pid
+        self.piazza_dict["guild_id"] = ctx.guild.id
+        writeJSON(self.piazza_dict, "data/piazza.json")
         response = f"Piazza instance created!\nName: {name}\nPiazza ID: {pid}\n"
         response += "If the above doesn't look right, please use `!pinit` again with the correct arguments"
         await ctx.send(response)
@@ -77,8 +87,8 @@ class Piazza(commands.Cog):
             cid = int(cid[0])
 
         self.bot.d_handler.piazza_handler.add_channel(cid)
-        self.bot.piazza_dict["channels"] = list(self.bot.d_handler.piazza_handler.channels)
-        self.bot.writeJSON(self.bot.piazza_dict, "data/piazza.json")
+        self.piazza_dict["channels"] = list(self.bot.d_handler.piazza_handler.channels)
+        writeJSON(self.piazza_dict, "data/piazza.json")
         await ctx.send("Channel added to tracking!")
 
     @commands.command(hidden=True)
@@ -104,8 +114,8 @@ class Piazza(commands.Cog):
             cid = int(cid[0])
 
         self.bot.d_handler.piazza_handler.remove_channel(cid)
-        self.bot.piazza_dict["channels"] = list(self.bot.d_handler.piazza_handler.channels)
-        self.bot.writeJSON(self.bot.piazza_dict, "data/piazza.json")
+        self.piazza_dict["channels"] = list(self.bot.d_handler.piazza_handler.channels)
+        writeJSON(self.piazza_dict, "data/piazza.json")
         await ctx.send("Channel removed from tracking!")
 
     @commands.command()
@@ -267,13 +277,13 @@ class Piazza(commands.Cog):
                 await asyncio.sleep(60)
 
     def piazza_start(self):
-        if all(field in self.bot.piazza_dict for field in ("course_name", "piazza_id", "guild_id")):
-            self.bot.d_handler.piazza_handler = PiazzaHandler(self.bot.piazza_dict["course_name"], self.bot.piazza_dict["piazza_id"], PIAZZA_EMAIL, PIAZZA_PASSWORD, self.bot.piazza_dict["guild_id"])
+        if all(field in self.piazza_dict for field in ("course_name", "piazza_id", "guild_id")):
+            self.bot.d_handler.piazza_handler = PiazzaHandler(self.piazza_dict["course_name"], self.piazza_dict["piazza_id"], PIAZZA_EMAIL, PIAZZA_PASSWORD, self.piazza_dict["guild_id"])
 
         # dict.get will default to an empty tuple so a key error is never raised
         # We need to have the empty tuple because if the default value is None, an error is raised (NoneType object
         # is not iterable).
-        for ch in self.bot.piazza_dict.get("channels", tuple()):
+        for ch in self.piazza_dict.get("channels", tuple()):
             self.bot.d_handler.piazza_handler.add_channel(int(ch))
 
 

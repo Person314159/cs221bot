@@ -6,6 +6,7 @@ import re
 import shutil
 import traceback
 from datetime import datetime
+from os.path import isfile
 from typing import List, Optional, Union
 
 import canvasapi
@@ -15,9 +16,10 @@ from discord.ext import commands
 from dotenv import load_dotenv
 
 import util.canvas_handler
-from util import create_file
 from util.badargs import BadArgs
 from util.canvas_handler import CanvasHandler
+from util.create_file import create_file_if_not_exists
+from util.json import readJSON, writeJSON
 
 CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
@@ -26,6 +28,7 @@ load_dotenv()
 CANVAS_API_URL = "https://canvas.ubc.ca"
 CANVAS_API_KEY = os.getenv("CANVAS_API_KEY")
 CANVAS_INSTANCE = canvasapi.Canvas(CANVAS_API_URL, CANVAS_API_KEY)
+CANVAS_FILE = "data/canvas.json"
 
 # Used for updating Canvas modules
 EMBED_CHAR_LIMIT = 6000
@@ -35,6 +38,12 @@ MAX_MODULE_IDENTIFIER_LENGTH = 120
 class Canvas(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+        if not isfile(CANVAS_FILE):
+            create_file_if_not_exists(CANVAS_FILE)
+            writeJSON({}, CANVAS_FILE)
+
+        self.canvas_dict = readJSON(CANVAS_FILE)
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
@@ -62,12 +71,12 @@ class Canvas(commands.Cog):
         Sends an embed to ctx that lists the Canvas courses being tracked by c_handler.
         """
 
-        guild_dict = self.bot.canvas_dict[str(ctx.message.guild.id)]
+        guild_dict = self.canvas_dict[str(ctx.message.guild.id)]
         guild_dict["courses"] = [str(c.id) for c in c_handler.courses]
         guild_dict["due_week"] = c_handler.due_week
         guild_dict["due_day"] = c_handler.due_day
 
-        self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
+        writeJSON(self.canvas_dict, "data/canvas.json")
 
         embed_var = self._get_tracking_courses(c_handler, CANVAS_API_URL)
         embed_var.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=str(ctx.author.avatar_url))
@@ -162,14 +171,14 @@ class Canvas(commands.Cog):
                 watchers_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course.id}/watchers.txt"
                 CanvasHandler.store_channels_in_file([ctx.message.channel], watchers_file)
 
-                create_file.create_file_if_not_exists(modules_file)
+                create_file_if_not_exists(modules_file)
 
                 # Here, we will only download modules if modules_file is empty.
                 if os.stat(modules_file).st_size == 0:
                     CanvasHandler.download_modules(course, self.bot.notify_unpublished)
 
-            self.bot.canvas_dict[str(ctx.message.guild.id)]["live_channels"] = [channel.id for channel in c_handler.live_channels]
-            self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
+            self.canvas_dict[str(ctx.message.guild.id)]["live_channels"] = [channel.id for channel in c_handler.live_channels]
+            writeJSON(self.canvas_dict, "data/canvas.json")
 
             await ctx.send("Added channel to live tracking.")
         else:
@@ -192,8 +201,8 @@ class Canvas(commands.Cog):
         if ctx.message.channel in c_handler.live_channels:
             c_handler.live_channels.remove(ctx.message.channel)
 
-            self.bot.canvas_dict[str(ctx.message.guild.id)]["live_channels"] = [channel.id for channel in c_handler.live_channels]
-            self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
+            self.canvas_dict[str(ctx.message.guild.id)]["live_channels"] = [channel.id for channel in c_handler.live_channels]
+            writeJSON(self.canvas_dict, "data/canvas.json")
 
             for course in c_handler.courses:
                 watchers_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course.id}/watchers.txt"
@@ -255,13 +264,13 @@ class Canvas(commands.Cog):
     def _add_guild(self, guild: discord.Guild):
         if guild not in (ch.guild for ch in self.bot.d_handler.canvas_handlers):
             self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, CANVAS_API_KEY, guild))
-            self.bot.canvas_dict[str(guild.id)] = {
-                "courses"      : [],
+            self.canvas_dict[str(guild.id)] = {
+                "courses": [],
                 "live_channels": [],
-                "due_week"     : {},
-                "due_day"      : {}
+                "due_week": {},
+                "due_day": {}
             }
-            self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
+            writeJSON(self.canvas_dict, "data/canvas.json")
 
     def _get_canvas_handler(self, guild: discord.Guild) -> Optional[CanvasHandler]:
         return next((ch for ch in self.bot.d_handler.canvas_handlers if ch.guild == guild), None)
@@ -300,7 +309,7 @@ class Canvas(commands.Cog):
                         # latest announcement first
                         ch.timings[str(c.id)] = data_list[0][5]
 
-            await asyncio.sleep(3600)
+            await asyncio.sleep(30)
 
     async def assignment_reminder(self):
         while True:
@@ -323,11 +332,11 @@ class Canvas(commands.Cog):
                         else:
                             ch.due_day[str(c.id)] = ass_ids
 
-                        self.bot.canvas_dict[str(ch.guild.id)][f"due_{time}"][str(c.id)] = ass_ids
+                        self.canvas_dict[str(ch.guild.id)][f"due_{time}"][str(c.id)] = ass_ids
 
-                    self.bot.writeJSON(self.bot.canvas_dict, "data/canvas.json")
+                    writeJSON(self.canvas_dict, "data/canvas.json")
 
-            await asyncio.sleep(3600)
+            await asyncio.sleep(30)
 
     async def _assignment_sender(self, ch, data_list, recorded_ass_ids, notify_role, time):
         ass_ids = [data[-1] for data in data_list]
@@ -354,9 +363,9 @@ class Canvas(commands.Cog):
 
         return ass_ids
 
-    async def update_modules_hourly(self):
+    async def update_modules(self):
         """
-        Every hour, we check Canvas modules for courses being tracked, and send information
+        Every x interval, we check Canvas modules for courses being tracked, and send information
         about new modules to Discord channels that are live tracking the courses.
         """
 
@@ -364,7 +373,7 @@ class Canvas(commands.Cog):
 
         while True:
             await self.check_modules()
-            await asyncio.sleep(3600)
+            await asyncio.sleep(30)
 
     async def check_modules(self):
         """
@@ -477,8 +486,8 @@ class Canvas(commands.Cog):
                         modules_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course_id}/modules.txt"
                         watchers_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course_id}/watchers.txt"
 
-                        create_file.create_file_if_not_exists(modules_file)
-                        create_file.create_file_if_not_exists(watchers_file)
+                        create_file_if_not_exists(modules_file)
+                        create_file_if_not_exists(watchers_file)
 
                         with open(modules_file, "r") as m:
                             existing_modules = set(m.read().splitlines())
@@ -502,24 +511,24 @@ class Canvas(commands.Cog):
                         print(traceback.format_exc(), flush=True)
 
     def canvas_init(self):
-        for c_handler_guild_id in self.bot.canvas_dict:
+        for c_handler_guild_id in self.canvas_dict:
             guild = self.bot.guilds[[guild.id for guild in self.bot.guilds].index(int(c_handler_guild_id))]
 
             if guild not in (ch.guild for ch in self.bot.d_handler.canvas_handlers):
                 self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, CANVAS_API_KEY, guild))
 
             c_handler = self._get_canvas_handler(guild)
-            c_handler.track_course(tuple(self.bot.canvas_dict[c_handler_guild_id]["courses"]), self.bot.notify_unpublished)
-            live_channels_ids = self.bot.canvas_dict[c_handler_guild_id]["live_channels"]
+            c_handler.track_course(tuple(self.canvas_dict[c_handler_guild_id]["courses"]), self.bot.notify_unpublished)
+            live_channels_ids = self.canvas_dict[c_handler_guild_id]["live_channels"]
             live_channels = list(filter(lambda channel: channel.id in live_channels_ids, guild.text_channels))
             c_handler.live_channels = live_channels
 
             for due in ("due_week", "due_day"):
-                for c in self.bot.canvas_dict[c_handler_guild_id][due]:
+                for c in self.canvas_dict[c_handler_guild_id][due]:
                     if due == "due_week":
-                        c_handler.due_week[c] = self.bot.canvas_dict[c_handler_guild_id][due][c]
+                        c_handler.due_week[c] = self.canvas_dict[c_handler_guild_id][due][c]
                     else:
-                        c_handler.due_day[c] = self.bot.canvas_dict[c_handler_guild_id][due][c]
+                        c_handler.due_day[c] = self.canvas_dict[c_handler_guild_id][due][c]
 
 
 def setup(bot):

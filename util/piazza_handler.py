@@ -226,9 +226,9 @@ class PiazzaHandler:
 
         for post in posts:
             post_details = {
-                "num"    : post["nr"],
+                "num": post["nr"],
                 "subject": post["history"][0]["subject"],
-                "url"    : f"{self.url}?cid={post['nr']}",
+                "url": f"{self.url}?cid={post['nr']}",
             }
             response.append(post_details)
 
@@ -249,14 +249,14 @@ class PiazzaHandler:
         if post:
             postType = "Note" if post["type"] == "note" else "Question"
             response = {
-                "subject"     : self.clean_response(post["history"][0]["subject"]),
-                "num"         : f"@{postID}",
-                "url"         : f"{self.url}?cid={postID}",
-                "post_type"   : postType,
-                "post_body"   : self.clean_response(self.get_body(post)),
-                "i_answer"    : None,
-                "s_answer"    : None,
-                "num_followups" : 0
+                "subject": self.clean_response(post["history"][0]["subject"]),
+                "num": f"@{postID}",
+                "url": f"{self.url}?cid={postID}",
+                "post_type": postType,
+                "post_body": self.clean_response(self.get_body(post)),
+                "i_answer": None,
+                "s_answer": None,
+                "num_followups": 0
             }
 
             answers = post["children"]
@@ -292,10 +292,10 @@ class PiazzaHandler:
 
         def create_post_dict(post, tag) -> dict:
             return {
-                "type"   : tag,
-                "num"    : post["nr"],
+                "type": tag,
+                "num": post["nr"],
                 "subject": self.clean_response(post["history"][0]["subject"]),
-                "url"    : f"{self.url}?cid={post['nr']}"
+                "url": f"{self.url}?cid={post['nr']}"
             }
 
         def filter_tag(post, arr, tagged):
@@ -333,9 +333,9 @@ class PiazzaHandler:
 
         for post in posts:
             post_details = {
-                "num"    : post["nr"],
+                "num": post["nr"],
                 "subject": self.clean_response(post["history"][0]["subject"]),
-                "url"    : f"{self.url}?cid={post['nr']}"
+                "url": f"{self.url}?cid={post['nr']}"
             }
             response.append(post_details)
 

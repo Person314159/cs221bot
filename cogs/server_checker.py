@@ -1,14 +1,14 @@
 import asyncio
 import json
-from os.path import isfile
 import subprocess
+from os.path import isfile
 from typing import Dict, Optional
 
 import discord
 from discord.ext import commands
 
-from util import create_file
-
+from util.create_file import create_file_if_not_exists
+from util.json import writeJSON
 
 SERVER_LIST = ("thetis", "remote", "annacis", "anvil", "bowen", "lulu")
 OTHER_SERVER_NAMES = ("valdes",)
@@ -17,22 +17,19 @@ SERVER_TRACKERS_FILE = "data/server_trackers.json"
 
 class ServerChecker(commands.Cog, name="server_checker"):
     def __init__(self, bot):
-        def hook(dct):
-            return {int(key): dct[key] for key in dct}
-
         self.bot = bot
 
         if not isfile(SERVER_TRACKERS_FILE):
-            create_file.create_file_if_not_exists(SERVER_TRACKERS_FILE)
-            self.bot.writeJSON({}, SERVER_TRACKERS_FILE)
+            create_file_if_not_exists(SERVER_TRACKERS_FILE)
+            writeJSON({}, SERVER_TRACKERS_FILE)
 
         with open(SERVER_TRACKERS_FILE, "r") as f:
             # Maps channel ID to live message ID
             # All keys in the JSON are ints stored as strings. The hook function turns those keys into ints.
-            self.server_trackers_dict: Dict[int, Optional[int]] = json.load(f, object_hook=hook)
+            self.server_trackers_dict: Dict[int, Optional[int]] = json.load(f, object_hook=lambda dct: {int(key): dct[key] for key in dct})
 
     @commands.command(name="checkservers")
-    @commands.cooldown(1, 60, commands.BucketType.user)
+    @commands.cooldown(1, 60, commands.BucketType.default)
     async def check_servers(self, ctx, *args):
         """
         `!checkservers` __`Check if the remote CS servers are online`__
@@ -95,18 +92,16 @@ class ServerChecker(commands.Cog, name="server_checker"):
 
         if ctx.channel.id not in self.server_trackers_dict:
             self.server_trackers_dict[ctx.channel.id] = None
-            self.bot.writeJSON(self.server_trackers_dict, SERVER_TRACKERS_FILE)
-            await ctx.send("This channel will now receive live CS server status updates.",
-                           delete_after=5)
+            writeJSON(self.server_trackers_dict, SERVER_TRACKERS_FILE)
+            await ctx.send("This channel will now receive live CS server status updates.", delete_after=5)
         else:
-            await ctx.send("This channel is already receiving live CS server status updates.",
-                           delete_after=5)
+            await ctx.send("This channel is already receiving live CS server status updates.", delete_after=5)
 
     @commands.command(name="untrackservers")
     @commands.is_owner()
     async def untrack_servers(self, ctx):
         """
-        `!untrackservers`
+        `!untrackservers` __`Untracks CS server live status updates`__
 
         Causes the bot to stop sending CS server updates to the channel where
         this command is invoked. The bot also deletes the live status message
@@ -115,7 +110,7 @@ class ServerChecker(commands.Cog, name="server_checker"):
 
         if ctx.channel.id in self.server_trackers_dict:
             live_msg_id = self.server_trackers_dict.pop(ctx.channel.id, None)
-            self.bot.writeJSON(self.server_trackers_dict, SERVER_TRACKERS_FILE)
+            writeJSON(self.server_trackers_dict, SERVER_TRACKERS_FILE)
 
             if live_msg_id is not None:
                 live_msg = ctx.channel.get_partial_message(live_msg_id)
@@ -126,11 +121,9 @@ class ServerChecker(commands.Cog, name="server_checker"):
                     # The message was already deleted
                     pass
 
-            await ctx.send("This channel will no longer receive live CS server status updates.",
-                           delete_after=5)
+            await ctx.send("This channel will no longer receive live CS server status updates.", delete_after=5)
         else:
-            await ctx.send("This channel is not receiving live CS server status updates.",
-                           delete_after=5)
+            await ctx.send("This channel is not receiving live CS server status updates.", delete_after=5)
 
     async def check_servers_periodically(self):
         """
@@ -196,11 +189,10 @@ class ServerChecker(commands.Cog, name="server_checker"):
             else:
                 deleted_channel_ids.append(channel_id)
 
-        if deleted_channel_ids:
-            for channel_id in deleted_channel_ids:
-                del self.server_trackers_dict[channel_id]
+        for channel_id in deleted_channel_ids:
+            del self.server_trackers_dict[channel_id]
 
-        self.bot.writeJSON(self.server_trackers_dict, SERVER_TRACKERS_FILE)
+        writeJSON(self.server_trackers_dict, SERVER_TRACKERS_FILE)
 
 
 async def can_connect_ssh(server_ip: str) -> bool:
