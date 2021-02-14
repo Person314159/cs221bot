@@ -4,7 +4,7 @@ from discord.ext import commands
 POS = {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7}
 
 
-class Chess(commands.Cog, name="chess test"):
+class Chess(commands.Cog, name="chess"):
     board = []
     w = 8
     h = 8
