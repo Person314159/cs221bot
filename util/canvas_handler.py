@@ -4,13 +4,13 @@ import shutil
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Set, Tuple, Union
 
-import dateutil.parser.isoparser
 import discord
 from bs4 import BeautifulSoup
 from canvasapi.canvas import Canvas
 from canvasapi.course import Course
 from canvasapi.module import Module, ModuleItem
 from canvasapi.paginated_list import PaginatedList
+from dateutil.parser import isoparse
 
 from util import create_file
 from util.canvas_api_extension import get_course_stream, get_course_url, get_staff_ids
@@ -352,7 +352,7 @@ class CanvasHandler(Canvas):
                             ctime_text = "No info"
                         else:
                             time_shift = datetime.now() - datetime.utcnow()
-                            ctime_iso_parsed = (dateutil.parser.isoparse(ctime_iso) + time_shift).replace(tzinfo=None)
+                            ctime_iso_parsed = (isoparse(ctime_iso) + time_shift).replace(tzinfo=None)
 
                             # A timedelta representing how long ago the conversation was created.
                             ctime_timedelta = datetime.now() - ctime_iso_parsed
@@ -435,12 +435,12 @@ class CanvasHandler(Canvas):
                 if ctime_iso is None:
                     ctime_text = "No info"
                 else:
-                    ctime_text = (dateutil.parser.isoparse(ctime_iso) + time_shift).strftime("%Y-%m-%d %H:%M:%S")
+                    ctime_text = (isoparse(ctime_iso) + time_shift).strftime("%Y-%m-%d %H:%M:%S")
 
                 if dtime_iso is None:
                     dtime_text = "No info"
                 else:
-                    dtime_iso_parsed = (dateutil.parser.isoparse(dtime_iso) + time_shift).replace(tzinfo=None)
+                    dtime_iso_parsed = (isoparse(dtime_iso) + time_shift).replace(tzinfo=None)
                     dtime_timedelta = dtime_iso_parsed - datetime.now()
 
                     if dtime_timedelta < timedelta(0) or (due and dtime_timedelta > self._make_timedelta(due)):
