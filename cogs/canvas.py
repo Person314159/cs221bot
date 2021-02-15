@@ -169,13 +169,13 @@ class Canvas(commands.Cog):
             for course in c_handler.courses:
                 modules_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course.id}/modules.txt"
                 watchers_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course.id}/watchers.txt"
-                CanvasHandler.store_channels_in_file([ctx.message.channel], watchers_file)
+                c_handler.store_channels_in_file([ctx.message.channel], watchers_file)
 
                 create_file_if_not_exists(modules_file)
 
                 # Here, we will only download modules if modules_file is empty.
                 if os.stat(modules_file).st_size == 0:
-                    CanvasHandler.download_modules(course, self.bot.notify_unpublished)
+                    c_handler.download_modules(course, self.bot.notify_unpublished)
 
             self.canvas_dict[str(ctx.message.guild.id)]["live_channels"] = [channel.id for channel in c_handler.live_channels]
             write_json(self.canvas_dict, "data/canvas.json")
@@ -206,7 +206,7 @@ class Canvas(commands.Cog):
 
             for course in c_handler.courses:
                 watchers_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course.id}/watchers.txt"
-                CanvasHandler.delete_channels_from_file([ctx.message.channel], watchers_file)
+                c_handler.delete_channels_from_file([ctx.message.channel], watchers_file)
 
                 # If there are no more channels watching the course, we should delete that course's directory.
                 if os.stat(watchers_file).st_size == 0:
@@ -338,7 +338,7 @@ class Canvas(commands.Cog):
 
             await asyncio.sleep(30)
 
-    async def _assignment_sender(self, ch: CanvasHandler, data_list: List[List[str]], recorded_ass_ids: List[int], notify_role: discord.Role, time: str):
+    async def _assignment_sender(self, ch: CanvasHandler, data_list: List[List[str]], recorded_ass_ids: List[int], notify_role: discord.Role, time: str) -> List[str]:
         ass_ids = [data[-1] for data in data_list]
         not_recorded = tuple(data_list[i] for i, j in enumerate(ass_ids) if j not in recorded_ass_ids)
 
@@ -378,7 +378,7 @@ class Canvas(commands.Cog):
     async def check_modules(self) -> None:
         """
         For every folder in handler.canvas_handler.COURSES_DIRECTORY (abbreviated as CDIR) we will:
-        - get the modules for the Canvas course with id that matches the folder name
+        - get the modules for the Canvas course with ID that matches the folder name
         - compare the modules we retrieved with the modules found in CDIR/{course_id}/modules.txt
         - send the names of any new modules (i.e. modules that are not in modules.txt) to all channels
           in CDIR/{course_id}/watchers.txt

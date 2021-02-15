@@ -178,8 +178,7 @@ class CanvasHandler(Canvas):
                 if os.stat(modules_file).st_size == 0:
                     self.download_modules(c, get_unpublished_modules)
 
-    @staticmethod
-    def download_modules(course: Course, incl_unpublished: bool) -> None:
+    def download_modules(self, course: Course, incl_unpublished: bool) -> None:
         """
         Download all modules for a Canvas course, storing each module's id
         in `{COURSES_DIRECTORY}/{course.id}/modules.txt`. Includes unpublished modules if
@@ -191,7 +190,7 @@ class CanvasHandler(Canvas):
         modules_file = f"{COURSES_DIRECTORY}/{course.id}/modules.txt"
 
         with open(modules_file, "w") as m:
-            for module in CanvasHandler.get_all_modules(course, incl_unpublished):
+            for module in self.get_all_modules(course, incl_unpublished):
                 m.write(f"{str(module.id)}\n")
 
     @staticmethod
@@ -216,8 +215,7 @@ class CanvasHandler(Canvas):
 
         return all_modules
 
-    @staticmethod
-    def store_channels_in_file(text_channels: List[discord.TextChannel], file_path: str) -> None:
+    def store_channels_in_file(self, text_channels: List[discord.TextChannel], file_path: str) -> None:
         """
         For each text channel provided, we add its id to the file with given path if the file does
         not already contain the id.
@@ -278,8 +276,7 @@ class CanvasHandler(Canvas):
             if os.stat(watchers_file).st_size == 0:
                 shutil.rmtree(f"{COURSES_DIRECTORY}/{i}")
 
-    @staticmethod
-    def delete_channels_from_file(text_channels: List[discord.TextChannel], file_path: str) -> None:
+    def delete_channels_from_file(self, text_channels: List[discord.TextChannel], file_path: str) -> None:
         """
         For each text channel provided, we remove its id from the file with given path
         if the id is contained in the file.
@@ -455,8 +452,7 @@ class CanvasHandler(Canvas):
 
         return data_list
 
-    @staticmethod
-    def _make_timedelta(till_str: str) -> timedelta:
+    def _make_timedelta(self, till_str: str) -> timedelta:
         """
         Makes a datetime.timedelta
 

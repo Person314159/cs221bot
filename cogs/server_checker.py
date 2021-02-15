@@ -137,8 +137,7 @@ class ServerChecker(commands.Cog, name="Server Checker"):
             await self.update_server_statuses()
             await asyncio.sleep(30)
 
-    @staticmethod
-    async def get_server_statuses() -> str:
+    async def get_server_statuses(self) -> str:
         """
         Returns a Discord message that indicates the statuses of the remote CS servers.
         """

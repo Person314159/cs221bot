@@ -176,8 +176,7 @@ class Piazza(commands.Cog):
 
         await self.send_piazza_posts(False)
 
-    @staticmethod
-    def create_post_embed(post: dict) -> discord.Embed:
+    def create_post_embed(self, post: dict) -> discord.Embed:
         if post:
             post_embed = discord.Embed(title=post["subject"], url=post["url"], description=post["num"])
             post_embed.add_field(name=post["post_type"], value=post["post_body"], inline=False)

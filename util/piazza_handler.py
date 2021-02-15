@@ -89,20 +89,20 @@ class PiazzaHandler:
         self.nid = nid
 
     @property
-    def channels(self) -> List[int]:
-        return self._channels
-
-    @channels.setter
-    def channels(self, channels: List[int]) -> None:
-        self._channels = channels
-
-    @property
     def guild(self) -> discord.Guild:
         return self._guild
 
     @guild.setter
     def guild(self, guild: discord.Guild) -> None:
         self._guild = guild
+
+    @property
+    def channels(self) -> List[int]:
+        return self._channels
+
+    @channels.setter
+    def channels(self, channels: List[int]) -> None:
+        self._channels = channels
 
     def add_channel(self, channel: int) -> None:
         if channel not in self.channels:
@@ -114,12 +114,12 @@ class PiazzaHandler:
 
     def fetch_post_instance(self, post_id: int) -> dict:
         """
-        Returns a JSON object representing a Piazza post with id `post_id`, or returns None if post doesn't exist
+        Returns a JSON object representing a Piazza post with ID `post_id`, or returns None if post doesn't exist
 
         Parameters
         ----------
         post_id : `int`
-            requested post id
+            requested post ID
         """
 
         try:
@@ -343,12 +343,10 @@ class PiazzaHandler:
 
         return response
 
-    @staticmethod
-    def check_if_private(post: dict) -> bool:
+    def check_if_private(self, post: dict) -> bool:
         return post["status"] == "private"
 
-    @staticmethod
-    def clean_response(res: str) -> str:
+    def clean_response(self, res: str) -> str:
         if len(res) > 1024:
             res = res[:1000]
             res += "...\n\n *(Read more)*"
@@ -361,8 +359,7 @@ class PiazzaHandler:
 
         return res
 
-    @staticmethod
-    def get_body(res: dict) -> str:
+    def get_body(self, res: dict) -> str:
         body = res["history"][0]["content"]
 
         if not body:
