@@ -9,17 +9,17 @@ from util.badargs import BadArgs
 
 
 class Meta(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @commands.command(hidden=True)
     @commands.is_owner()
-    async def die(self, ctx):
+    async def die(self, ctx: commands.Context):
         await self.bot.logout()
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def help(self, ctx, *arg):
+    async def help(self, ctx: commands.Context, *arg: str):
         """
         `!help` __`Returns list of commands or usage of command`__
 
@@ -52,7 +52,7 @@ class Meta(commands.Cog):
     @commands.command(hidden=True)
     @commands.is_owner()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def reload(self, ctx, *modules):
+    async def reload(self, ctx: commands.Context, *modules: str):
         if not isinstance(ctx.channel, discord.DMChannel):
             await ctx.message.delete()
 
@@ -65,7 +65,7 @@ class Meta(commands.Cog):
             try:
                 self.bot.reload_extension(f"cogs.{extension}")
             except ExtensionError as exc:
-                return await ctx.send(exc)
+                return await ctx.send(str(exc))
 
             await reload_msg.edit(content=f"{extension} module reloaded.")
 
@@ -74,5 +74,5 @@ class Meta(commands.Cog):
         await ctx.send("Done")
 
 
-def setup(bot):
+def setup(bot: commands.Bot) -> None:
     bot.add_cog(Meta(bot))

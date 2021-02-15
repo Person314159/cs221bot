@@ -36,27 +36,27 @@ class CanvasHandler(Canvas):
         Contains course and its last announcement date and time.
 
     due_week : `Dict[str, List[int]]`
-        Contains course and assignment ids due in less than a week.
+        Contains course and assignment IDs due in less than a week.
 
     due_day : `Dict[str, List[int]]`
-        Contains course and assignment ids due in less than a day.
+        Contains course and assignment IDs due in less than a day.
     """
 
-    def __init__(self, API_URL, API_KEY, guild: discord.Guild):
+    def __init__(self, api_url: str, api_key: str, guild: discord.Guild):
         """
         Parameters
         ----------
-        API_URL : `str`
+        api_url : `str`
             Base URL of the Canvas instance's API
 
-        API_KEY : `str`
+        api_key : `str`
             API key to authenticate requests with
 
         guild : `discord.Guild`
             Guild to assign to this handler
         """
 
-        super().__init__(API_URL, API_KEY)
+        super().__init__(api_url, api_key)
         self._courses: List[Course] = []
         self._guild = guild
         self._live_channels: List[discord.TextChannel] = []
@@ -69,47 +69,50 @@ class CanvasHandler(Canvas):
         return self._courses
 
     @courses.setter
-    def courses(self, courses: List[Course]):
+    def courses(self, courses: List[Course]) -> None:
         self._courses = courses
 
     @property
     def guild(self) -> discord.Guild:
         return self._guild
 
+    @guild.setter
+    def guild(self, guild: discord.Guild) -> None:
+        self._guild = guild
+
     @property
-    def live_channels(self):
+    def live_channels(self) -> List[discord.TextChannel]:
         return self._live_channels
 
     @live_channels.setter
-    def live_channels(self, live_channels):
+    def live_channels(self, live_channels: List[discord.TextChannel]) -> None:
         self._live_channels = live_channels
 
     @property
-    def timings(self):
+    def timings(self) -> Dict[str, str]:
         return self._timings
 
     @timings.setter
-    def timings(self, timings):
+    def timings(self, timings: Dict[str, str]) -> None:
         self._timings = timings
 
     @property
-    def due_week(self):
+    def due_week(self) -> Dict[str, List[int]]:
         return self._due_week
 
     @due_week.setter
-    def due_week(self, due_week):
+    def due_week(self, due_week: Dict[str, List[int]]) -> None:
         self._due_week = due_week
 
     @property
-    def due_day(self):
+    def due_day(self) -> Dict[str, List[int]]:
         return self._due_day
 
     @due_day.setter
-    def due_day(self, due_day):
+    def due_day(self, due_day: Dict[str, List[int]]) -> None:
         self._due_day = due_day
 
-    @staticmethod
-    def _ids_converter(ids: Tuple[str]) -> Set[int]:
+    def _ids_converter(self, ids: Tuple[str]) -> Set[int]:
         """
         Converts tuple of string to set of int, removing duplicates. Each string
         must be parsable to an int.
@@ -127,7 +130,7 @@ class CanvasHandler(Canvas):
 
         return set(int(i) for i in ids)
 
-    def track_course(self, course_ids_str: Tuple[str], get_unpublished_modules: bool):
+    def track_course(self, course_ids_str: Tuple[str], get_unpublished_modules: bool) -> None:
         """
         Cause this CanvasHandler to start tracking the courses with given IDs.
 
@@ -166,9 +169,9 @@ class CanvasHandler(Canvas):
         for c in new_courses:
             modules_file = f"{COURSES_DIRECTORY}/{c.id}/modules.txt"
             watchers_file = f"{COURSES_DIRECTORY}/{c.id}/watchers.txt"
-            self.store_channels_in_file(self._live_channels, watchers_file)
+            self.store_channels_in_file(self.live_channels, watchers_file)
 
-            if self._live_channels:
+            if self.live_channels:
                 create_file.create_file_if_not_exists(modules_file)
 
                 # Here, we will only download modules if modules_file is empty.
@@ -176,9 +179,9 @@ class CanvasHandler(Canvas):
                     self.download_modules(c, get_unpublished_modules)
 
     @staticmethod
-    def download_modules(course: Course, incl_unpublished: bool):
+    def download_modules(course: Course, incl_unpublished: bool) -> None:
         """
-        Download all modules for a Canvas course, storing each module's ID
+        Download all modules for a Canvas course, storing each module's id
         in `{COURSES_DIRECTORY}/{course.id}/modules.txt`. Includes unpublished modules if
         `incl_unpublished` is `True` and we have access to unpublished modules for the course.
 
@@ -214,7 +217,7 @@ class CanvasHandler(Canvas):
         return all_modules
 
     @staticmethod
-    def store_channels_in_file(text_channels: List[discord.TextChannel], file_path: str):
+    def store_channels_in_file(text_channels: List[discord.TextChannel], file_path: str) -> None:
         """
         For each text channel provided, we add its id to the file with given path if the file does
         not already contain the id.
@@ -238,7 +241,7 @@ class CanvasHandler(Canvas):
                 for channel_id in ids_to_add:
                     f.write(channel_id)
 
-    def untrack_course(self, course_ids_str: Tuple[str]):
+    def untrack_course(self, course_ids_str: Tuple[str]) -> None:
         """
         Cause this CanvasHandler to stop tracking the courses with given IDs.
 
@@ -276,7 +279,7 @@ class CanvasHandler(Canvas):
                 shutil.rmtree(f"{COURSES_DIRECTORY}/{i}")
 
     @staticmethod
-    def delete_channels_from_file(text_channels: List[discord.TextChannel], file_path: str):
+    def delete_channels_from_file(text_channels: List[discord.TextChannel], file_path: str) -> None:
         """
         For each text channel provided, we remove its id from the file with given path
         if the id is contained in the file.
@@ -324,8 +327,8 @@ class CanvasHandler(Canvas):
         course_streams = tuple(get_course_stream(c.id, base_url, access_token) for c in self.courses if (not course_ids) or c.id in course_ids)
         data_list = []
 
-        for stream_iter in map(iter, course_streams):
-            for item in filter(lambda i: i["type"] == "Conversation" and i["participant_count"] == 2, stream_iter):
+        for stream in course_streams:
+            for item in filter(lambda i: i["type"] == "Conversation" and i["participant_count"] == 2, iter(stream)):
                 messages = item.get("latest_messages")
 
                 # Idea behind this hack:
@@ -366,7 +369,7 @@ class CanvasHandler(Canvas):
 
         return data_list
 
-    def get_assignments(self, due: Optional[str], course_ids_str: Tuple[str, ...], base_url) -> List[List[str]]:
+    def get_assignments(self, due: Optional[str], course_ids_str: Tuple[str, ...], base_url: str) -> List[List[str]]:
         """
         Gets assignments for course(s)
 
@@ -483,7 +486,7 @@ class CanvasHandler(Canvas):
         hour, minute, second = int(till[3]), int(till[4]), int(till[5])
         return abs(datetime(year, month, day, hour, minute, second) - datetime.now())
 
-    def get_course_names(self, url) -> List[List[str]]:
+    def get_course_names(self, url: str) -> List[List[str]]:
         """
         Gives a list of tracked courses and their urls
 

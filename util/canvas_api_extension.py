@@ -5,7 +5,7 @@ from canvasapi.requester import Requester
 from canvasapi.util import combine_kwargs, get_institution_url
 
 
-def get_course_stream(course_id: int, base_url, access_token, **kwargs):
+def get_course_stream(course_id: int, base_url: str, access_token: str, **kwargs: dict) -> dict:
     """
     Parameters
     ----------
@@ -29,7 +29,7 @@ def get_course_stream(course_id: int, base_url, access_token, **kwargs):
     requester = Requester(base_url, access_token)
     response = requester.request(
         "GET",
-        "courses/{}/activity_stream".format(course_id),
+        f"courses/{course_id}/activity_stream",
         _kwargs=combine_kwargs(**kwargs)
     )
     return response.json()
@@ -52,7 +52,7 @@ def get_course_url(course_id: str, base_url) -> str:
     """
 
     base_url = get_institution_url(base_url)
-    return "{}/courses/{}".format(base_url, course_id)
+    return f"{base_url}/courses/{course_id}"
 
 
 def get_staff_ids(course: Course) -> List[int]:

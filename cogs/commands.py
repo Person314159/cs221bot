@@ -9,27 +9,27 @@ from fractions import Fraction
 from io import BytesIO
 from operator import methodcaller
 from os.path import isfile
+from typing import Any
 
-import discord
 import pytz
 import requests
 import requests.models
-import webcolors
 from discord.ext import commands
-from discord.ext.commands import MemberConverter
+from discord.ext.commands import BadArgument, MemberConverter
 from googletrans import constants, Translator
 
 from util.badargs import BadArgs
+from util.colour import *
 from util.create_file import create_file_if_not_exists
 from util.custom_role_converter import CustomRoleConverter
 from util.discord_handler import DiscordHandler
-from util.json import readJSON, writeJSON
+from util.json import read_json, write_json
 
 POLL_FILE = "data/poll.json"
 
 
 # This is a huge hack but it technically works
-def _urlencode(*args, **kwargs):
+def _urlencode(*args, **kwargs) -> str:
     kwargs.update(quote_via=urllib.parse.quote)
     return urllib.parse.urlencode(*args, **kwargs)
 
@@ -41,7 +41,7 @@ requests.models.urlencode = _urlencode
 
 
 class Commands(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.add_instructor_role_counter = 0
         self.bot.d_handler = DiscordHandler()
@@ -49,9 +49,9 @@ class Commands(commands.Cog):
 
         if not isfile(POLL_FILE):
             create_file_if_not_exists(POLL_FILE)
-            writeJSON({}, POLL_FILE)
+            write_json({}, POLL_FILE)
 
-        self.poll_dict = readJSON(POLL_FILE)
+        self.poll_dict = read_json(POLL_FILE)
 
         for channel in filter(lambda ch: not self.bot.get_channel(int(ch)), list(self.poll_dict)):
             del self.poll_dict[channel]
@@ -59,11 +59,11 @@ class Commands(commands.Cog):
         for channel in (c for g in self.bot.guilds for c in g.text_channels if str(c.id) not in self.poll_dict):
             self.poll_dict.update({str(channel.id): ""})
 
-        writeJSON(self.poll_dict, POLL_FILE)
+        write_json(self.poll_dict, POLL_FILE)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def colour(self, ctx):
+    async def colour(self, ctx: commands.Context):
         """
         `!colour` __`Colour info`__
 
@@ -80,194 +80,44 @@ class Commands(commands.Cog):
         percent signs are optional
         """
 
-        def RGB_to_HSL(r, g, b):
-            r /= 255
-            g /= 255
-            b /= 255
-            c_max = max(r, g, b)
-            c_min = min(r, g, b)
-            delta = c_max - c_min
-            l = (c_max + c_min) / 2
-
-            if not delta:
-                h = 0
-                s = 0
-            else:
-                s = delta / (1 - abs(2 * l - 1))
-
-                if c_max == r:
-                    h = 60 * (((g - b) / delta) % 6)
-                elif c_max == g:
-                    h = 60 * ((b - r) / delta + 2)
-                else:
-                    h = 60 * ((r - g) / delta + 4)
-
-            s *= 100
-            l *= 100
-            return h, s, l
-
-        def HSL_to_RGB(h, s, l):
-            h %= 360
-            s /= 100
-            l /= 100
-            c = (1 - abs(2 * l - 1)) * s
-            x = c * (1 - abs((h / 60) % 2 - 1))
-            m = l - c / 2
-
-            if 0 <= h < 60:
-                temp = [c, x, 0]
-            elif 60 <= h < 120:
-                temp = [x, c, 0]
-            elif 120 <= h < 180:
-                temp = [0, c, x]
-            elif 180 <= h < 240:
-                temp = [0, x, c]
-            elif 240 <= h < 300:
-                temp = [x, 0, c]
-            else:
-                temp = [c, 0, x]
-
-            return (temp[0] + m) * 255, (temp[1] + m) * 255, (temp[2] + m) * 255
-
-        def RGB_to_CMYK(r, g, b):
-            if (r, g, b) == (0, 0, 0):
-                return 0, 0, 0, 100
-
-            r /= 255
-            g /= 255
-            b /= 255
-            k = 1 - max(r, g, b)
-            c = (1 - r - k) / (1 - k)
-            m = (1 - g - k) / (1 - k)
-            y = (1 - b - k) / (1 - k)
-            c *= 100
-            m *= 100
-            y *= 100
-            k *= 100
-            return c, m, y, k
-
-        def CMYK_to_RGB(c, m, y, k):
-            c /= 100
-            m /= 100
-            y /= 100
-            k /= 100
-            r = 255 * (1 - c) * (1 - k)
-            g = 255 * (1 - m) * (1 - k)
-            b = 255 * (1 - y) * (1 - k)
-            return r, g, b
-
-        def RGB_to_HEX(r, g, b):
-            return hex(r * 16 ** 4 + g * 16 ** 2 + b)[2:].zfill(6)
-
-        def closest_colour(requested_colour):
-            min_colours = {}
-
-            for key, name in webcolors.CSS3_HEX_TO_NAMES.items():
-                r_c, g_c, b_c = webcolors.hex_to_rgb(key)
-                rd = (r_c - requested_colour[0]) ** 2
-                gd = (g_c - requested_colour[1]) ** 2
-                bd = (b_c - requested_colour[2]) ** 2
-                min_colours[(rd + gd + bd)] = name
-
-            return min_colours[min(min_colours.keys())]
-
-        def get_colour_name(requested_colour):
-            try:
-                closest_name = actual_name = webcolors.rgb_to_name(requested_colour)
-            except ValueError:
-                closest_name = closest_colour(requested_colour)
-                actual_name = None
-
-            return actual_name, closest_name
-
-        css = {"lightsalmon": "0xFFA07A", "salmon": "0xFA8072", "darksalmon": "0xE9967A", "lightcoral": "0xF08080", "indianred": "0xCD5C5C", "crimson": "0xDC143C", "firebrick": "0xB22222", "red": "0xFF0000", "darkred": "0x8B0000", "coral": "0xFF7F50", "tomato": "0xFF6347", "orangered": "0xFF4500", "gold": "0xFFD700", "orange": "0xFFA500", "darkorange": "0xFF8C00", "lightyellow": "0xFFFFE0", "lemonchiffon": "0xFFFACD", "lightgoldenrodyellow": "0xFAFAD2", "papayawhip": "0xFFEFD5", "moccasin": "0xFFE4B5", "peachpuff": "0xFFDAB9", "palegoldenrod": "0xEEE8AA", "khaki": "0xF0E68C", "darkkhaki": "0xBDB76B", "yellow": "0xFFFF00", "lawngreen": "0x7CFC00", "chartreuse": "0x7FFF00", "limegreen": "0x32CD32", "lime": "0x00FF00", "forestgreen": "0x228B22", "green": "0x008000", "darkgreen": "0x006400", "greenyellow": "0xADFF2F", "yellowgreen": "0x9ACD32", "springgreen": "0x00FF7F", "mediumspringgreen": "0x00FA9A", "lightgreen": "0x90EE90", "palegreen": "0x98FB98", "darkseagreen": "0x8FBC8F",
-               "mediumseagreen": "0x3CB371", "seagreen": "0x2E8B57", "olive": "0x808000", "darkolivegreen": "0x556B2F", "olivedrab": "0x6B8E23", "lightcyan": "0xE0FFFF", "cyan": "0x00FFFF", "aqua": "0x00FFFF", "aquamarine": "0x7FFFD4", "mediumaquamarine": "0x66CDAA", "paleturquoise": "0xAFEEEE", "turquoise": "0x40E0D0", "mediumturquoise": "0x48D1CC", "darkturquoise": "0x00CED1", "lightseagreen": "0x20B2AA", "cadetblue": "0x5F9EA0", "darkcyan": "0x008B8B", "teal": "0x008080", "powderblue": "0xB0E0E6", "lightblue": "0xADD8E6", "lightskyblue": "0x87CEFA", "skyblue": "0x87CEEB", "deepskyblue": "0x00BFFF", "lightsteelblue": "0xB0C4DE", "dodgerblue": "0x1E90FF", "cornflowerblue": "0x6495ED", "steelblue": "0x4682B4", "royalblue": "0x4169E1", "blue": "0x0000FF", "mediumblue": "0x0000CD", "darkblue": "0x00008B", "navy": "0x000080", "midnightblue": "0x191970", "mediumslateblue": "0x7B68EE", "slateblue": "0x6A5ACD", "darkslateblue": "0x483D8B", "lavender": "0xE6E6FA", "thistle": "0xD8BFD8",
-               "plum": "0xDDA0DD", "violet": "0xEE82EE", "orchid": "0xDA70D6", "fuchsia": "0xFF00FF", "magenta": "0xFF00FF", "mediumorchid": "0xBA55D3", "mediumpurple": "0x9370DB", "blueviolet": "0x8A2BE2", "darkviolet": "0x9400D3", "darkorchid": "0x9932CC", "darkmagenta": "0x8B008B", "purple": "0x800080", "indigo": "0x4B0082", "pink": "0xFFC0CB", "lightpink": "0xFFB6C1", "hotpink": "0xFF69B4", "deeppink": "0xFF1493", "palevioletred": "0xDB7093", "mediumvioletred": "0xC71585", "white": "0xFFFFFF", "snow": "0xFFFAFA", "honeydew": "0xF0FFF0", "mintcream": "0xF5FFFA", "azure": "0xF0FFFF", "aliceblue": "0xF0F8FF", "ghostwhite": "0xF8F8FF", "whitesmoke": "0xF5F5F5", "seashell": "0xFFF5EE", "beige": "0xF5F5DC", "oldlace": "0xFDF5E6", "floralwhite": "0xFFFAF0", "ivory": "0xFFFFF0", "antiquewhite": "0xFAEBD7", "linen": "0xFAF0E6", "lavenderblush": "0xFFF0F5", "mistyrose": "0xFFE4E1", "gainsboro": "0xDCDCDC", "lightgray": "0xD3D3D3", "silver": "0xC0C0C0", "darkgray": "0xA9A9A9",
-               "gray": "0x808080", "dimgray": "0x696969", "lightslategray": "0x778899", "slategray": "0x708090", "darkslategray": "0x2F4F4F", "black": "0x000000", "cornsilk": "0xFFF8DC", "blanchedalmond": "0xFFEBCD", "bisque": "0xFFE4C4", "navajowhite": "0xFFDEAD", "wheat": "0xF5DEB3", "burlywood": "0xDEB887", "tan": "0xD2B48C", "rosybrown": "0xBC8F8F", "sandybrown": "0xF4A460", "goldenrod": "0xDAA520", "peru": "0xCD853F", "chocolate": "0xD2691E", "saddlebrown": "0x8B4513", "sienna": "0xA0522D", "brown": "0xA52A2A", "maroon": "0x800000"}
-
-        def color_embed(colour, r, g, b, c, m, y, k, h, s, l):
-            Hex = f"#{RGB_to_HEX(r, g, b)}"
-            rgb = f"rgb({r},{g},{b})"
-            hsl = f"hsl({round(float(h), 2)},{round(float(s), 2)}%,{round(float(l), 2)}%)"
-            cmyk = f"cmyk({round(float(c), 2)}%,{round(float(m), 2)}%,{round(float(y), 2)}%,{round(float(k), 2)}%)"
-            css_code = get_colour_name((r, g, b))[1]
-            embed = discord.Embed(title=colour, description="", colour=int(Hex[1:], 16))
-            embed.add_field(name="Hex", value=Hex, inline=True)
-            embed.add_field(name="RGB", value=rgb, inline=True)
-            embed.add_field(name="HSL", value=hsl, inline=True)
-            embed.add_field(name="CMYK", value=cmyk, inline=True)
-            embed.add_field(name="CSS", value=css_code, inline=True)
-            embed.set_thumbnail(url=f"https://serux.pro/rendercolour/?rgb={r},{g},{b}")
-            return embed
-
-        def RGB(r, g, b, colour):
-            h, s, l = RGB_to_HSL(r, g, b)
-            c, m, y, k = RGB_to_CMYK(r, g, b)
-            return color_embed(colour, r, g, b, c, m, y, k, h, s, l)
-
-        def hslRGB(h, s, l, colour):
-            h -= (h // 360) * 360
-            r, g, b = HSL_to_RGB(h, s, l)
-            c, m, y, k = RGB_to_CMYK(r, g, b)
-            r = round(r)
-            g = round(g)
-            b = round(b)
-            return color_embed(colour, r, g, b, c, m, y, k, h, s, l)
-
-        def cmykRGB(c, m, y, k, colour):
-            r, g, b = CMYK_to_RGB(c, m, y, k)
-            h, s, l = RGB_to_HSL(r, g, b)
-            r = round(r)
-            g = round(g)
-            b = round(b)
-            return color_embed(colour, r, g, b, c, m, y, k, h, s, l)
-
-        def cssRGB(colour):
-            r = int(css[colour][2:4], 16)
-            g = int(css[colour][4:6], 16)
-            b = int(css[colour][6:], 16)
-            h, s, l = RGB_to_HSL(r, g, b)
-            c, m, y, k = RGB_to_CMYK(r, g, b)
-            return color_embed(colour, r, g, b, c, m, y, k, h, s, l)
-
         colour = ctx.message.content[len(self.bot.command_prefix) + 7:]
 
         if not colour:
-            await ctx.send(embed=RGB(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), "Random Colour"))
+            await ctx.send(embed=rgb_embed(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), "Random Colour"))
         elif c_str := re.search(r"\brgb\((\d{1,3}), *(\d{1,3}), *(\d{1,3})\)", colour):
             r, g, b = map(int, c_str.group(1, 2, 3))
 
             if max(r, g, b) > 255 or min(r, g, b) < 0:
                 raise BadArgs("You inputted an invalid colour. Please try again.", show_help=True)
 
-            await ctx.send(embed=RGB(r, g, b, c_str.group()))
+            await ctx.send(embed=rgb_embed(r, g, b, c_str.group()))
         elif c_str := re.search(r"\bhsl\((\d{1,3}(?:\.\d*)?), *(\d{1,3}(?:\.\d*)?)%?, *(\d{1,3}(?:\.\d*)?)%?\)", colour):
             h, s, l = map(Fraction, c_str.group(1, 2, 3))
 
             if h > 360 or max(s, l) > 100 or min(h, s, l) < 0:
                 raise BadArgs("You inputted an invalid colour. Please try again.", show_help=True)
 
-            await ctx.send(embed=hslRGB(h, s, l, c_str.group()))
+            await ctx.send(embed=hsl_embed(h, s, l, c_str.group()))
         elif c_str := re.search(r"\bcmyk\((\d{1,3}(?:\.\d*)?)%?, *(\d{1,3}(?:\.\d*)?)%?, *(\d{1,3}(?:\.\d*)?)%?, *(\d{1,3}(?:\.\d*)?)%?\)", colour):
             c, m, y, k = map(Fraction, c_str.group(1, 2, 3, 4))
 
             if max(c, m, y, k) > 100 or min(c, m, y, k) < 0:
                 raise BadArgs("You inputted an invalid colour. Please try again.", show_help=True)
 
-            await ctx.send(embed=cmykRGB(c, m, y, k, c_str.group()))
+            await ctx.send(embed=cmyk_embed(c, m, y, k, c_str.group()))
         elif colour.lower() in css:
-            await ctx.send(embed=cssRGB(colour.lower()))
+            await ctx.send(embed=css_embed(colour.lower()))
         elif c_str := re.search(r"\b#?([\dA-F]([\dA-F](?=[\dA-F]{4}))?)([\dA-F](?:(?<=[\dA-F]{3})[\dA-F](?=[\dA-F]{2}))?)([\dA-F](?:(?<=[\dA-F]{5})[\dA-F])?)\b", colour, re.I):
             mul = methodcaller("__mul__", 1 + (not c_str.group(2)))
             r, g, b = map(mul, c_str.group(1, 3, 4))
 
-            await ctx.send(embed=RGB(int(r, 16), int(g, 16), int(b, 16), c_str.group()))
+            await ctx.send(embed=rgb_embed(int(r, 16), int(g, 16), int(b, 16), c_str.group()))
         else:
             raise BadArgs("You inputted an invalid colour. Please try again.", show_help=True)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def emojify(self, ctx):
+    async def emojify(self, ctx: commands.Context):
         """
         `!emojify` __`Emoji text generator`__
 
@@ -287,7 +137,7 @@ class Commands(commands.Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def gtcycle(self, ctx, limit, *, txt):
+    async def gtcycle(self, ctx: commands.Context, limit: str, *, txt: str):
         """
         `!gtcycle` __`Google Translate Cycler`__
 
@@ -328,7 +178,7 @@ class Commands(commands.Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def join(self, ctx, *arg):
+    async def join(self, ctx: commands.Context, *arg: str):
         """
         `!join` __`Adds a role to yourself`__
 
@@ -384,7 +234,7 @@ class Commands(commands.Cog):
 
     @commands.command()
     @commands.cooldown(1, 10, commands.BucketType.user)
-    async def latex(self, ctx, *args):
+    async def latex(self, ctx: commands.Context, *args: str):
         """
         `!latex` __`LaTeX equation render`__
 
@@ -427,7 +277,7 @@ class Commands(commands.Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def leave(self, ctx, *arg):
+    async def leave(self, ctx: commands.Context, *arg: str):
         """
         `!leave` __`Removes an existing role from yourself`__
 
@@ -458,7 +308,7 @@ class Commands(commands.Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def poll(self, ctx):
+    async def poll(self, ctx: commands.Context):
         """
         `!poll` __`Poll generator`__
 
@@ -479,7 +329,7 @@ class Commands(commands.Cog):
         if question in ("check", "end"):
             if end := (question == "end"):
                 del self.poll_dict[str(ctx.channel.id)]
-                writeJSON(self.poll_dict, "data/poll.json")
+                write_json(self.poll_dict, "data/poll.json")
 
             if not id_:
                 raise BadArgs("No active poll found.")
@@ -557,11 +407,11 @@ class Commands(commands.Cog):
             await react_message.add_reaction(reaction)
 
         self.poll_dict[str(ctx.channel.id)] = react_message.id
-        writeJSON(self.poll_dict, "data/poll.json")
+        write_json(self.poll_dict, "data/poll.json")
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def purge(self, ctx: commands.Context, amount: int, *arg):
+    async def purge(self, ctx: commands.Context, amount: int, *arg: str):
         """
         `!purge` __`purges all messages satisfying conditions from the last specified number of messages in channel.`__
 
@@ -608,49 +458,49 @@ class Commands(commands.Cog):
 
             await ctx.send(f"Reactions removed from the last {'' if amount == 1 else '**' + str(amount) + '**'} message{'s' if amount > 1 else ''}.", delete_after=5)
         elif arg[0] == "text":
-            def no_image(m):
+            def no_image(m: discord.Message) -> bool:
                 return not m.embeds and not m.attachments
 
             total_messages = await ctx.channel.purge(limit=amount, check=no_image)
 
             await ctx.send(f"**{len(total_messages)}** text message{'s' if len(total_messages) > 1 else ''} purged.")
         elif arg[0] == "bots":
-            def is_bot(m):
+            def is_bot(m: discord.Message) -> bool:
                 return m.author.bot
 
             total_messages = await ctx.channel.purge(limit=amount, check=is_bot)
 
             await ctx.send(f"**{len(total_messages)}** bot message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
         elif arg[0] == "images":
-            def has_image(m):
+            def has_image(m: discord.Message) -> bool:
                 return m.attachments != []
 
             total_messages = await ctx.channel.purge(limit=amount, check=has_image)
 
             await ctx.send(f"**{len(total_messages)}** image message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
         elif arg[0] == "embeds":
-            def has_embed(m):
+            def has_embed(m: discord.Message) -> bool:
                 return m.embeds != []
 
             total_messages = await ctx.channel.purge(limit=amount, check=has_embed)
 
             await ctx.send(f"**{len(total_messages)}** embed message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
         elif arg[0] == "mentions":
-            def has_mention(m):
+            def has_mention(m: discord.Message) -> bool:
                 return m.mentions != []
 
             total_messages = await ctx.channel.purge(limit=amount, check=has_mention)
 
             await ctx.send(f"**{len(total_messages)}** mention message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
         elif arg[0] == "links":
-            def has_link(m):
+            def has_link(m: discord.Message) -> bool:
                 return bool(re.search(r"https?://[a-zA-Z0-9-]+\.[a-zA-Z0-9-]+", m.content))
 
             total_messages = await ctx.channel.purge(limit=amount, check=has_link)
 
             await ctx.send(f"**{len(total_messages)}** link message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
         elif arg[0] == "string":
-            def has_string(m):
+            def has_string(m: discord.Message) -> bool:
                 return " ".join(arg[1:]) in m.content
 
             total_messages = await ctx.channel.purge(limit=amount, check=has_string)
@@ -659,20 +509,20 @@ class Commands(commands.Cog):
         else:
             try:
                 user = await MemberConverter().convert(ctx, " ".join(arg))
+            except BadArgument:
+                return await ctx.send("That user doesn't exist.", delete_after=5)
 
-                def check(m):
-                    return m.author == user
+            def check(m: discord.Message) -> bool:
+                return m.author == user
 
-                total_messages = await ctx.channel.purge(limit=amount, check=check)
+            total_messages = await ctx.channel.purge(limit=amount, check=check)
 
-                await ctx.send(f"**{len(total_messages)}** message{'s' if len(total_messages) > 1 else ''} from {user.display_name} purged.", delete_after=5)
-            except Exception:
-                await ctx.send("That user doesn't exist.", delete_after=5)
+            await ctx.send(f"**{len(total_messages)}** message{'s' if len(total_messages) > 1 else ''} from {user.display_name} purged.", delete_after=5)
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def shut(self, ctx):
+    async def shut(self, ctx: commands.Context):
         await ctx.message.delete()
         change = ""
 
@@ -695,7 +545,7 @@ class Commands(commands.Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def userstats(self, ctx, user: discord.Member):
+    async def userstats(self, ctx: commands.Context, user: discord.Member):
         """
         `!userstats` __`Check user profile and stats`__
 
@@ -737,7 +587,7 @@ class Commands(commands.Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def votes(self, ctx):
+    async def votes(self, ctx: commands.Context):
         """
         `!votes` __`Top votes for server icon`__
 
@@ -760,8 +610,7 @@ class Commands(commands.Cog):
 
                     images.append([message.attachments[0].url, count])
 
-            images.sort(key=lambda image: image[1], reverse=True)
-            images = images[:5]
+            images = sorted(images, key=lambda image: image[1], reverse=True)[:5]
 
             for image in images:
                 embed = discord.Embed(colour=random.randint(0, 0xFFFFFF))
@@ -773,5 +622,5 @@ class Commands(commands.Cog):
     # also just look up the docs lol i can't do everything
 
 
-def setup(bot):
+def setup(bot: commands.Bot) -> None:
     bot.add_cog(Commands(bot))

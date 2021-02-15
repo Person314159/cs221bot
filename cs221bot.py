@@ -11,8 +11,6 @@ from discord.ext import commands
 from dotenv import load_dotenv
 
 from util.badargs import BadArgs
-from util.create_file import create_file_if_not_exists
-from util.json import readJSON, writeJSON
 
 CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
@@ -29,7 +27,7 @@ parser.add_argument("--cnu", dest="notify_unpublished", action="store_true",
 args = parser.parse_args()
 
 
-async def status_task():
+async def status_task() -> None:
     await bot.wait_until_ready()
 
     while not bot.is_closed():
@@ -54,13 +52,13 @@ async def status_task():
         await asyncio.sleep(30)
 
 
-def startup():
+def startup() -> None:
     bot.get_cog("Canvas").canvas_init()
     bot.get_cog("Piazza").piazza_start()
 
 
 @bot.event
-async def on_ready():
+async def on_ready() -> None:
     startup()
     print("Logged in successfully")
     bot.loop.create_task(status_task())
@@ -68,16 +66,16 @@ async def on_ready():
     bot.loop.create_task(bot.get_cog("Canvas").stream_tracking())
     bot.loop.create_task(bot.get_cog("Canvas").assignment_reminder())
     bot.loop.create_task(bot.get_cog("Canvas").update_modules())
-    bot.loop.create_task(bot.get_cog("server_checker").check_servers_periodically())
+    bot.loop.create_task(bot.get_cog("Server Checker").check_servers_periodically())
 
 
 @bot.event
-async def on_message_edit(before, after):
+async def on_message_edit(before: discord.Message, after: discord.Message) -> None:
     await bot.process_commands(after)
 
 
 @bot.event
-async def on_message(message):
+async def on_message(message: discord.Message) -> None:
     if isinstance(message.channel, discord.abc.PrivateChannel):
         return
 
@@ -119,22 +117,22 @@ if __name__ == "__main__":
 
 
 @bot.event
-async def on_command_error(ctx, error):
+async def on_command_error(ctx: commands.Context, error: commands.CommandError):
     if isinstance(error, commands.CommandNotFound) or isinstance(error, discord.HTTPException):
         pass
     elif isinstance(error, BadArgs):
         await error.print(ctx)
     elif isinstance(error, commands.CommandOnCooldown):
-        await ctx.send(error, delete_after=error.retry_after)
+        await ctx.send(str(error), delete_after=error.retry_after)
     elif isinstance(error, commands.MissingPermissions) or isinstance(error, commands.BotMissingPermissions):
-        await ctx.send(error, delete_after=5)
+        await ctx.send(str(error), delete_after=5)
     else:
         etype = type(error)
         trace = error.__traceback__
 
         try:
             await ctx.send("```" + "".join(traceback.format_exception(etype, error, trace)) + "```")
-        except Exception:
+        except (discord.Forbidden, discord.HTTPException):
             print("".join(traceback.format_exception(etype, error, trace)))
 
 

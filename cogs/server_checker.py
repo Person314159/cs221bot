@@ -8,20 +8,20 @@ import discord
 from discord.ext import commands
 
 from util.create_file import create_file_if_not_exists
-from util.json import writeJSON
+from util.json import write_json
 
 SERVER_LIST = ("thetis", "remote", "annacis", "anvil", "bowen", "lulu")
 OTHER_SERVER_NAMES = ("valdes",)
 SERVER_TRACKERS_FILE = "data/server_trackers.json"
 
 
-class ServerChecker(commands.Cog, name="server_checker"):
-    def __init__(self, bot):
+class ServerChecker(commands.Cog, name="Server Checker"):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
         if not isfile(SERVER_TRACKERS_FILE):
             create_file_if_not_exists(SERVER_TRACKERS_FILE)
-            writeJSON({}, SERVER_TRACKERS_FILE)
+            write_json({}, SERVER_TRACKERS_FILE)
 
         with open(SERVER_TRACKERS_FILE, "r") as f:
             # Maps channel ID to live message ID
@@ -30,7 +30,7 @@ class ServerChecker(commands.Cog, name="server_checker"):
 
     @commands.command(name="checkservers")
     @commands.cooldown(1, 60, commands.BucketType.default)
-    async def check_servers(self, ctx, *args):
+    async def check_servers(self, ctx: commands.Context, *args: str):
         """
         `!checkservers` __`Check if the remote CS servers are online`__
 
@@ -82,7 +82,7 @@ class ServerChecker(commands.Cog, name="server_checker"):
 
     @commands.command(name="trackservers")
     @commands.is_owner()
-    async def track_servers(self, ctx):
+    async def track_servers(self, ctx: commands.Context):
         """
         `!trackservers` __`Get CS server status updates live`__
 
@@ -92,14 +92,14 @@ class ServerChecker(commands.Cog, name="server_checker"):
 
         if ctx.channel.id not in self.server_trackers_dict:
             self.server_trackers_dict[ctx.channel.id] = None
-            writeJSON(self.server_trackers_dict, SERVER_TRACKERS_FILE)
+            write_json(self.server_trackers_dict, SERVER_TRACKERS_FILE)
             await ctx.send("This channel will now receive live CS server status updates.", delete_after=5)
         else:
             await ctx.send("This channel is already receiving live CS server status updates.", delete_after=5)
 
     @commands.command(name="untrackservers")
     @commands.is_owner()
-    async def untrack_servers(self, ctx):
+    async def untrack_servers(self, ctx: commands.Context):
         """
         `!untrackservers` __`Untracks CS server live status updates`__
 
@@ -110,7 +110,7 @@ class ServerChecker(commands.Cog, name="server_checker"):
 
         if ctx.channel.id in self.server_trackers_dict:
             live_msg_id = self.server_trackers_dict.pop(ctx.channel.id, None)
-            writeJSON(self.server_trackers_dict, SERVER_TRACKERS_FILE)
+            write_json(self.server_trackers_dict, SERVER_TRACKERS_FILE)
 
             if live_msg_id is not None:
                 live_msg = ctx.channel.get_partial_message(live_msg_id)
@@ -125,7 +125,7 @@ class ServerChecker(commands.Cog, name="server_checker"):
         else:
             await ctx.send("This channel is not receiving live CS server status updates.", delete_after=5)
 
-    async def check_servers_periodically(self):
+    async def check_servers_periodically(self) -> None:
         """
         Periodically checks the statuses of the remote CS servers and sends status updates
         to all channels tracking the servers.
@@ -156,7 +156,7 @@ class ServerChecker(commands.Cog, name="server_checker"):
 
         return "\n".join(msg_components)
 
-    async def update_server_statuses(self):
+    async def update_server_statuses(self) -> None:
         """
         Gets the statuses of the CS servers and updates a live status message in each channel
         that is tracking the servers. We will call these channels "tracking channels".
@@ -192,7 +192,7 @@ class ServerChecker(commands.Cog, name="server_checker"):
         for channel_id in deleted_channel_ids:
             del self.server_trackers_dict[channel_id]
 
-        writeJSON(self.server_trackers_dict, SERVER_TRACKERS_FILE)
+        write_json(self.server_trackers_dict, SERVER_TRACKERS_FILE)
 
 
 async def can_connect_ssh(server_ip: str) -> bool:
@@ -222,5 +222,5 @@ async def can_connect_ssh(server_ip: str) -> bool:
         return False
 
 
-def setup(bot):
+def setup(bot: commands.Bot) -> None:
     bot.add_cog(ServerChecker(bot))

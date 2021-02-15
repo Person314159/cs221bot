@@ -13,12 +13,12 @@ from util.badargs import BadArgs
 
 
 class Tree(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def bst(self, ctx):
+    async def bst(self, ctx: commands.Context):
         """
         `!bst` __`Binary Search Tree analysis tool`__
         **Usage:** !bst <node> [node] [...]
@@ -63,7 +63,7 @@ class Tree(commands.Cog):
 
         nodes = [root]
 
-        def insert(subroot, num):
+        def insert(subroot: Node, num: int) -> None:
             if num < subroot.val:
                 if not subroot.left:
                     node = Node(num)
@@ -79,7 +79,7 @@ class Tree(commands.Cog):
                 else:
                     insert(subroot.right, num)
 
-        def delete(subroot, num):
+        def delete(subroot: Node, num: int) -> Node:
             if subroot:
                 if subroot.val == num:
                     if subroot.left is not None and subroot.right is not None:
@@ -118,7 +118,7 @@ class Tree(commands.Cog):
 
             return subroot
 
-        def get_node(num):
+        def get_node(num: int) -> Optional[Node]:
             for node in nodes:
                 if node.val == num:
                     return node
@@ -132,18 +132,19 @@ class Tree(commands.Cog):
         timeout = 60
         display = True
 
-        def draw_bst(root):
+        def draw_bst(root: Node) -> None:
             graph = root.graphviz()
             graph.render("bst", format="png")
 
         while True:
+            draw_bst(root)
+            text = f"```{root}\n```"
+
             if display:
-                draw_bst(root)
-                text = f"```{root}\n```"
                 await ctx.send(text, file=discord.File("bst.png"))
                 display = False
 
-            def check(m):
+            def check(m: discord.Message) -> bool:
                 return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
 
             try:
@@ -183,10 +184,10 @@ class Tree(commands.Cog):
                 embed.add_field(name="Post-Order Traversal:", value=" ".join([str(n.val) for n in root.postorder]))
 
                 if root.left:
-                    embed.add_field(name="In-Order Predecessor:", value=max(filter(lambda x: x is not None, root.left.values)))
+                    embed.add_field(name="In-Order Predecessor:", value=str(max(filter(lambda x: x is not None, root.left.values))))
 
                 if root.right:
-                    embed.add_field(name="In-Order Successor:", value=min(filter(lambda x: x is not None, root.right.values)))
+                    embed.add_field(name="In-Order Successor:", value=str(min(filter(lambda x: x is not None, root.right.values))))
 
                 await ctx.send(embed=embed, file=discord.File("bst.png"))
             elif command.startswith("pause"):
@@ -222,7 +223,7 @@ class Tree(commands.Cog):
                 for entry in command[7:].split():
                     try:
                         num = float(entry)
-                    except Exception:
+                    except ValueError:
                         continue
 
                     if root.size == 1:
@@ -249,5 +250,5 @@ class Tree(commands.Cog):
                 return
 
 
-def setup(bot):
+def setup(bot: commands.Bot) -> None:
     bot.add_cog(Tree(bot))

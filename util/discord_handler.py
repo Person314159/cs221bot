@@ -6,7 +6,7 @@ from util.piazza_handler import PiazzaHandler
 
 class DiscordHandler:
     """
-    Class for Discord bot to maintain list of active CanvasHandlers
+    Class for Discord bot to maintain list of active handlers
 
     Attributes
     ----------
@@ -24,10 +24,14 @@ class DiscordHandler:
     def canvas_handlers(self) -> List[CanvasHandler]:
         return self._canvas_handlers
 
+    @canvas_handlers.setter
+    def canvas_handlers(self, handlers: List[CanvasHandler]):
+        self._canvas_handlers = handlers
+
     @property
     def piazza_handler(self) -> PiazzaHandler:
         return self._piazza_handler
 
     @piazza_handler.setter
-    def piazza_handler(self, piazza):
+    def piazza_handler(self, piazza: PiazzaHandler) -> None:
         self._piazza_handler = piazza

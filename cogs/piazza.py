@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 from util.badargs import BadArgs
 from util.create_file import create_file_if_not_exists
-from util.json import readJSON, writeJSON
+from util.json import read_json, write_json
 from util.piazza_handler import InvalidPostID, PiazzaHandler
 
 PIAZZA_THUMBNAIL_URL = "https://store-images.s-microsoft.com/image/apps.25584.554ac7a6-231b-46e2-9960-a059f3147dbe.727eba5c-763a-473f-981d-ffba9c91adab.4e76ea6a-bd74-487f-bf57-3612e43ca795.png"
@@ -21,14 +21,14 @@ PIAZZA_PASSWORD = os.getenv("PIAZZA_PASSWORD")
 
 
 class Piazza(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
         if not isfile(PIAZZA_FILE):
             create_file_if_not_exists(PIAZZA_FILE)
-            writeJSON({}, PIAZZA_FILE)
+            write_json({}, PIAZZA_FILE)
 
-        self.piazza_dict = readJSON(PIAZZA_FILE)
+        self.piazza_dict = read_json(PIAZZA_FILE)
 
     # # start of Piazza functions # #
     # didn't want to support multiple PiazzaHandler instances because it's associated with
@@ -38,7 +38,7 @@ class Piazza(commands.Cog):
     # with an unlimited # of POST requests per instance everyday. One instance should be safe
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
-    async def pinit(self, ctx, name, pid):
+    async def pinit(self, ctx: commands.Context, name: str, pid: str):
         """
         `!pinit` _ `course name` _ _ `piazza id` _
 
@@ -59,21 +59,20 @@ class Piazza(commands.Cog):
         self.piazza_dict["course_name"] = name
         self.piazza_dict["piazza_id"] = pid
         self.piazza_dict["guild_id"] = ctx.guild.id
-        writeJSON(self.piazza_dict, "data/piazza.json")
+        write_json(self.piazza_dict, "data/piazza.json")
         response = f"Piazza instance created!\nName: {name}\nPiazza ID: {pid}\n"
         response += "If the above doesn't look right, please use `!pinit` again with the correct arguments"
         await ctx.send(response)
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
-    async def ptrack(self, ctx, *cid):
+    async def ptrack(self, ctx: commands.Context):
         """
-        `!ptrack` __`channel id`__
+        `!ptrack` __`Tracks Piazza posts in channel`__
 
-        **Usage:** !ptrack [channel id]
+        **Usage:** !ptrack
 
         **Examples:**
-        `!ptrack 747259140908384386` adds CPSC221 server's #bot-commands channel id to the Piazza instance's list of tracked channels
         `!ptrack` adds the current channel's id to the Piazza instance's list of channels
 
         The channels added through `!ptrack` are where send_pupdate and track_inotes send their responses.
@@ -81,26 +80,22 @@ class Piazza(commands.Cog):
         *Only usable by TAs and Profs
         """
 
-        if not cid:
-            cid = ctx.message.channel.id
-        else:
-            cid = int(cid[0])
+        cid = ctx.message.channel.id
 
         self.bot.d_handler.piazza_handler.add_channel(cid)
-        self.piazza_dict["channels"] = list(self.bot.d_handler.piazza_handler.channels)
-        writeJSON(self.piazza_dict, "data/piazza.json")
+        self.piazza_dict["channels"] = self.bot.d_handler.piazza_handler.channels
+        write_json(self.piazza_dict, "data/piazza.json")
         await ctx.send("Channel added to tracking!")
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
-    async def puntrack(self, ctx, *cid):
+    async def puntrack(self, ctx: commands.Context):
         """
-        `!puntrack` __`channel id`__
+        `!puntrack` __`Untracks Piazza posts in channel`__
 
-        **Usage:** !puntrack [channel id]
+        **Usage:** !puntrack
 
         **Examples:**
-        `!puntrack 747259140908384386` removes CPSC221 server's #bot-commands channel id to the Piazza instance's list of tracked channels
         `!puntrack` removes the current channel's id to the Piazza instance's list of channels
 
         The channels removed through `!puntrack` are where send_pupdate and track_inotes send their responses.
@@ -108,19 +103,16 @@ class Piazza(commands.Cog):
         *Only usable by TAs and Profs
         """
 
-        if not cid:
-            cid = ctx.message.channel.id
-        else:
-            cid = int(cid[0])
+        cid = ctx.message.channel.id
 
         self.bot.d_handler.piazza_handler.remove_channel(cid)
-        self.piazza_dict["channels"] = list(self.bot.d_handler.piazza_handler.channels)
-        writeJSON(self.piazza_dict, "data/piazza.json")
+        self.piazza_dict["channels"] = self.bot.d_handler.piazza_handler.channels
+        write_json(self.piazza_dict, "data/piazza.json")
         await ctx.send("Channel removed from tracking!")
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
-    async def ppinned(self, ctx):
+    async def ppinned(self, ctx: commands.Context):
         """
         `!ppinned`
 
@@ -147,7 +139,7 @@ class Piazza(commands.Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def pread(self, ctx, postID):
+    async def pread(self, ctx: commands.Context, post_id: int):
         """
         `!pread` __`post id`__
 
@@ -162,7 +154,7 @@ class Piazza(commands.Cog):
             raise BadArgs("Piazza hasn't been instantiated yet!")
 
         try:
-            post = self.bot.d_handler.piazza_handler.get_post(postID)
+            post = self.bot.d_handler.piazza_handler.get_post(post_id)
         except InvalidPostID:
             raise BadArgs("Post not found.")
 
@@ -172,7 +164,7 @@ class Piazza(commands.Cog):
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
-    async def ptest(self, ctx):
+    async def ptest(self, ctx: commands.Context):
         """
         `!ptest`
 
@@ -185,7 +177,7 @@ class Piazza(commands.Cog):
         await self.send_piazza_posts(False)
 
     @staticmethod
-    def create_post_embed(post):
+    def create_post_embed(post: dict) -> discord.Embed:
         if post:
             post_embed = discord.Embed(title=post["subject"], url=post["url"], description=post["num"])
             post_embed.add_field(name=post["post_type"], value=post["post_body"], inline=False)
@@ -201,7 +193,7 @@ class Piazza(commands.Cog):
             post_embed.set_footer(text=f"tags: {post['tags']}")
             return post_embed
 
-    async def send_at_time(self):
+    async def send_at_time(self) -> None:
         # default set to midnight PT (7/8am UTC)
         today = datetime.utcnow()
         hours = round((datetime.utcnow() - datetime.now()).seconds / 3600)
@@ -211,7 +203,7 @@ class Piazza(commands.Cog):
         if time_until_post.total_seconds():
             await asyncio.sleep(time_until_post.total_seconds())
 
-    async def send_pupdate(self):
+    async def send_pupdate(self) -> None:
         while True:
             await self.send_piazza_posts(True)
 
@@ -220,7 +212,7 @@ class Piazza(commands.Cog):
             else:
                 await asyncio.sleep(60 * 60 * 24)
 
-    async def send_piazza_posts(self, wait: bool):
+    async def send_piazza_posts(self, wait: bool) -> None:
         if not self.bot.d_handler.piazza_handler:
             return
 
@@ -253,7 +245,7 @@ class Piazza(commands.Cog):
                 channel = self.bot.get_channel(ch)
                 await channel.send(response)
 
-    async def track_inotes(self, wait: bool):
+    async def track_inotes(self, wait: bool) -> None:
         while True:
             if self.bot.d_handler.piazza_handler:
                 posts = await self.bot.d_handler.piazza_handler.get_recent_notes()
@@ -276,7 +268,7 @@ class Piazza(commands.Cog):
             else:
                 await asyncio.sleep(60)
 
-    def piazza_start(self):
+    def piazza_start(self) -> None:
         if all(field in self.piazza_dict for field in ("course_name", "piazza_id", "guild_id")):
             self.bot.d_handler.piazza_handler = PiazzaHandler(self.piazza_dict["course_name"], self.piazza_dict["piazza_id"], PIAZZA_EMAIL, PIAZZA_PASSWORD, self.piazza_dict["guild_id"])
 
@@ -287,5 +279,5 @@ class Piazza(commands.Cog):
             self.bot.d_handler.piazza_handler.add_channel(int(ch))
 
 
-def setup(bot):
+def setup(bot: commands.Bot) -> None:
     bot.add_cog(Piazza(bot))
