@@ -15,7 +15,7 @@ OTHER_SERVER_NAMES = ("valdes",)
 SERVER_TRACKERS_FILE = "data/server_trackers.json"
 
 
-class ServerChecker(commands.Cog, name="Server Checker"):
+class ServerStats(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -222,4 +222,4 @@ async def can_connect_ssh(server_ip: str) -> bool:
 
 
 def setup(bot: commands.Bot) -> None:
-    bot.add_cog(ServerChecker(bot))
+    bot.add_cog(ServerStats(bot))
