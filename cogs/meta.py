@@ -69,8 +69,6 @@ class Meta(commands.Cog):
 
             await reload_msg.edit(content=f"{extension} module reloaded.")
 
-        self.bot.reload_extension("cogs.meta")
-
         await ctx.send("Done")
 
 

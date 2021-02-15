@@ -66,7 +66,7 @@ async def on_ready() -> None:
     bot.loop.create_task(bot.get_cog("Canvas").stream_tracking())
     bot.loop.create_task(bot.get_cog("Canvas").assignment_reminder())
     bot.loop.create_task(bot.get_cog("Canvas").update_modules())
-    bot.loop.create_task(bot.get_cog("Server Checker").check_servers_periodically())
+    bot.loop.create_task(bot.get_cog("ServerStats").check_servers_periodically())
 
 
 @bot.event
