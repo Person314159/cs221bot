@@ -3,6 +3,7 @@ import json
 import subprocess
 from os.path import isfile
 from typing import Dict, Optional
+from datetime import datetime
 
 import discord
 from discord.ext import commands
@@ -141,8 +142,8 @@ class ServerStats(commands.Cog):
         """
         Returns a Discord message that indicates the statuses of the remote CS servers.
         """
-
-        msg_components = ["Server Statuses:"]
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        msg_components = [f"Server Statuses at {current_time}:"]
 
         for server_name in SERVER_LIST:
             ip = f"{server_name}.students.cs.ubc.ca"
