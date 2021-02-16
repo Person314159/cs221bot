@@ -196,7 +196,7 @@ class Piazza(commands.Cog):
         # default set to midnight PT (7/8am UTC)
         today = datetime.utcnow()
         hours = round((datetime.utcnow() - datetime.now()).seconds / 3600)
-        post_time = datetime(today.year, today.month, today.day, hour=hours, minute=0, tzinfo=today.tzinfo)
+        post_time = datetime(today.year, today.month, today.day + 1, hour=hours, minute=0, tzinfo=today.tzinfo)
         time_until_post = post_time - today
 
         if time_until_post.total_seconds():

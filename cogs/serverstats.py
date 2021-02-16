@@ -1,6 +1,7 @@
 import asyncio
 import json
 import subprocess
+import time
 from os.path import isfile
 from typing import Dict, Optional
 from datetime import datetime
@@ -142,7 +143,9 @@ class ServerStats(commands.Cog):
         """
         Returns a Discord message that indicates the statuses of the remote CS servers.
         """
-        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        offset = datetime.utcnow() - datetime.now()
+        current_time = datetime.now().strftime(f"%Y-%m-%d %H:%M:%S {time.tzname[time.localtime().tm_isdst]}")
         msg_components = [f"Server Statuses at {current_time}:"]
 
         for server_name in SERVER_LIST:
@@ -169,13 +172,12 @@ class ServerStats(commands.Cog):
         """
 
         message = await self.get_server_statuses()
-        deleted_channel_ids = []
 
-        for channel_id, msg_id in self.server_trackers_dict.items():
+        for channel_id, msg_id in list(self.server_trackers_dict.items()):
             channel = self.bot.get_channel(channel_id)
 
-            if channel is not None:
-                if msg_id is not None:
+            if channel:
+                if msg_id:
                     live_msg = channel.get_partial_message(msg_id)
 
                     try:
@@ -187,10 +189,7 @@ class ServerStats(commands.Cog):
                     live_msg = await channel.send(message)
                     self.server_trackers_dict[channel_id] = live_msg.id
             else:
-                deleted_channel_ids.append(channel_id)
-
-        for channel_id in deleted_channel_ids:
-            del self.server_trackers_dict[channel_id]
+                del self.server_trackers_dict[channel_id]
 
         write_json(self.server_trackers_dict, SERVER_TRACKERS_FILE)
 
