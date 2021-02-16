@@ -33,7 +33,7 @@ class Meta(commands.Cog):
             embed = discord.Embed(title="CS221 Bot", description="Commands:", colour=random.randint(0, 0xFFFFFF), timestamp=datetime.utcnow())
             embed.add_field(name=f"❗ Current Prefix: `{self.bot.command_prefix}`", value="\u200b", inline=False)
 
-            for k, v in self.bot.cogs.items():
+            for k, v in sorted(self.bot.cogs.items(), key=lambda kv: kv[0]):
                 embed.add_field(name=k, value=" ".join(f"`{i}`" for i in v.get_commands() if not i.hidden), inline=False)
 
             embed.set_thumbnail(url=self.bot.user.avatar_url)

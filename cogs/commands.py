@@ -545,11 +545,11 @@ class Commands(commands.Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def userstats(self, ctx: commands.Context, user: discord.Member):
+    async def userstats(self, ctx: commands.Context, *args: discord.Member):
         """
         `!userstats` __`Check user profile and stats`__
 
-        **Usage:** !userstats <USER>
+        **Usage:** !userstats [USER]
 
         **Examples:**
         `!userstats abc#1234` [embed]
@@ -557,6 +557,11 @@ class Commands(commands.Cog):
 
         # we use both user and member objects, since some stats can only be obtained
         # from either user or member object
+
+        if not args:
+            user = ctx.author
+        else:
+            user = args[0]
 
         async with ctx.channel.typing():
             most_active_channel = 0
