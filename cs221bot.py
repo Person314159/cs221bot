@@ -10,6 +10,7 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
+import cogs.meta
 from util.badargs import BadArgs
 
 CANVAS_COLOR = 0xe13f2b
@@ -52,14 +53,9 @@ async def status_task() -> None:
         await asyncio.sleep(30)
 
 
-def startup() -> None:
-    bot.get_cog("Canvas").canvas_init()
-    bot.get_cog("Piazza").piazza_start()
-
-
 @bot.event
 async def on_ready() -> None:
-    startup()
+    await cogs.meta.startup_tasks(bot)
     print("Logged in successfully")
     bot.loop.create_task(status_task())
     bot.loop.create_task(bot.get_cog("Piazza").send_pupdate())
