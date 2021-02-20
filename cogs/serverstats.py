@@ -2,9 +2,9 @@ import asyncio
 import json
 import subprocess
 import time
+from datetime import datetime
 from os.path import isfile
 from typing import Dict, Optional
-from datetime import datetime
 
 import discord
 from discord.ext import commands
@@ -137,14 +137,13 @@ class ServerStats(commands.Cog):
 
         while True:
             await self.update_server_statuses()
-            await asyncio.sleep(30)
+            await asyncio.sleep(60)
 
     async def get_server_statuses(self) -> str:
         """
         Returns a Discord message that indicates the statuses of the remote CS servers.
         """
 
-        offset = datetime.utcnow() - datetime.now()
         current_time = datetime.now().strftime(f"%Y-%m-%d %H:%M:%S {time.tzname[time.localtime().tm_isdst]}")
         msg_components = [f"Server Statuses at {current_time}:"]
 

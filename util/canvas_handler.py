@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Set, Tuple, Union
 
@@ -351,13 +352,14 @@ class CanvasHandler(Canvas):
                         if ctime_iso is None:
                             ctime_text = "No info"
                         else:
-                            time_shift = datetime.now() - datetime.utcnow()
+                            time_shift = timedelta(seconds=-time.timezone)
                             ctime_iso_parsed = (isoparse(ctime_iso) + time_shift).replace(tzinfo=None)
 
                             # A timedelta representing how long ago the conversation was created.
-                            ctime_timedelta = datetime.now() - ctime_iso_parsed
+                            now = datetime.now()
+                            ctime_timedelta = now - ctime_iso_parsed
 
-                            if since and ctime_timedelta >= self._make_timedelta(since):
+                            if since and ctime_timedelta >= self._make_timedelta(since, now):
                                 break
 
                             ctime_text = ctime_iso_parsed.strftime("%Y-%m-%d %H:%M:%S")
@@ -430,7 +432,7 @@ class CanvasHandler(Canvas):
                 ctime_iso = assignment.__getattribute__("created_at")
                 dtime_iso = assignment.__getattribute__("due_at")
 
-                time_shift = datetime.now() - datetime.utcnow()
+                time_shift = timedelta(seconds=-time.timezone)
 
                 if ctime_iso is None:
                     ctime_text = "No info"
@@ -440,10 +442,11 @@ class CanvasHandler(Canvas):
                 if dtime_iso is None:
                     dtime_text = "No info"
                 else:
+                    now = datetime.now()
                     dtime_iso_parsed = (isoparse(dtime_iso) + time_shift).replace(tzinfo=None)
-                    dtime_timedelta = dtime_iso_parsed - datetime.now()
+                    dtime_timedelta = dtime_iso_parsed - now
 
-                    if dtime_timedelta < timedelta(0) or (due and dtime_timedelta > self._make_timedelta(due)):
+                    if dtime_timedelta < timedelta(0) or (due and dtime_timedelta > self._make_timedelta(due, now)):
                         continue
 
                     dtime_text = dtime_iso_parsed.strftime("%Y-%m-%d %H:%M:%S")
@@ -452,7 +455,7 @@ class CanvasHandler(Canvas):
 
         return data_list
 
-    def _make_timedelta(self, till_str: str) -> timedelta:
+    def _make_timedelta(self, till_str: str, now: datetime) -> timedelta:
         """
         Makes a datetime.timedelta
 
@@ -460,6 +463,9 @@ class CanvasHandler(Canvas):
         ----------
         till_str : `str`
             Date/Time from due date of assignments
+
+        now: `datetime`
+            Current time
 
         Returns
         -------
@@ -477,10 +483,10 @@ class CanvasHandler(Canvas):
         year, month, day = int(till[0]), int(till[1]), int(till[2])
 
         if len(till) == 3:
-            return abs(datetime(year, month, day) - datetime.now())
+            return abs(datetime(year, month, day) - now)
 
         hour, minute, second = int(till[3]), int(till[4]), int(till[5])
-        return abs(datetime(year, month, day, hour, minute, second) - datetime.now())
+        return abs(datetime(year, month, day, hour, minute, second) - now)
 
     def get_course_names(self, url: str) -> List[List[str]]:
         """

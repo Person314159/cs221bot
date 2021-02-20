@@ -9,7 +9,6 @@ from fractions import Fraction
 from io import BytesIO
 from operator import methodcaller
 from os.path import isfile
-from typing import Any
 
 import pytz
 import requests

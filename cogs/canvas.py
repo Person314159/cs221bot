@@ -307,6 +307,7 @@ class Canvas(commands.Cog):
 
                     if data_list:
                         # latest announcement first
+                        print(ch.timings)
                         ch.timings[str(c.id)] = data_list[0][5]
 
             await asyncio.sleep(30)

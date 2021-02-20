@@ -1,5 +1,6 @@
 import asyncio
 import os
+import time
 from datetime import datetime
 from os.path import isfile
 
@@ -195,7 +196,7 @@ class Piazza(commands.Cog):
     async def send_at_time(self) -> None:
         # default set to midnight PT (7/8am UTC)
         today = datetime.utcnow()
-        hours = round((datetime.utcnow() - datetime.now()).seconds / 3600)
+        hours = round(time.timezone / 3600)
         post_time = datetime(today.year, today.month, today.day + 1, hour=hours, minute=0, tzinfo=today.tzinfo)
         time_until_post = post_time - today
 
