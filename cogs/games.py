@@ -1,0 +1,101 @@
+import asyncio
+import random
+from datetime import datetime
+from io import BytesIO
+
+import chess
+from chess import svg, pgn
+import discord
+from cairosvg import svg2png
+from discord.ext import commands
+from discord.ext.commands import BadArgument, MemberConverter
+
+
+class Games(commands.Cog):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+
+    @commands.command()
+    async def chess(self, ctx: commands.Context, *args: str):
+        """
+        `!chess` __`Play chess`__
+
+        **Usage:** !chess <user>
+
+        **Examples:**
+        `!chess abc#1234` starts a game of chess with abc#1234
+
+        **Note:**
+        Moves are in standard algebraic notation (e4, Nxf7, etc).
+        """
+
+        try:
+            user = await MemberConverter().convert(ctx, " ".join(args))
+        except BadArgument:
+            return await ctx.send("That user doesn't exist.", delete_after=5)
+
+        board = chess.Board()
+        game = pgn.Game()
+        node = None
+        turns = [ctx.author, user]
+        turn = random.choice([True, False])
+        game.headers["Date"] = datetime.today().strftime("%Y.%m.%d")
+        game.headers["White"] = turns[turn].display_name
+        game.headers["Black"] = turns[not turn].display_name
+
+        def render_board(board: chess.Board) -> BytesIO:
+            boardimg = chess.svg.board(board=board, lastmove=board.peek() if board.move_stack else None, check=board.king(turn) if board.is_check() or board.is_checkmate() else None, flipped=board.turn == chess.BLACK)
+            res = BytesIO()
+            svg2png(bytestring=boardimg, write_to=res)
+            res.seek(0)
+            return res
+
+        res = render_board(board)
+        game_msg = await ctx.send(f"{turns[turn].mention}, its your turn.", file=discord.File(res, "file.png"))
+
+        while True:
+            try:
+                msg = await self.bot.wait_for("message", timeout=600, check=lambda msg: msg.channel == ctx.channel and msg.author.id == turns[turn].id)
+            except asyncio.TimeoutError:
+                return await ctx.send("Timed out.", delete_after=5)
+
+            if msg.content == "exit":
+                res = render_board(board)
+                game.headers["Result"] = board.result()
+                await game_msg.delete()
+                return await ctx.send(f"{turns[turn].mention} resigned. {turns[not turn].mention} wins.\n{str(game)}", file=discord.File(res, "file.png"))
+
+            try:
+                move = board.push_san(msg.content)
+            except ValueError:
+                continue
+
+            await msg.delete()
+
+            if not node:
+                node = game.add_variation(move)
+            else:
+                node = node.add_variation(move)
+
+            extra = "\n\nCheck!" if board.is_check() else ""
+
+            if board.is_checkmate():
+                res = render_board(board)
+                game.headers["Result"] = board.result()
+                await game_msg.delete()
+                return await ctx.send(f"Checkmate!\n\n{turns[not turn].mention} wins.\n{str(game)}", file=discord.File(res, "file.png"))
+
+            if board.is_stalemate() or board.is_insufficient_material():
+                res = render_board(board)
+                game.headers["Result"] = board.result()
+                await game_msg.delete()
+                return await ctx.send(f"Draw!\n{str(game)}", file=discord.File(res, "file.png"))
+
+            res = render_board(board)
+            await game_msg.delete()
+            game_msg = await ctx.send(f"{turns[turn].mention}, its your turn.{extra}", file=discord.File(res, "file.png"))
+            turn = not turn
+
+
+def setup(bot: commands.Bot) -> None:
+    bot.add_cog(Games(bot))

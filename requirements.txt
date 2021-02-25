@@ -1,6 +1,8 @@
 beautifulsoup4==4.9.3
 binarytree==6.1.0
+cairosvg==2.5.1
 canvasapi==2.1.0
+chess==1.4.0
 discord.py==1.6.0
 googletrans==3.1.0a0
 piazza-api==0.11.0
