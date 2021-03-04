@@ -4,6 +4,7 @@ import math
 import os
 import random
 import re
+from typing import Optional
 
 import discord
 from binarytree import Node
@@ -144,11 +145,8 @@ class Tree(commands.Cog):
                 await ctx.send(text, file=discord.File("bst.png"))
                 display = False
 
-            def check(m: discord.Message) -> bool:
-                return m.channel.id == ctx.channel.id and m.author.id == ctx.author.id
-
             try:
-                message = await self.bot.wait_for("message", timeout=timeout, check=check)
+                message = await self.bot.wait_for("message", timeout=timeout, check=lambda m: m.channel.id == ctx.channel.id and m.author.id == ctx.author.id)
             except asyncio.exceptions.TimeoutError:
                 for f in glob.glob("bst*"):
                     os.remove(f)

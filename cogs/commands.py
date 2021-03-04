@@ -457,52 +457,31 @@ class Commands(commands.Cog):
 
             await ctx.send(f"Reactions removed from the last {'' if amount == 1 else '**' + str(amount) + '**'} message{'s' if amount > 1 else ''}.", delete_after=5)
         elif arg[0] == "text":
-            def no_image(m: discord.Message) -> bool:
-                return not m.embeds and not m.attachments
-
-            total_messages = await ctx.channel.purge(limit=amount, check=no_image)
+            total_messages = await ctx.channel.purge(limit=amount, check=lambda m: not m.embeds and not m.attachments)
 
             await ctx.send(f"**{len(total_messages)}** text message{'s' if len(total_messages) > 1 else ''} purged.")
         elif arg[0] == "bots":
-            def is_bot(m: discord.Message) -> bool:
-                return m.author.bot
-
-            total_messages = await ctx.channel.purge(limit=amount, check=is_bot)
+            total_messages = await ctx.channel.purge(limit=amount, check=lambda m: m.author.bot)
 
             await ctx.send(f"**{len(total_messages)}** bot message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
         elif arg[0] == "images":
-            def has_image(m: discord.Message) -> bool:
-                return m.attachments != []
-
-            total_messages = await ctx.channel.purge(limit=amount, check=has_image)
+            total_messages = await ctx.channel.purge(limit=amount, check=lambda m: m.attachments)
 
             await ctx.send(f"**{len(total_messages)}** image message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
         elif arg[0] == "embeds":
-            def has_embed(m: discord.Message) -> bool:
-                return m.embeds != []
-
-            total_messages = await ctx.channel.purge(limit=amount, check=has_embed)
+            total_messages = await ctx.channel.purge(limit=amount, check=lambda m: m.embeds)
 
             await ctx.send(f"**{len(total_messages)}** embed message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
         elif arg[0] == "mentions":
-            def has_mention(m: discord.Message) -> bool:
-                return m.mentions != []
-
-            total_messages = await ctx.channel.purge(limit=amount, check=has_mention)
+            total_messages = await ctx.channel.purge(limit=amount, check=lambda m: m.mentions)
 
             await ctx.send(f"**{len(total_messages)}** mention message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
         elif arg[0] == "links":
-            def has_link(m: discord.Message) -> bool:
-                return bool(re.search(r"https?://[a-zA-Z0-9-]+\.[a-zA-Z0-9-]+", m.content))
-
-            total_messages = await ctx.channel.purge(limit=amount, check=has_link)
+            total_messages = await ctx.channel.purge(limit=amount, check=lambda m: bool(re.search(r"https?://[a-zA-Z0-9-]+\.[a-zA-Z0-9-]+", m.content)))
 
             await ctx.send(f"**{len(total_messages)}** link message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
         elif arg[0] == "string":
-            def has_string(m: discord.Message) -> bool:
-                return " ".join(arg[1:]) in m.content
-
-            total_messages = await ctx.channel.purge(limit=amount, check=has_string)
+            total_messages = await ctx.channel.purge(limit=amount, check=lambda m: " ".join(arg[1:]) in m.content)
 
             await ctx.send(f"**{len(total_messages)}** message{'s' if len(total_messages) > 1 else ''} containing \"{' '.join(arg[1:])}\" purged.")
         else:
@@ -511,10 +490,7 @@ class Commands(commands.Cog):
             except BadArgument:
                 return await ctx.send("That user doesn't exist.", delete_after=5)
 
-            def check(m: discord.Message) -> bool:
-                return m.author == user
-
-            total_messages = await ctx.channel.purge(limit=amount, check=check)
+            total_messages = await ctx.channel.purge(limit=amount, check=lambda m: m.author == user)
 
             await ctx.send(f"**{len(total_messages)}** message{'s' if len(total_messages) > 1 else ''} from {user.display_name} purged.", delete_after=5)
 
