@@ -136,8 +136,10 @@ class ServerStats(commands.Cog):
         await self.bot.wait_until_ready()
 
         while True:
+            start = time.time()
             await self.update_server_statuses()
-            await asyncio.sleep(60)
+            # guarantee 60s between updates
+            await asyncio.sleep(60 - (time.time() - start))
 
     async def get_server_statuses(self) -> str:
         """

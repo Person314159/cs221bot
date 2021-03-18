@@ -4,9 +4,9 @@ from datetime import datetime
 from io import BytesIO
 
 import chess
-from chess import svg, pgn
 import discord
 from cairosvg import svg2png
+from chess import pgn, svg
 from discord.ext import commands
 from discord.ext.commands import BadArgument, MemberConverter
 

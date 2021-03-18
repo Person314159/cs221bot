@@ -251,14 +251,14 @@ class Commands(commands.Cog):
         formula = formula.strip("`")
 
         body = {
-            "formula": formula,
-            "fsize": r"30px",
-            "fcolor": r"FFFFFF",
-            "mode": r"0",
-            "out": r"1",
-            "remhost": r"quicklatex.com",
+            "formula" : formula,
+            "fsize"   : r"30px",
+            "fcolor"  : r"FFFFFF",
+            "mode"    : r"0",
+            "out"     : r"1",
+            "remhost" : r"quicklatex.com",
             "preamble": r"\usepackage{amsmath}\usepackage{amsfonts}\usepackage{amssymb}",
-            "rnd": str(random.random() * 100)
+            "rnd"     : str(random.random() * 100)
         }
 
         try:

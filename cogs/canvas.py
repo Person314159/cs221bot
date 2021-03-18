@@ -265,10 +265,10 @@ class Canvas(commands.Cog):
         if guild not in (ch.guild for ch in self.bot.d_handler.canvas_handlers):
             self.bot.d_handler.canvas_handlers.append(CanvasHandler(CANVAS_API_URL, CANVAS_API_KEY, guild))
             self.canvas_dict[str(guild.id)] = {
-                "courses": [],
+                "courses"      : [],
                 "live_channels": [],
-                "due_week": {},
-                "due_day": {}
+                "due_week"     : {},
+                "due_day"      : {}
             }
             write_json(self.canvas_dict, "data/canvas.json")
 
@@ -307,7 +307,6 @@ class Canvas(commands.Cog):
 
                     if data_list:
                         # latest announcement first
-                        print(ch.timings)
                         ch.timings[str(c.id)] = data_list[0][5]
 
             await asyncio.sleep(30)
