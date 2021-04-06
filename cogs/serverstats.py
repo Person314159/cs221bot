@@ -12,7 +12,7 @@ from discord.ext import commands
 from util.create_file import create_file_if_not_exists
 from util.json import write_json
 
-SERVER_LIST = ("thetis", "remote", "annacis", "anvil", "bowen", "lulu")
+SERVER_LIST = ("thetis", "remote", "annacis", "bowen", "lulu", "gambier")
 OTHER_SERVER_NAMES = ("valdes",)
 SERVER_TRACKERS_FILE = "data/server_trackers.json"
 
@@ -39,7 +39,7 @@ class ServerStats(commands.Cog):
         **Usage** `!checkservers [server names]`
 
         **Valid server names**
-        thetis, remote, annacis, anvil, bowen, lulu, valdes
+        thetis, remote, annacis, bowen, lulu, valdes, gambier
 
         **Examples:**
         `!checkservers` checks all server statuses

@@ -4,6 +4,7 @@ import os
 import random
 import re
 import traceback
+from io import BytesIO
 from os.path import isfile, join
 
 import discord
@@ -130,11 +131,7 @@ async def on_command_error(ctx: commands.Context, error: commands.CommandError):
         etype = type(error)
         trace = error.__traceback__
 
-        try:
-            await ctx.send(str(error))
-            print("".join(traceback.format_exception(etype, error, trace)))
-        except (discord.Forbidden, discord.HTTPException):
-            pass
+        await ctx.send(file=discord.File(BytesIO(bytes("".join(traceback.format_exception(etype, error, trace)), "utf-8")), filename="error.txt"))
 
 
 bot.run(CS221BOT_KEY)

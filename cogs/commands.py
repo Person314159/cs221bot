@@ -164,16 +164,7 @@ class Commands(commands.Cog):
             txt = translation.text
             await asyncio.sleep(0)
 
-        if len(txt) > 10000:
-            BadArgs("Result too large.", False)
-
-        while len(txt) > 2000:
-            await ctx.send(txt[:2000])
-            txt = txt[2000:]
-
-        await ctx.send(txt)
-
-        return
+        await ctx.send(file=discord.File(BytesIO(bytes(txt, "utf-8")), filename="gtcycle.txt"))
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
