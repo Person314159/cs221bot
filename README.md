@@ -14,7 +14,9 @@ The bot requires the following pip packages:
 
 - `beautifulsoup4`
 - `binarytree`
+- `cairosvg`
 - `canvasapi`
+- `chess`
 - `discord.py`
 - `googletrans`
 - `piazza-api`

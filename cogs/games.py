@@ -77,23 +77,18 @@ class Games(commands.Cog):
             else:
                 node = node.add_variation(move)
 
-            extra = "\n\nCheck!" if board.is_check() else ""
-
-            if board.is_checkmate():
-                res = render_board(board)
-                game.headers["Result"] = board.result()
-                await game_msg.delete()
-                return await ctx.send(f"Checkmate!\n\n{turns[not turn].mention} wins.\n{str(game)}", file=discord.File(res, "file.png"))
-
-            if board.is_stalemate() or board.is_insufficient_material():
-                res = render_board(board)
-                game.headers["Result"] = board.result()
-                await game_msg.delete()
-                return await ctx.send(f"Draw!\n{str(game)}", file=discord.File(res, "file.png"))
-
             res = render_board(board)
             await game_msg.delete()
-            game_msg = await ctx.send(f"{turns[turn].mention}, its your turn.{extra}", file=discord.File(res, "file.png"))
+
+            if board.outcome() is not None:
+                game.headers["Result"] = board.outcome().result()
+
+                if board.is_checkmate():
+                    return await ctx.send(f"Checkmate!\n\n{turns[not turn].mention} wins.\n{str(game)}", file=discord.File(res, "file.png"))
+                else:
+                    return await ctx.send(f"Draw!\n{str(game)}", file=discord.File(res, "file.png"))
+
+            game_msg = await ctx.send(f"{turns[turn].mention}, its your turn." + ("\n\nCheck!" if board.is_check() else ""), file=discord.File(res, "file.png"))
             turn = not turn
 
 

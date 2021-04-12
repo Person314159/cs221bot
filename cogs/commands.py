@@ -1,4 +1,3 @@
-import asyncio
 import mimetypes
 import random
 import re
@@ -15,7 +14,6 @@ import requests
 import requests.models
 from discord.ext import commands
 from discord.ext.commands import BadArgument, MemberConverter
-from googletrans import constants, Translator
 
 from util.badargs import BadArgs
 from util.colour import *
@@ -133,38 +131,6 @@ class Commands(commands.Cog):
         output = "".join(mapping[i] + (" " if i in string.ascii_uppercase else "") if i in mapping else i for i in text)
 
         await ctx.send(output)
-
-    @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    async def gtcycle(self, ctx: commands.Context, limit: str, *, txt: str):
-        """
-        `!gtcycle` __`Google Translate Cycler`__
-
-        **Usage:** !gtcycle <number of languages | all> <text>
-
-        **Examples:**
-        `!gtcycle all hello!` cycles through all languages with input text "hello!"
-        `!gtcycle 12 hello!` cycles through 12 languages with input text "hello!"
-        """
-
-        lang_list = list(constants.LANGUAGES)
-        random.shuffle(lang_list)
-
-        if limit == "all":
-            limit = len(lang_list)
-        elif not (limit.isdecimal() and 1 < (limit := int(limit)) < len(constants.LANGUAGES)):
-            raise BadArgs(
-                f"Please send a positive integer number of languages less than {len(constants.LANGUAGES)} to cycle.")
-
-        lang_list = ["en"] + lang_list[:limit] + ["en"]
-        translator = Translator()
-
-        for i, j in zip(lang_list[:-1], lang_list[1:]):
-            translation = translator.translate(txt, src=i, dest=j)
-            txt = translation.text
-            await asyncio.sleep(0)
-
-        await ctx.send(file=discord.File(BytesIO(bytes(txt, "utf-8")), filename="gtcycle.txt"))
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
