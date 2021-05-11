@@ -4,11 +4,10 @@ import re
 import string
 import urllib.parse
 from datetime import datetime, timedelta, timezone
-from fractions import Fraction
 from io import BytesIO
-from operator import methodcaller
 from os.path import isfile
 
+import discord
 import pytz
 import requests
 import requests.models
@@ -16,7 +15,6 @@ from discord.ext import commands
 from discord.ext.commands import BadArgument, MemberConverter
 
 from util.badargs import BadArgs
-from util.colour import *
 from util.create_file import create_file_if_not_exists
 from util.custom_role_converter import CustomRoleConverter
 from util.discord_handler import DiscordHandler
@@ -57,60 +55,6 @@ class Commands(commands.Cog):
             self.poll_dict.update({str(channel.id): ""})
 
         write_json(self.poll_dict, POLL_FILE)
-
-    @commands.command()
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    async def colour(self, ctx: commands.Context):
-        """
-        `!colour` __`Colour info`__
-
-        **Usage:** !colour [colour]
-
-        **Examples:**
-        `!colour` returns info of random colour
-        `!colour #ffffff` returns info of colour white
-        `!colour rgb(0, 0, 0)` returns info of colour black
-        `!colour hsl(0, 100%, 50%)` returns info of colour red
-        `!colour cmyk(100%, 0%, 0%, 0%)` returns info of colour cyan
-        `!colour blue` returns info of colour blue
-
-        percent signs are optional
-        """
-
-        colour = ctx.message.content[len(self.bot.command_prefix) + 7:]
-
-        if not colour:
-            await ctx.send(embed=rgb_embed(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), "Random Colour"))
-        elif c_str := re.search(r"\brgb\((\d{1,3}), *(\d{1,3}), *(\d{1,3})\)", colour):
-            r, g, b = map(int, c_str.group(1, 2, 3))
-
-            if max(r, g, b) > 255 or min(r, g, b) < 0:
-                raise BadArgs("You inputted an invalid colour. Please try again.", show_help=True)
-
-            await ctx.send(embed=rgb_embed(r, g, b, c_str.group()))
-        elif c_str := re.search(r"\bhsl\((\d{1,3}(?:\.\d*)?), *(\d{1,3}(?:\.\d*)?)%?, *(\d{1,3}(?:\.\d*)?)%?\)", colour):
-            h, s, l = map(Fraction, c_str.group(1, 2, 3))
-
-            if h > 360 or max(s, l) > 100 or min(h, s, l) < 0:
-                raise BadArgs("You inputted an invalid colour. Please try again.", show_help=True)
-
-            await ctx.send(embed=hsl_embed(h, s, l, c_str.group()))
-        elif c_str := re.search(r"\bcmyk\((\d{1,3}(?:\.\d*)?)%?, *(\d{1,3}(?:\.\d*)?)%?, *(\d{1,3}(?:\.\d*)?)%?, *(\d{1,3}(?:\.\d*)?)%?\)", colour):
-            c, m, y, k = map(Fraction, c_str.group(1, 2, 3, 4))
-
-            if max(c, m, y, k) > 100 or min(c, m, y, k) < 0:
-                raise BadArgs("You inputted an invalid colour. Please try again.", show_help=True)
-
-            await ctx.send(embed=cmyk_embed(c, m, y, k, c_str.group()))
-        elif colour.lower() in css:
-            await ctx.send(embed=css_embed(colour.lower()))
-        elif c_str := re.search(r"\b#?([\dA-F]([\dA-F](?=[\dA-F]{4}))?)([\dA-F](?:(?<=[\dA-F]{3})[\dA-F](?=[\dA-F]{2}))?)([\dA-F](?:(?<=[\dA-F]{5})[\dA-F])?)\b", colour, re.I):
-            mul = methodcaller("__mul__", 1 + (not c_str.group(2)))
-            r, g, b = map(mul, c_str.group(1, 3, 4))
-
-            await ctx.send(embed=rgb_embed(int(r, 16), int(g, 16), int(b, 16), c_str.group()))
-        else:
-            raise BadArgs("You inputted an invalid colour. Please try again.", show_help=True)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -243,8 +187,6 @@ class Commands(commands.Cog):
         `!leave Study Group` removes the Study Group role from yourself
         """
 
-        await ctx.message.delete()
-
         # case where role name is space separated
         name = " ".join(arg).lower()
 
@@ -254,7 +196,7 @@ class Commands(commands.Cog):
         try:
             role = await self.role_converter.convert(ctx, name)
         except commands.RoleNotFound:
-            raise BadArgs("You can't add that role!", show_help=True)
+            raise BadArgs("That role doesn't exist!", show_help=True)
 
         if role not in ctx.author.roles:
             raise BadArgs("you don't have that role!")
@@ -537,7 +479,14 @@ class Commands(commands.Cog):
         async with ctx.channel.typing():
             images = []
 
-            async for message in self.bot.get_channel(796523380920680454).history():
+            for c in ctx.guild.text_channels:
+                if c.name == "course-events":
+                    channel = c
+                    break
+            else:
+                raise BadArgs("votes channel doesn't exist.")
+
+            async for message in channel.history():
                 if message.attachments or message.embeds:
                     count = 0
 

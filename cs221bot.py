@@ -16,6 +16,7 @@ from util.badargs import BadArgs
 CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
 POLL_FILE = "data/poll.json"
+GUILD_ID = 838813343611093032
 
 load_dotenv()
 CS221BOT_KEY = os.getenv("CS221BOT_KEY")
@@ -67,7 +68,6 @@ async def on_ready() -> None:
     bot.loop.create_task(bot.get_cog("Canvas").stream_tracking())
     bot.loop.create_task(bot.get_cog("Canvas").assignment_reminder())
     bot.loop.create_task(bot.get_cog("Canvas").update_modules())
-    bot.loop.create_task(bot.get_cog("ServerStats").check_servers_periodically())
 
 
 @bot.event
@@ -92,12 +92,12 @@ async def on_message(message: discord.Message) -> None:
             new = message.content.replace("<@&457618814058758146>", "@")
             await message.channel.send(new)
 
-        # if message.channel.id == 796523380920680454 and (message.attachments or message.embeds):
-        #     if (message.attachments[0].height, message.attachments[0].width) < (512, 512):
-        #         await message.delete()
-        #         await message.channel.send("Please submit an image with at least 512x512 dimensions!", delete_after=5)
-        #     else:
-        #         await message.add_reaction("⬆️")
+        if message.channel.id == 838813344160153608 and (message.attachments or message.embeds):
+            if (message.attachments[0].height, message.attachments[0].width) < (512, 512):
+                await message.delete()
+                await message.channel.send("Please submit an image with at least 512x512 dimensions!", delete_after=5)
+            else:
+                await message.add_reaction("⬆️")
 
         await bot.process_commands(message)
 
@@ -108,6 +108,7 @@ if __name__ == "__main__":
     # not have access, then the bot won't know about any unpublished modules and won't send any info
     # about them anyway.
     bot.notify_unpublished = args.notify_unpublished
+    bot.guild_id = GUILD_ID
 
     if bot.notify_unpublished:
         print("Warning: bot will send notifications about unpublished modules (if you have access).")
@@ -125,7 +126,7 @@ async def on_command_error(ctx: commands.Context, error: commands.CommandError):
         await error.print(ctx)
     elif isinstance(error, commands.CommandOnCooldown):
         await ctx.send(str(error), delete_after=error.retry_after)
-    elif isinstance(error, commands.MissingPermissions) or isinstance(error, commands.BotMissingPermissions):
+    elif isinstance(error, commands.MissingPermissions) or isinstance(error, commands.BotMissingPermissions) or isinstance(error, commands.BadArgument):
         await ctx.send(str(error), delete_after=5)
     else:
         etype = type(error)

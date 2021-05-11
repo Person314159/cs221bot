@@ -18,7 +18,6 @@ The bot requires the following pip packages:
 - `canvasapi`
 - `chess`
 - `discord.py`
-- `googletrans`
 - `piazza-api`
 - `Pillow`
 - `python-dateutil`

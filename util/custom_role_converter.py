@@ -8,4 +8,4 @@ class CustomRoleConverter(commands.IDConverter):
             if argument.lower() in role.name.lower():
                 return role
         else:
-            raise commands.RoleNotFound
+            raise commands.RoleNotFound(argument)

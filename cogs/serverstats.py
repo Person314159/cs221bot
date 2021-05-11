@@ -1,34 +1,14 @@
-import asyncio
-import json
 import subprocess
-import time
-from datetime import datetime
-from os.path import isfile
-from typing import Dict, Optional
 
-import discord
 from discord.ext import commands
 
-from util.create_file import create_file_if_not_exists
-from util.json import write_json
-
-SERVER_LIST = ("thetis", "remote", "annacis", "bowen", "lulu", "gambier")
+SERVER_LIST = ("thetis", "remote", "annacis", "bowen", "lulu", "gambier", "anvil")
 OTHER_SERVER_NAMES = ("valdes",)
-SERVER_TRACKERS_FILE = "data/server_trackers.json"
 
 
 class ServerStats(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-
-        if not isfile(SERVER_TRACKERS_FILE):
-            create_file_if_not_exists(SERVER_TRACKERS_FILE)
-            write_json({}, SERVER_TRACKERS_FILE)
-
-        with open(SERVER_TRACKERS_FILE, "r") as f:
-            # Maps channel ID to live message ID
-            # All keys in the JSON are ints stored as strings. The hook function turns those keys into ints.
-            self.server_trackers_dict: Dict[int, Optional[int]] = json.load(f, object_hook=lambda dct: {int(key): dct[key] for key in dct})
 
     @commands.command(name="checkservers")
     @commands.cooldown(1, 60, commands.BucketType.default)
@@ -39,7 +19,7 @@ class ServerStats(commands.Cog):
         **Usage** `!checkservers [server names]`
 
         **Valid server names**
-        thetis, remote, annacis, bowen, lulu, valdes, gambier
+        thetis, remote, annacis, bowen, lulu, valdes, gambier, anvil
 
         **Examples:**
         `!checkservers` checks all server statuses
@@ -81,118 +61,6 @@ class ServerStats(commands.Cog):
                     msgs.append(f"{server_name} is not a valid server name.")
 
         await ctx.send("\n".join(msgs))
-
-    @commands.command(name="trackservers")
-    @commands.is_owner()
-    async def track_servers(self, ctx: commands.Context):
-        """
-        `!trackservers` __`Get CS server status updates live`__
-
-        Causes the bot to periodically check the statuses of the remote CS servers,
-        updating a live status message in the channel where this command is invoked.
-        """
-
-        if ctx.channel.id not in self.server_trackers_dict:
-            self.server_trackers_dict[ctx.channel.id] = None
-            write_json(self.server_trackers_dict, SERVER_TRACKERS_FILE)
-            await ctx.send("This channel will now receive live CS server status updates.", delete_after=5)
-        else:
-            await ctx.send("This channel is already receiving live CS server status updates.", delete_after=5)
-
-    @commands.command(name="untrackservers")
-    @commands.is_owner()
-    async def untrack_servers(self, ctx: commands.Context):
-        """
-        `!untrackservers` __`Untracks CS server live status updates`__
-
-        Causes the bot to stop sending CS server updates to the channel where
-        this command is invoked. The bot also deletes the live status message
-        in the channel, if that message exists.
-        """
-
-        if ctx.channel.id in self.server_trackers_dict:
-            live_msg_id = self.server_trackers_dict.pop(ctx.channel.id, None)
-            write_json(self.server_trackers_dict, SERVER_TRACKERS_FILE)
-
-            if live_msg_id is not None:
-                live_msg = ctx.channel.get_partial_message(live_msg_id)
-
-                try:
-                    await live_msg.delete()
-                except discord.NotFound:
-                    # The message was already deleted
-                    pass
-
-            await ctx.send("This channel will no longer receive live CS server status updates.", delete_after=5)
-        else:
-            await ctx.send("This channel is not receiving live CS server status updates.", delete_after=5)
-
-    async def check_servers_periodically(self) -> None:
-        """
-        Periodically checks the statuses of the remote CS servers and sends status updates
-        to all channels tracking the servers.
-        """
-
-        await self.bot.wait_until_ready()
-
-        while True:
-            start = time.time()
-            await self.update_server_statuses()
-            # guarantee 60s between updates
-            await asyncio.sleep(60 - (time.time() - start))
-
-    async def get_server_statuses(self) -> str:
-        """
-        Returns a Discord message that indicates the statuses of the remote CS servers.
-        """
-
-        current_time = datetime.now().strftime(f"%Y-%m-%d %H:%M:%S {time.tzname[time.localtime().tm_isdst]}")
-        msg_components = [f"Server Statuses at {current_time}:"]
-
-        for server_name in SERVER_LIST:
-            ip = f"{server_name}.students.cs.ubc.ca"
-            can_connect = await can_connect_ssh(ip)
-
-            if can_connect:
-                msg_components.append(f":white_check_mark: {ip}")
-            else:
-                msg_components.append(f":x: {ip}")
-
-        return "\n".join(msg_components)
-
-    async def update_server_statuses(self) -> None:
-        """
-        Gets the statuses of the CS servers and updates a live status message in each channel
-        that is tracking the servers. We will call these channels "tracking channels".
-
-        If there is no live status message in a tracking channel, the bot sends one. Otherwise,
-        the bot simply edits the existing status message.
-
-        If a tracking channel has been deleted, the bot will no longer attempt to send status
-        updates to that channel.
-        """
-
-        message = await self.get_server_statuses()
-
-        for channel_id, msg_id in list(self.server_trackers_dict.items()):
-            channel = self.bot.get_channel(channel_id)
-
-            if channel:
-                if msg_id:
-                    live_msg = channel.get_partial_message(msg_id)
-
-                    try:
-                        await live_msg.edit(content=message)
-                    except discord.NotFound:
-                        live_msg = await channel.send(message)
-                        self.server_trackers_dict[channel_id] = live_msg.id
-                else:
-                    live_msg = await channel.send(message)
-                    self.server_trackers_dict[channel_id] = live_msg.id
-            else:
-                del self.server_trackers_dict[channel_id]
-
-        write_json(self.server_trackers_dict, SERVER_TRACKERS_FILE)
 
 
 async def can_connect_ssh(server_ip: str) -> bool:
