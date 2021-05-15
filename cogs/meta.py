@@ -69,7 +69,14 @@ class Meta(commands.Cog):
 
             await reload_msg.edit(content=f"{extension} module reloaded.")
 
+        await startup_tasks(self.bot)
         await ctx.send("Done")
+
+
+async def startup_tasks(bot: commands.Bot) -> None:
+    await bot.wait_until_ready()
+    bot.get_cog("Canvas").canvas_init()
+    bot.get_cog("Piazza").piazza_start()
 
 
 def setup(bot: commands.Bot) -> None:
