@@ -141,7 +141,7 @@ class Commands(commands.Cog):
         **Usage:** !latex <equation>
 
         **Examples:**
-        `!latex \\frac{a}{b}` [img]
+        `!latex $\\frac{a}{b}$` [img]
         """
 
         formula = " ".join(args).strip("\n ")
@@ -151,29 +151,9 @@ class Commands(commands.Cog):
 
         formula = formula.strip("`")
 
-        body = {
-            "formula" : formula,
-            "fsize"   : r"30px",
-            "fcolor"  : r"FFFFFF",
-            "mode"    : r"0",
-            "out"     : r"1",
-            "remhost" : r"quicklatex.com",
-            "preamble": r"\usepackage{amsmath}\usepackage{amsfonts}\usepackage{amssymb}",
-            "rnd"     : str(random.random() * 100)
-        }
+        data = requests.get(f"https://latex.codecogs.com/png.image?\dpi{{300}}\colorbox{{white}}{{{formula}}}")
 
-        try:
-            img = requests.post("https://www.quicklatex.com/latex3.f", data=body, timeout=10)
-        except (requests.ConnectionError, requests.HTTPError, requests.TooManyRedirects, requests.Timeout):
-            raise BadArgs("Render timed out.")
-
-        if img.status_code != 200:
-            raise BadArgs("Something done goofed. Maybe check your syntax?")
-
-        if img.text.startswith("0"):
-            await ctx.send(file=discord.File(BytesIO(requests.get(img.text.split()[1]).content), "latex.png"))
-        else:
-            await ctx.send(" ".join(img.text.split()[5:]), delete_after=5)
+        await ctx.send(file=discord.File(BytesIO(data.content), filename="latex.png"))
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)

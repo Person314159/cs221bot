@@ -2,12 +2,12 @@ import asyncio
 import datetime
 import html
 import re
-import typing
 from operator import itemgetter
-from typing import List
+from typing import List, Optional
 
 import discord
 import piazza_api.exceptions
+from bs4 import BeautifulSoup
 from piazza_api import Piazza
 
 
@@ -236,7 +236,7 @@ class PiazzaHandler:
 
         return response
 
-    def get_post(self, post_id: int) -> typing.Union[dict, None]:
+    def get_post(self, post_id: int) -> Optional[dict]:
         """
         Returns a dict that contains post information to be formatted and returned as an embed
 
@@ -258,7 +258,8 @@ class PiazzaHandler:
                 "post_body"    : self.clean_response(self.get_body(post)),
                 "i_answer"     : None,
                 "s_answer"     : None,
-                "num_followups": 0
+                "num_followups": 0,
+                "first_image"  : self.get_first_image_url(self.get_body(post))
             }
 
             answers = post["children"]
@@ -366,3 +367,15 @@ class PiazzaHandler:
             raise Exception("Body not found.")
 
         return body
+
+    def get_first_image_url(self, res: str) -> Optional[str]:
+        if not res:
+            raise Exception("Body not found.")
+
+        soup = BeautifulSoup(res, "html.parser")
+        img = soup.find('img')
+
+        if img:
+            return f"https://piazza.com{img['src']}"
+
+        return None
