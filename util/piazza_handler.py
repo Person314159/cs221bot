@@ -376,6 +376,6 @@ class PiazzaHandler:
         img = soup.find('img')
 
         if img:
-            return f"https://piazza.com{img['src']}"
+            return f"https://piazza.com{img['src']}" if img["src"].startswith("/redirect") else img["src"]
 
         return None

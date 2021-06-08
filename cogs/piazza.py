@@ -175,7 +175,7 @@ class Piazza(commands.Cog):
         `!ptest` simulates a single call of `send_pupdate` to ensure the set-up was done correctly.
         """
 
-        await self.send_piazza_posts(False)
+        await self.send_piazza_posts()
 
     def create_post_embed(self, post: dict) -> discord.Embed:
         if post:
@@ -206,14 +206,11 @@ class Piazza(commands.Cog):
 
     async def send_pupdate(self) -> None:
         while True:
-            await self.send_piazza_posts(True)
+            # Sends at midnight
+            await self.send_at_time()
+            await self.send_piazza_posts()
 
-            if not self.bot.d_handler.piazza_handler:
-                await asyncio.sleep(60)
-            else:
-                await asyncio.sleep(60 * 60 * 24)
-
-    async def send_piazza_posts(self, wait: bool) -> None:
+    async def send_piazza_posts(self) -> None:
         if not self.bot.d_handler.piazza_handler:
             return
 
@@ -238,36 +235,9 @@ class Piazza(commands.Cog):
             for post in posts[1]:
                 response += f"@{post['num']}: {post['subject']} <{post['url']}>\n"
 
-            if wait:
-                # Sends at midnight if it is not called by the test function
-                await self.send_at_time()
-
             for ch in self.bot.d_handler.piazza_handler.channels:
                 channel = self.bot.get_channel(ch)
                 await channel.send(response)
-
-    async def track_inotes(self, wait: bool) -> None:
-        while True:
-            if self.bot.d_handler.piazza_handler:
-                posts = await self.bot.d_handler.piazza_handler.get_recent_notes()
-
-                if posts:
-                    response = "Instructor Update:\n"
-
-                    for post in posts:
-                        response += f"@{post['num']}: {post['subject']} <{post['url']}>\n"
-
-                    if wait:
-                        # Sends at midnight if it is not called by the test function
-                        await self.send_at_time()
-
-                    for chnl in self.bot.d_handler.piazza_handler.channels:
-                        channel = self.bot.get_channel(chnl)
-                        await channel.send(response)
-
-                await asyncio.sleep(60 * 60 * 24)
-            else:
-                await asyncio.sleep(60)
 
     def piazza_start(self) -> None:
         if all(field in self.piazza_dict for field in ("course_name", "piazza_id", "guild_id")):
