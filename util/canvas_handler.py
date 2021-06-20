@@ -3,7 +3,7 @@ import re
 import shutil
 import time
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Optional, Union
 
 import discord
 from bs4 import BeautifulSoup
@@ -27,19 +27,19 @@ class CanvasHandler(Canvas):
 
     Attributes
     ----------
-    courses : `List[canvasapi.Course]`
+    courses : `list[canvasapi.Course]`
         Courses tracked in guild mode.
 
     guild : `discord.Guild`
         Guild assigned to this handler.
 
-    timings : `Dict[str, str]`
+    timings : `dict[str, str]`
         Contains course and its last announcement date and time.
 
-    due_week : `Dict[str, List[int]]`
+    due_week : `dict[str, list[int]]`
         Contains course and assignment IDs due in less than a week.
 
-    due_day : `Dict[str, List[int]]`
+    due_day : `dict[str, list[int]]`
         Contains course and assignment IDs due in less than a day.
     """
 
@@ -58,19 +58,19 @@ class CanvasHandler(Canvas):
         """
 
         super().__init__(api_url, api_key)
-        self._courses: List[Course] = []
+        self._courses: list[Course] = []
         self._guild = guild
-        self._live_channels: List[discord.TextChannel] = []
-        self._timings: Dict[str, str] = {}
-        self._due_week: Dict[str, List[int]] = {}
-        self._due_day: Dict[str, List[int]] = {}
+        self._live_channels: list[discord.TextChannel] = []
+        self._timings: dict[str, str] = {}
+        self._due_week: dict[str, list[int]] = {}
+        self._due_day: dict[str, list[int]] = {}
 
     @property
-    def courses(self) -> List[Course]:
+    def courses(self) -> list[Course]:
         return self._courses
 
     @courses.setter
-    def courses(self, courses: List[Course]) -> None:
+    def courses(self, courses: list[Course]) -> None:
         self._courses = courses
 
     @property
@@ -82,45 +82,45 @@ class CanvasHandler(Canvas):
         self._guild = guild
 
     @property
-    def live_channels(self) -> List[discord.TextChannel]:
+    def live_channels(self) -> list[discord.TextChannel]:
         return self._live_channels
 
     @live_channels.setter
-    def live_channels(self, live_channels: List[discord.TextChannel]) -> None:
+    def live_channels(self, live_channels: list[discord.TextChannel]) -> None:
         self._live_channels = live_channels
 
     @property
-    def timings(self) -> Dict[str, str]:
+    def timings(self) -> dict[str, str]:
         return self._timings
 
     @timings.setter
-    def timings(self, timings: Dict[str, str]) -> None:
+    def timings(self, timings: dict[str, str]) -> None:
         self._timings = timings
 
     @property
-    def due_week(self) -> Dict[str, List[int]]:
+    def due_week(self) -> dict[str, list[int]]:
         return self._due_week
 
     @due_week.setter
-    def due_week(self, due_week: Dict[str, List[int]]) -> None:
+    def due_week(self, due_week: dict[str, list[int]]) -> None:
         self._due_week = due_week
 
     @property
-    def due_day(self) -> Dict[str, List[int]]:
+    def due_day(self) -> dict[str, list[int]]:
         return self._due_day
 
     @due_day.setter
-    def due_day(self, due_day: Dict[str, List[int]]) -> None:
+    def due_day(self, due_day: dict[str, list[int]]) -> None:
         self._due_day = due_day
 
-    def _ids_converter(self, ids: Tuple[str]) -> Set[int]:
+    def _ids_converter(self, ids: tuple[str]) -> set[int]:
         """
         Converts tuple of string to set of int, removing duplicates. Each string
         must be parsable to an int.
 
         Parameters
         ----------
-        ids : `Tuple[str]`
+        ids : `tuple[str]`
             Tuple of string ids
 
         Returns
@@ -131,7 +131,7 @@ class CanvasHandler(Canvas):
 
         return set(int(i) for i in ids)
 
-    def track_course(self, course_ids_str: Tuple[str], get_unpublished_modules: bool) -> None:
+    def track_course(self, course_ids_str: tuple[str], get_unpublished_modules: bool) -> None:
         """
         Cause this CanvasHandler to start tracking the courses with given IDs.
 
@@ -143,7 +143,7 @@ class CanvasHandler(Canvas):
 
         Parameters
         ----------
-        course_ids_str : `Tuple[str]`
+        course_ids_str : `tuple[str]`
             Tuple of course ids
 
         get_unpublished_modules: `bool`
@@ -195,7 +195,7 @@ class CanvasHandler(Canvas):
                 m.write(f"{str(module.id)}\n")
 
     @staticmethod
-    def get_all_modules(course: Course, incl_unpublished: bool) -> List[Union[Module, ModuleItem]]:
+    def get_all_modules(course: Course, incl_unpublished: bool) -> list[Union[Module, ModuleItem]]:
         """
         Returns a list of all modules for the given course. Includes unpublished modules if
         `incl_unpublished` is `True` and we have access to unpublished modules for the course.
@@ -216,7 +216,7 @@ class CanvasHandler(Canvas):
 
         return all_modules
 
-    def store_channels_in_file(self, text_channels: List[discord.TextChannel], file_path: str) -> None:
+    def store_channels_in_file(self, text_channels: list[discord.TextChannel], file_path: str) -> None:
         """
         For each text channel provided, we add its id to the file with given path if the file does
         not already contain the id.
@@ -240,13 +240,13 @@ class CanvasHandler(Canvas):
                 for channel_id in ids_to_add:
                     f.write(channel_id)
 
-    def untrack_course(self, course_ids_str: Tuple[str]) -> None:
+    def untrack_course(self, course_ids_str: tuple[str]) -> None:
         """
         Cause this CanvasHandler to stop tracking the courses with given IDs.
 
         Parameters
         ----------
-        course_ids_str : `Tuple[str, ...]`
+        course_ids_str : `tuple[str, ...]`
             Tuple of course ids
         """
 
@@ -277,7 +277,7 @@ class CanvasHandler(Canvas):
             if os.stat(watchers_file).st_size == 0:
                 shutil.rmtree(f"{COURSES_DIRECTORY}/{i}")
 
-    def delete_channels_from_file(self, text_channels: List[discord.TextChannel], file_path: str) -> None:
+    def delete_channels_from_file(self, text_channels: list[discord.TextChannel], file_path: str) -> None:
         """
         For each text channel provided, we remove its id from the file with given path
         if the id is contained in the file.
@@ -295,7 +295,7 @@ class CanvasHandler(Canvas):
                 if channel_id not in ids_to_remove:
                     f.write(channel_id)
 
-    def get_course_stream_ch(self, since: Optional[str], course_ids_str: Tuple[str, ...], base_url: str, access_token: str) -> List[List[str]]:
+    def get_course_stream_ch(self, since: Optional[str], course_ids_str: tuple[str, ...], base_url: str, access_token: str) -> list[list[str]]:
         """
         Gets announcements for course(s)
 
@@ -305,7 +305,7 @@ class CanvasHandler(Canvas):
             Date/Time from announcement creation to now. If None, then all announcements are returned,
             regardless of date of creation.
 
-        course_ids_str : `Tuple[str, ...]`
+        course_ids_str : `tuple[str, ...]`
             Tuple of course ids. If this parameter is an empty tuple, then this function gets announcements
             for *all* courses being tracked by this CanvasHandler.
 
@@ -317,7 +317,7 @@ class CanvasHandler(Canvas):
 
         Returns
         -------
-        `List[List[str]]`
+        `list[list[str]]`
             List of announcement data to be formatted and sent as embeds
         """
 
@@ -368,7 +368,7 @@ class CanvasHandler(Canvas):
 
         return data_list
 
-    def get_assignments(self, due: Optional[str], course_ids_str: Tuple[str, ...], base_url: str) -> List[List[str]]:
+    def get_assignments(self, due: Optional[str], course_ids_str: tuple[str, ...], base_url: str) -> list[list[str]]:
         """
         Gets assignments for course(s)
 
@@ -377,7 +377,7 @@ class CanvasHandler(Canvas):
         due : `None or str`
             Date/Time from due date of assignments
 
-        course_ids_str : `Tuple[str, ...]`
+        course_ids_str : `tuple[str, ...]`
             Tuple of course ids
 
         base_url : `str`
@@ -385,7 +385,7 @@ class CanvasHandler(Canvas):
 
         Returns
         -------
-        `List[List[str]]`
+        `list[list[str]]`
             List of assignment data to be formatted and sent as embeds
         """
 
@@ -394,7 +394,7 @@ class CanvasHandler(Canvas):
 
         return self._get_assignment_data(due, courses_assignments, base_url)
 
-    def _get_assignment_data(self, due: Optional[str], courses_assignments: Dict[Course, PaginatedList], base_url: str) -> List[List[str]]:
+    def _get_assignment_data(self, due: Optional[str], courses_assignments: dict[Course, PaginatedList], base_url: str) -> list[list[str]]:
         """
         Formats all courses assignments as separate assignments
 
@@ -403,7 +403,7 @@ class CanvasHandler(Canvas):
         due : `None or str`
             Date/Time from due date of assignments
 
-        courses_assignments : `Dict[Course, PaginatedList of Assignments]`
+        courses_assignments : `dict[Course, PaginatedList of Assignments]`
             List of courses and their assignments
 
         base_url : `str`
@@ -411,7 +411,7 @@ class CanvasHandler(Canvas):
 
         Returns
         -------
-        `List[List[str]]`
+        `list[list[str]]`
             List of assignment data to be formatted and sent as embeds
         """
 
@@ -488,7 +488,7 @@ class CanvasHandler(Canvas):
         hour, minute, second = int(till[3]), int(till[4]), int(till[5])
         return abs(datetime(year, month, day, hour, minute, second) - now)
 
-    def get_course_names(self, url: str) -> List[List[str]]:
+    def get_course_names(self, url: str) -> list[list[str]]:
         """
         Gives a list of tracked courses and their urls
 
@@ -499,7 +499,7 @@ class CanvasHandler(Canvas):
 
         Returns
         -------
-        `List[List[str]]`
+        `list[list[str]]`
             List of course names and their page urls
         """
 

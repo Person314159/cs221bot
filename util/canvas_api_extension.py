@@ -1,5 +1,3 @@
-from typing import List
-
 from canvasapi.course import Course
 from canvasapi.requester import Requester
 from canvasapi.util import combine_kwargs, get_institution_url
@@ -55,7 +53,7 @@ def get_course_url(course_id: str, base_url) -> str:
     return f"{base_url}/courses/{course_id}"
 
 
-def get_staff_ids(course: Course) -> List[int]:
+def get_staff_ids(course: Course) -> list[int]:
     """
     Parameters
     ----------

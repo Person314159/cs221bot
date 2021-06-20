@@ -2,8 +2,8 @@ beautifulsoup4==4.9.3
 binarytree==6.3.0
 cairosvg==2.5.2
 canvasapi==2.2.0
-chess==1.5.0
-discord.py==1.7.2
+chess==1.6.1
+discord.py==1.7.3
 piazza-api==0.11.0
 Pillow==8.2.0
 python-dateutil==2.8.1

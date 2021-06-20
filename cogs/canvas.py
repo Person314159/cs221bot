@@ -7,7 +7,7 @@ import shutil
 import traceback
 from datetime import datetime
 from os.path import isfile
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import canvasapi
 import discord
@@ -145,7 +145,7 @@ class Canvas(commands.Cog):
             embed_var = discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR, timestamp=datetime.strptime(data[5], "%Y-%m-%d %H:%M:%S"))
             embed_var.set_author(name=data[0], url=data[1])
             embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
-            embed_var.add_field(name="Due at", value=data[6], inline=True)
+            embed_var.add_field(name="Due at", value=data[6])
             embed_var.set_footer(text="Created at", icon_url=CANVAS_THUMBNAIL_URL)
             await ctx.send(embed=embed_var)
 
@@ -252,7 +252,7 @@ class Canvas(commands.Cog):
             embed_var = discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR)
             embed_var.set_author(name=data[0], url=data[1])
             embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
-            embed_var.add_field(name="Created at", value=data[5], inline=True)
+            embed_var.add_field(name="Created at", value=data[5])
             await ctx.send(embed=embed_var)
 
     @commands.command(hidden=True)
@@ -300,7 +300,7 @@ class Canvas(commands.Cog):
                         embed_var = discord.Embed(title=data[2], url=data[3], description=data[4], color=CANVAS_COLOR)
                         embed_var.set_author(name=data[0], url=data[1])
                         embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
-                        embed_var.add_field(name="Created at", value=data[5], inline=True)
+                        embed_var.add_field(name="Created at", value=data[5])
 
                         for channel in ch.live_channels:
                             await channel.send(notify_role.mention if notify_role else "", embed=embed_var)
@@ -338,7 +338,7 @@ class Canvas(commands.Cog):
 
             await asyncio.sleep(30)
 
-    async def _assignment_sender(self, ch: CanvasHandler, data_list: List[List[str]], recorded_ass_ids: List[int], notify_role: discord.Role, time: str) -> List[str]:
+    async def _assignment_sender(self, ch: CanvasHandler, data_list: list[list[str]], recorded_ass_ids: list[int], notify_role: discord.Role, time: str) -> list[str]:
         ass_ids = [data[-1] for data in data_list]
         not_recorded = tuple(data_list[i] for i, j in enumerate(ass_ids) if j not in recorded_ass_ids)
 
@@ -355,7 +355,7 @@ class Canvas(commands.Cog):
                                       timestamp=datetime.strptime(data[5], "%Y-%m-%d %H:%M:%S"))
             embed_var.set_author(name=data[0], url=data[1])
             embed_var.set_thumbnail(url=CANVAS_THUMBNAIL_URL)
-            embed_var.add_field(name="Due at", value=data[6], inline=True)
+            embed_var.add_field(name="Due at", value=data[6])
             embed_var.set_footer(text="Created at", icon_url=CANVAS_THUMBNAIL_URL)
 
             for channel in ch.live_channels:
@@ -410,7 +410,7 @@ class Canvas(commands.Cog):
 
             return field
 
-        def update_embed(embed: discord.Embed, module: Union[Module, ModuleItem], embed_list: List[discord.Embed]) -> None:
+        def update_embed(embed: discord.Embed, module: Union[Module, ModuleItem], embed_list: list[discord.Embed]) -> None:
             """
             Adds a field to embed containing information about given module. The field includes the module's name or
             title, as well as a hyperlink to the module if one exists.
@@ -446,7 +446,7 @@ class Canvas(commands.Cog):
                 embed.clear_fields()
                 embed.title = f"New modules found for {course.name} (continued):"
 
-        def write_modules(file_path: str, modules: List[Union[Module, ModuleItem]]) -> None:
+        def write_modules(file_path: str, modules: list[Union[Module, ModuleItem]]) -> None:
             """
             Stores the ID of all modules in file with given path.
             """
@@ -455,7 +455,7 @@ class Canvas(commands.Cog):
                 for module in modules:
                     f.write(str(module.id) + "\n")
 
-        def get_embeds(modules: List[Union[Module, ModuleItem]]) -> List[discord.Embed]:
+        def get_embeds(modules: list[Union[Module, ModuleItem]]) -> list[discord.Embed]:
             """
             Returns a list of Discord embeds to send to live channels.
             """

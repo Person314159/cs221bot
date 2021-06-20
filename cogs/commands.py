@@ -436,11 +436,11 @@ class Commands(commands.Cog):
                     most_active_channel_name = "#" + channel.name
 
             embed = discord.Embed(title=f"Report for user `{user.name}#{user.discriminator}` (all times in UTC)")
-            embed.add_field(name="Date Joined", value=user.joined_at.strftime("%A, %Y %B %d @ %H:%M:%S"), inline=True)
-            embed.add_field(name="Account Created", value=user.created_at.strftime("%A, %Y %B %d @ %H:%M:%S"), inline=True)
-            embed.add_field(name="Roles", value=", ".join([str(i) for i in sorted(user.roles[1:], key=lambda role: role.position, reverse=True)]), inline=True)
-            embed.add_field(name="Most active text channel in last 24 h", value=f"{most_active_channel_name} ({most_active_channel} messages)", inline=True)
-            embed.add_field(name="Total messages sent in last 24 h", value=str(cum_message_count), inline=True)
+            embed.add_field(name="Date Joined", value=user.joined_at.strftime("%A, %Y %B %d @ %H:%M:%S"))
+            embed.add_field(name="Account Created", value=user.created_at.strftime("%A, %Y %B %d @ %H:%M:%S"))
+            embed.add_field(name="Roles", value=", ".join([str(i) for i in sorted(user.roles[1:], key=lambda role: role.position, reverse=True)]))
+            embed.add_field(name="Most active text channel in last 24 h", value=f"{most_active_channel_name} ({most_active_channel} messages)")
+            embed.add_field(name="Total messages sent in last 24 h", value=str(cum_message_count))
 
             await ctx.send(embed=embed)
 
@@ -480,7 +480,7 @@ class Commands(commands.Cog):
 
             for image in images:
                 embed = discord.Embed(colour=random.randint(0, 0xFFFFFF))
-                embed.add_field(name="Score", value=image[1], inline=True)
+                embed.add_field(name="Score", value=image[1])
                 embed.set_thumbnail(url=image[0])
                 await ctx.send(embed=embed)
 

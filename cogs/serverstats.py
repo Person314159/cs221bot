@@ -11,7 +11,7 @@ class ServerStats(commands.Cog):
         self.bot = bot
 
     @commands.command(name="checkservers")
-    @commands.cooldown(1, 60, commands.BucketType.default)
+    @commands.cooldown(1, 60)
     async def check_servers(self, ctx: commands.Context, *args: str):
         """
         `!checkservers` __`Check if the remote CS servers are online`__
