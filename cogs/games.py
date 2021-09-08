@@ -60,7 +60,7 @@ class Games(commands.Cog):
             except asyncio.TimeoutError:
                 return await ctx.send("Timed out.", delete_after=5)
 
-            if msg.content == "exit":
+            if msg.content == "exit" or msg.content == "resign":
                 res = render_board(board)
                 game.headers["Result"] = "0-1" if turn == chess.WHITE else "1-0"
                 await game_msg.delete()

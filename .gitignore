@@ -1,8 +1,3 @@
 data/
 __pycache__/
-.vscode/
-.env
-testing.py
-.idea/
-package-lock.json
-venv/
+.*

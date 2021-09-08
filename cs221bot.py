@@ -2,7 +2,6 @@ import argparse
 import asyncio
 import os
 import random
-import re
 import traceback
 from io import BytesIO
 from os.path import isfile, join
@@ -85,12 +84,6 @@ async def on_message(message: discord.Message) -> None:
         # with open("messages.txt", "a") as f:
         # 	print(f"{message.guild.name}: {message.channel.name}: {message.author.name}: \"{message.content}\" @ {str(datetime.datetime.now())} \r\n", file = f)
         # print(message.content)
-
-        # this is some weird bs happening only with android users in certain servers and idk why it happens
-        # but basically the '@' is screwed up
-        if re.findall(r"<<@&457618814058758146>&?\d{18}>", message.content):
-            new = message.content.replace("<@&457618814058758146>", "@")
-            await message.channel.send(new)
 
         if message.channel.id == 838813344160153608 and (message.attachments or message.embeds):
             if (message.attachments[0].height, message.attachments[0].width) < (512, 512):
