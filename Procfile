@@ -1,1 +1,1 @@
-worker: C:\Users\William\anaconda3\envs\cs221bot\python cs221bot.py
+worker: python cs221bot.py
