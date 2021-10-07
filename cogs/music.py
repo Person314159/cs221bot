@@ -13,6 +13,7 @@ import functools
 import itertools
 import math
 import random
+import re
 
 import discord
 import youtube_dl
@@ -357,12 +358,14 @@ class Music(commands.Cog):
         `!play` __`Play song`__
         **Aliases:** p
 
-        **Usage:** !play <url | search string>
+        **Usage:** !play <url>
 
         **Examples:**
         `!play https://www.youtube.com/watch?v=dQw4w9WgXcQ` plays Never Gonna Give You Up
-        `!play Never Gonna Give You Up` plays Never Gonna Give You Up
         """
+
+        if not re.match(r"https://(www\.youtube|soundcloud)\.com", search, flags=re.IGNORECASE):
+            raise BadArgs("Only links allowed.")
 
         if not ctx.voice_client:
             destination = ctx.author.voice.channel
