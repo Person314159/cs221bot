@@ -78,14 +78,14 @@ class Commands(commands.Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def join(self, ctx: commands.Context, *arg: str):
+    async def joinrole(self, ctx: commands.Context, *arg: str):
         """
-        `!join` __`Adds a role to yourself`__
+        `!joinrole` __`Adds a role to yourself`__
 
-        **Usage:** !join [role name]
+        **Usage:** !joinrole [role name]
 
         **Examples:**
-        `!join Study Group` adds the Study Group role to yourself
+        `!joinrole Study Group` adds the Study Group role to yourself
 
         **Valid Roles:**
         Looking for Partners, Study Group, He/Him/His, She/Her/Hers, They/Them/Theirs, Ze/Zir/Zirs, notify
@@ -157,14 +157,14 @@ class Commands(commands.Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def leave(self, ctx: commands.Context, *arg: str):
+    async def leaverole(self, ctx: commands.Context, *arg: str):
         """
-        `!leave` __`Removes an existing role from yourself`__
+        `!leaverole` __`Removes an existing role from yourself`__
 
         **Usage:** !leave [role name]
 
         **Examples:**
-        `!leave Study Group` removes the Study Group role from yourself
+        `!leaverole Study Group` removes the Study Group role from yourself
         """
 
         await ctx.message.delete()
