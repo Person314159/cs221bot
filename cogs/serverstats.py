@@ -2,8 +2,8 @@ import subprocess
 
 from discord.ext import commands
 
-SERVER_LIST = ("thetis", "remote", "annacis", "bowen", "lulu", "gambier", "anvil")
-OTHER_SERVER_NAMES = ("valdes",)
+SERVER_LIST = ("valdes", "remote", "anvil", "gambier", "pender")
+OTHER_SERVER_NAMES = ("thetis",)
 
 
 class ServerStats(commands.Cog):
@@ -19,7 +19,7 @@ class ServerStats(commands.Cog):
         **Usage** `!checkservers [server names]`
 
         **Valid server names**
-        thetis, remote, annacis, bowen, lulu, valdes, gambier, anvil
+        thetis, remote, valdes, anvil, gambier, pender
 
         **Examples:**
         `!checkservers` checks all server statuses
@@ -27,36 +27,20 @@ class ServerStats(commands.Cog):
         `!checkservers thetis remote` checks status of thetis and remote servers
         """
 
-        async def check_server(server_ip: str) -> str:
-            """
-            Checks if the server with given IP can be connected to with SSH.
-
-            Parameters
-            ----------
-            server_ip: `str`
-                The IP of the server to check
-
-            Returns
-            -------
-            `str`
-                "online" if we can connect to the server using SSH; "offline" otherwise
-            """
-
-            can_connect = await can_connect_ssh(server_ip)
-            return "online" if can_connect else "offline"
-
         msgs = []
 
         if not args:
             for server_name in SERVER_LIST:
                 ip = f"{server_name}.students.cs.ubc.ca"
-                msgs.append(f"{server_name} is {await check_server(ip)}")
+                status = await can_connect_ssh(ip)
+                msgs.append(f"{'✅' if status else '❌'} {server_name} is {'online' if status else 'offline'}")
         else:
             for server_name in set(map(lambda arg: arg.lower(), args)):
                 ip = f"{server_name}.students.cs.ubc.ca"
+                status = await can_connect_ssh(ip)
 
                 if server_name in SERVER_LIST or server_name in OTHER_SERVER_NAMES:
-                    msgs.append(f"{server_name} is {await check_server(ip)}")
+                    msgs.append(f"{'✅' if status else '❌'} {server_name} is {'online' if status else 'offline'}")
                 else:
                     msgs.append(f"{server_name} is not a valid server name.")
 

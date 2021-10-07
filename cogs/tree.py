@@ -59,6 +59,8 @@ class Tree(commands.Cog):
 
         if not numbers:
             raise BadArgs("Please provide some numbers for the tree.", show_help=True)
+        elif len(numbers) > 50:
+            raise BadArgs("Please enter 50 or fewer nodes.")
 
         root = Node(numbers[0])
 

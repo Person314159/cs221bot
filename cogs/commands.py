@@ -167,6 +167,8 @@ class Commands(commands.Cog):
         `!leave Study Group` removes the Study Group role from yourself
         """
 
+        await ctx.message.delete()
+
         # case where role name is space separated
         name = " ".join(arg).lower()
 
@@ -288,6 +290,7 @@ class Commands(commands.Cog):
         write_json(self.poll_dict, "data/poll.json")
 
     @commands.command()
+    @commands.has_permissions(administrator=True)
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def purge(self, ctx: commands.Context, amount: int, *arg: str):
         """

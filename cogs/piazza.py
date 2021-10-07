@@ -37,7 +37,7 @@ class Piazza(commands.Cog):
     # no way to login to another account without also having access to prod env variables)
     # and the API is also rate-limited, so it's probably not a good idea to spam Piazza's server
     # with an unlimited # of POST requests per instance everyday. One instance should be safe
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.has_permissions(administrator=True)
     async def pinit(self, ctx: commands.Context, name: str, pid: str):
         """
@@ -46,17 +46,18 @@ class Piazza(commands.Cog):
         **Usage:** !pinit <course name> <piazza id>
 
         **Examples:**
-        `!pinit CPSC221 ke1ukp9g4xx6oi` creates a CPSC221 Piazza instance for the server
+        `!pinit CPSC221 abcdef1234` creates a CPSC221 Piazza instance for the server
 
         *Only usable by TAs and Profs
         """
 
         self.bot.d_handler.piazza_handler = PiazzaHandler(name, pid, PIAZZA_EMAIL, PIAZZA_PASSWORD, ctx.guild)
 
-        # dict.get defaults to None so KeyError is never thrown
-        for channel in self.piazza_dict.get("channels"):
+        # dict.get default to empty list so KeyError is never thrown
+        for channel in self.piazza_dict.get("channels", []):
             self.bot.d_handler.piazza_handler.add_channel(channel)
 
+        self.piazza_dict["channels"] = [ctx.channel.id]
         self.piazza_dict["course_name"] = name
         self.piazza_dict["piazza_id"] = pid
         self.piazza_dict["guild_id"] = ctx.guild.id
@@ -65,7 +66,7 @@ class Piazza(commands.Cog):
         response += "If the above doesn't look right, please use `!pinit` again with the correct arguments"
         await ctx.send(response)
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.has_permissions(administrator=True)
     async def ptrack(self, ctx: commands.Context):
         """
@@ -88,7 +89,7 @@ class Piazza(commands.Cog):
         write_json(self.piazza_dict, "data/piazza.json")
         await ctx.send("Channel added to tracking!")
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.has_permissions(administrator=True)
     async def puntrack(self, ctx: commands.Context):
         """
