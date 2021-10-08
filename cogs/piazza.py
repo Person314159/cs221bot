@@ -1,7 +1,7 @@
 import asyncio
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from os.path import isfile
 
 import discord
@@ -196,8 +196,8 @@ class Piazza(commands.Cog):
             return post_embed
 
     async def send_at_time(self) -> None:
-        # default set to midnight PT (7/8am UTC)
-        today = datetime.utcnow()
+        # default set to midnight UTC (4/5 PM PT)
+        today = datetime.now(timezone.utc)
         hours = round(time.timezone / 3600) - time.daylight
         post_time = datetime(today.year, today.month, today.day, hour=hours) + timedelta(days=1)
         time_until_post = post_time - today
