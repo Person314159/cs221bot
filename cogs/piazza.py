@@ -197,7 +197,7 @@ class Piazza(commands.Cog):
 
     async def send_at_time(self) -> None:
         # default set to midnight UTC (4/5 PM PT)
-        today = datetime.now(timezone.utc)
+        today = datetime.now()
         hours = round(time.timezone / 3600) - time.daylight
         post_time = datetime(today.year, today.month, today.day, hour=hours) + timedelta(days=1)
         time_until_post = post_time - today
