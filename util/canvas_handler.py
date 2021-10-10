@@ -3,7 +3,7 @@ import re
 import shutil
 import time
 from datetime import datetime, timedelta
-from typing import Optional, Union
+from typing import Optional
 
 import discord
 from bs4 import BeautifulSoup
@@ -195,7 +195,7 @@ class CanvasHandler(Canvas):
                 m.write(f"{str(module.id)}\n")
 
     @staticmethod
-    def get_all_modules(course: Course, incl_unpublished: bool) -> list[Union[Module, ModuleItem]]:
+    def get_all_modules(course: Course, incl_unpublished: bool) -> list[Module | ModuleItem]:
         """
         Returns a list of all modules for the given course. Includes unpublished modules if
         `incl_unpublished` is `True` and we have access to unpublished modules for the course.

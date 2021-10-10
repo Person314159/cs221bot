@@ -51,35 +51,8 @@ class Games(commands.Cog):
             res.seek(0)
             return res
 
-        res = render_board(board)
-        game_msg = await ctx.send(f"{players[turn].mention}, its your turn.", file=discord.File(res, "file.png"))
-
         while True:
-            try:
-                msg = await self.bot.wait_for("message", timeout=600, check=lambda msg: msg.channel == ctx.channel and msg.author.id == players[turn].id)
-            except asyncio.TimeoutError:
-                return await ctx.send("Timed out.", delete_after=5)
-
-            if msg.content == "exit" or msg.content == "resign":
-                res = render_board(board)
-                game.headers["Result"] = "0-1" if turn == chess.WHITE else "1-0"
-                await game_msg.delete()
-                return await ctx.send(f"{players[turn].mention} resigned. {players[not turn].mention} wins.\n{str(game)}", file=discord.File(res, "file.png"))
-
-            try:
-                move = board.push_san(msg.content)
-            except ValueError:
-                continue
-
-            await msg.delete()
-
-            if not node:
-                node = game.add_variation(move)
-            else:
-                node = node.add_variation(move)
-
             res = render_board(board)
-            await game_msg.delete()
 
             if board.outcome() is not None:
                 game.headers["Result"] = board.outcome().result()
@@ -89,8 +62,33 @@ class Games(commands.Cog):
                 else:
                     return await ctx.send(f"Draw!\n{str(game)}", file=discord.File(res, "file.png"))
 
-            turn = not turn
             game_msg = await ctx.send(f"{players[turn].mention}, its your turn." + ("\n\nCheck!" if board.is_check() else ""), file=discord.File(res, "file.png"))
+
+            try:
+                msg = await self.bot.wait_for("message", timeout=600, check=lambda msg: msg.channel == ctx.channel and msg.author.id == players[turn].id)
+            except asyncio.TimeoutError:
+                return await ctx.send("Timed out.", delete_after=5)
+
+            await msg.delete()
+            await game_msg.delete()
+
+            if msg.content == "exit" or msg.content == "resign":
+                res = render_board(board)
+                game.headers["Result"] = "0-1" if turn else "1-0"
+                await game_msg.delete()
+                return await ctx.send(f"{players[turn].mention} resigned. {players[not turn].mention} wins.\n{str(game)}", file=discord.File(res, "file.png"))
+
+            try:
+                move = board.push_san(msg.content)
+            except ValueError:
+                continue
+
+            if not node:
+                node = game.add_variation(move)
+            else:
+                node = node.add_variation(move)
+
+            turn = not turn
 
 
 def setup(bot: commands.Bot) -> None:

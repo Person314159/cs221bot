@@ -7,7 +7,7 @@ import shutil
 import traceback
 from datetime import datetime
 from os.path import isfile
-from typing import Optional, Union
+from typing import Optional
 
 import canvasapi
 import discord
@@ -388,7 +388,7 @@ class Canvas(commands.Cog):
         the word "module" can refer to both; we do not distinguish between the two types.
         """
 
-        def get_field_value(module: Union[Module, ModuleItem]) -> str:
+        def get_field_value(module: Module | ModuleItem) -> str:
             """
             This function returns a string that can be added to a Discord embed as a field's value. The returned
             string contains the module's name/title attribute (depending on which one it has), as well
@@ -410,7 +410,7 @@ class Canvas(commands.Cog):
 
             return field
 
-        def update_embed(embed: discord.Embed, module: Union[Module, ModuleItem], embed_list: list[discord.Embed]) -> None:
+        def update_embed(embed: discord.Embed, module: Module | ModuleItem, embed_list: list[discord.Embed]) -> None:
             """
             Adds a field to embed containing information about given module. The field includes the module's name or
             title, as well as a hyperlink to the module if one exists.
@@ -446,7 +446,7 @@ class Canvas(commands.Cog):
                 embed.clear_fields()
                 embed.title = f"New modules found for {course.name} (continued):"
 
-        def write_modules(file_path: str, modules: list[Union[Module, ModuleItem]]) -> None:
+        def write_modules(file_path: str, modules: list[Module | ModuleItem]) -> None:
             """
             Stores the ID of all modules in file with given path.
             """
@@ -455,7 +455,7 @@ class Canvas(commands.Cog):
                 for module in modules:
                     f.write(str(module.id) + "\n")
 
-        def get_embeds(modules: list[Union[Module, ModuleItem]]) -> list[discord.Embed]:
+        def get_embeds(modules: list[Module | ModuleItem]) -> list[discord.Embed]:
             """
             Returns a list of Discord embeds to send to live channels.
             """
