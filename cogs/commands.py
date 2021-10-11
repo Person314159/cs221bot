@@ -328,53 +328,46 @@ class Commands(commands.Cog):
 
         if not arg:
             total_messages = await ctx.channel.purge(limit=amount)
+            return await ctx.send(f"**{len(total_messages)}** message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
 
-            await ctx.send(f"**{len(total_messages)}** message{'s' if len(total_messages) > 1 else ''} cleared.", delete_after=5)
-        elif arg[0] == "reactions":
-            messages = await ctx.channel.history(limit=amount).flatten()
+        match arg[0]:
+            case "reactions":
+                messages = await ctx.channel.history(limit=amount).flatten()
 
-            for i in messages:
-                if i.reactions:
-                    await i.clear_reactions()
+                for i in messages:
+                    if i.reactions:
+                        await i.clear_reactions()
 
-            await ctx.send(f"Reactions removed from the last {'' if amount == 1 else '**' + str(amount) + '**'} message{'s' if amount > 1 else ''}.", delete_after=5)
-        elif arg[0] == "text":
-            total_messages = await ctx.channel.purge(limit=amount, check=lambda m: not m.embeds and not m.attachments)
+                await ctx.send(f"Reactions removed from the last {'' if amount == 1 else '**' + str(amount) + '**'} message{'s' if amount > 1 else ''}.", delete_after=5)
+            case "text":
+                total_messages = await ctx.channel.purge(limit=amount, check=lambda m: not m.embeds and not m.attachments)
+                await ctx.send(f"**{len(total_messages)}** text message{'s' if len(total_messages) > 1 else ''} purged.")
+            case "bots":
+                total_messages = await ctx.channel.purge(limit=amount, check=lambda m: m.author.bot)
+                await ctx.send(f"**{len(total_messages)}** bot message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
+            case "images":
+                total_messages = await ctx.channel.purge(limit=amount, check=lambda m: m.attachments)
+                await ctx.send(f"**{len(total_messages)}** image message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
+            case "embeds":
+                total_messages = await ctx.channel.purge(limit=amount, check=lambda m: m.embeds)
+                await ctx.send(f"**{len(total_messages)}** embed message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
+            case "mentions":
+                total_messages = await ctx.channel.purge(limit=amount, check=lambda m: m.mentions)
+                await ctx.send(f"**{len(total_messages)}** mention message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
+            case "links":
+                total_messages = await ctx.channel.purge(limit=amount, check=lambda m: bool(re.search(r"https?://[a-zA-Z0-9-]+\.[a-zA-Z0-9-]+", m.content)))
+                await ctx.send(f"**{len(total_messages)}** link message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
+            case "string":
+                total_messages = await ctx.channel.purge(limit=amount, check=lambda m: " ".join(arg[1:]) in m.content)
+                await ctx.send(f"**{len(total_messages)}** message{'s' if len(total_messages) > 1 else ''} containing \"{' '.join(arg[1:])}\" purged.")
+            case _:
+                try:
+                    user = await MemberConverter().convert(ctx, " ".join(arg))
+                except BadArgument:
+                    return await ctx.send("That user doesn't exist.", delete_after=5)
 
-            await ctx.send(f"**{len(total_messages)}** text message{'s' if len(total_messages) > 1 else ''} purged.")
-        elif arg[0] == "bots":
-            total_messages = await ctx.channel.purge(limit=amount, check=lambda m: m.author.bot)
-
-            await ctx.send(f"**{len(total_messages)}** bot message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
-        elif arg[0] == "images":
-            total_messages = await ctx.channel.purge(limit=amount, check=lambda m: m.attachments)
-
-            await ctx.send(f"**{len(total_messages)}** image message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
-        elif arg[0] == "embeds":
-            total_messages = await ctx.channel.purge(limit=amount, check=lambda m: m.embeds)
-
-            await ctx.send(f"**{len(total_messages)}** embed message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
-        elif arg[0] == "mentions":
-            total_messages = await ctx.channel.purge(limit=amount, check=lambda m: m.mentions)
-
-            await ctx.send(f"**{len(total_messages)}** mention message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
-        elif arg[0] == "links":
-            total_messages = await ctx.channel.purge(limit=amount, check=lambda m: bool(re.search(r"https?://[a-zA-Z0-9-]+\.[a-zA-Z0-9-]+", m.content)))
-
-            await ctx.send(f"**{len(total_messages)}** link message{'s' if len(total_messages) > 1 else ''} purged.", delete_after=5)
-        elif arg[0] == "string":
-            total_messages = await ctx.channel.purge(limit=amount, check=lambda m: " ".join(arg[1:]) in m.content)
-
-            await ctx.send(f"**{len(total_messages)}** message{'s' if len(total_messages) > 1 else ''} containing \"{' '.join(arg[1:])}\" purged.")
-        else:
-            try:
-                user = await MemberConverter().convert(ctx, " ".join(arg))
-            except BadArgument:
-                return await ctx.send("That user doesn't exist.", delete_after=5)
-
-            total_messages = await ctx.channel.purge(limit=amount, check=lambda m: m.author == user)
-
-            await ctx.send(f"**{len(total_messages)}** message{'s' if len(total_messages) > 1 else ''} from {user.display_name} purged.", delete_after=5)
+                total_messages = await ctx.channel.purge(limit=amount, check=lambda m: m.author == user)
+                await ctx.send(f"**{len(total_messages)}** message{'s' if len(total_messages) > 1 else ''} from {user.display_name} purged.", delete_after=5)
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)

@@ -155,99 +155,100 @@ class Tree(commands.Cog):
 
                 return await ctx.send("Timed out.", delete_after=5)
 
-            command = message.content.replace(",", "").replace("!", "").lower()
+            command = message.content.replace(",", "").replace("!", "").lower().split()
 
-            if command.startswith("level"):
-                await ctx.send("Level-Order Traversal:\n**" + "  ".join([str(n.val) for n in root.levelorder]) + "**")
-            elif command.startswith("pre"):
-                await ctx.send("Pre-Order Traversal:\n**" + "  ".join([str(n.val) for n in root.preorder]) + "**")
-            elif command.startswith("post"):
-                await ctx.send("Post-Order Traversal:\n**" + "  ".join([str(n.val) for n in root.postorder]) + "**")
-            elif command.startswith("in") and not command.startswith("ins"):
-                await ctx.send("In-Order Traversal:\n**" + "  ".join([str(n.val) for n in root.inorder]) + "**")
-            elif command.startswith("about"):
-                embed = discord.Embed(title="Binary Search Tree Info", description="> " + text.replace("\n", "\n> "), color=random.randint(0, 0xffffff))
-                embed.add_field(name="Height:", value=str(root.height))
-                embed.add_field(name="Balanced?", value=str(root.is_balanced))
-                embed.add_field(name="Complete?", value=str(root.is_complete))
-                embed.add_field(name="Full?", value=str(root.is_strict))
-                embed.add_field(name="Perfect?", value=str(root.is_perfect))
-                embed.add_field(name="Number of leaves:", value=str(root.leaf_count))
-                embed.add_field(name="Max Leaf Depth:", value=str(root.max_leaf_depth))
-                embed.add_field(name="Min Leaf Depth:", value=str(root.min_leaf_depth))
-                embed.add_field(name="Max Node Value:", value=str(root.max_node_value))
-                embed.add_field(name="Min Node Value:", value=str(root.min_node_value))
-                embed.add_field(name="Entries:", value=str(root.size))
-                embed.add_field(name="Pre-Order Traversal:", value=" ".join([str(n.val) for n in root.preorder]))
-                embed.add_field(name="In-Order Traversal:", value=" ".join([str(n.val) for n in root.inorder]))
-                embed.add_field(name="Level-Order Traversal:", value=" ".join([str(n.val) for n in root.levelorder]))
-                embed.add_field(name="Post-Order Traversal:", value=" ".join([str(n.val) for n in root.postorder]))
+            match command[0]:
+                case "insert":
+                    add = []
 
-                if root.left:
-                    embed.add_field(name="In-Order Predecessor:", value=str(max(filter(lambda x: x is not None, root.left.values))))
+                    for entry in command[1:]:
+                        if re.fullmatch(r"[+-]?((\d+(\.\d*)?)|(\.\d+))", entry):
+                            try:
+                                num = int(entry)
+                            except ValueError:
+                                num = float(entry)
+                        else:
+                            continue
 
-                if root.right:
-                    embed.add_field(name="In-Order Successor:", value=str(min(filter(lambda x: x is not None, root.right.values))))
+                        add.append(str(num))
 
-                await ctx.send(embed=embed, file=discord.File("bst.png"))
-            elif command.startswith("pause"):
-                timeout = 86400
-                await ctx.send("Timeout paused.")
-            elif command.startswith("unpause"):
-                timeout = 60
-                await ctx.send("Timeout reset to 60 seconds.")
-            elif command.startswith("show"):
-                display = True
-            elif command.startswith("insert"):
-                add = []
+                        if not get_node(num):
+                            insert(root, num)
 
-                for entry in command[7:].split():
-                    if re.fullmatch(r"[+-]?((\d+(\.\d*)?)|(\.\d+))", entry):
+                    await ctx.send(f"Inserted {','.join(add)}.")
+                    display = True
+                case "delete":
+                    remove = []
+
+                    for entry in command[7:].split():
                         try:
-                            num = int(entry)
-                        except ValueError:
                             num = float(entry)
-                    else:
-                        continue
+                        except ValueError:
+                            continue
 
-                    add.append(str(num))
+                        if root.size == 1:
+                            await ctx.send("Tree has reached one node in size. Stopping deletions.")
+                            break
 
-                    if not get_node(num):
-                        insert(root, num)
+                        if math.modf(num)[0] == 0:
+                            num = int(round(num))
 
-                await ctx.send(f"Inserted {','.join(add)}.")
-                display = True
-            elif command.startswith("delete"):
-                remove = []
+                        if not get_node(num):
+                            continue
 
-                for entry in command[7:].split():
-                    try:
-                        num = float(entry)
-                    except ValueError:
-                        continue
+                        remove.append(str(num))
+                        root = delete(root, num)
 
-                    if root.size == 1:
-                        await ctx.send("Tree has reached one node in size. Stopping deletions.")
-                        break
+                    await ctx.send(f"Deleted {','.join(remove)}.")
+                    display = True
+                case "level":
+                    await ctx.send("Level-Order Traversal:\n**" + "  ".join([str(n.val) for n in root.levelorder]) + "**")
+                case "pre":
+                    await ctx.send("Pre-Order Traversal:\n**" + "  ".join([str(n.val) for n in root.preorder]) + "**")
+                case "post":
+                    await ctx.send("Post-Order Traversal:\n**" + "  ".join([str(n.val) for n in root.postorder]) + "**")
+                case "in":
+                    await ctx.send("In-Order Traversal:\n**" + "  ".join([str(n.val) for n in root.inorder]) + "**")
+                case "about":
+                    embed = discord.Embed(title="Binary Search Tree Info", description="> " + text.replace("\n", "\n> "), color=random.randint(0, 0xffffff))
+                    embed.add_field(name="Height:", value=str(root.height))
+                    embed.add_field(name="Balanced?", value=str(root.is_balanced))
+                    embed.add_field(name="Complete?", value=str(root.is_complete))
+                    embed.add_field(name="Full?", value=str(root.is_strict))
+                    embed.add_field(name="Perfect?", value=str(root.is_perfect))
+                    embed.add_field(name="Number of leaves:", value=str(root.leaf_count))
+                    embed.add_field(name="Max Leaf Depth:", value=str(root.max_leaf_depth))
+                    embed.add_field(name="Min Leaf Depth:", value=str(root.min_leaf_depth))
+                    embed.add_field(name="Max Node Value:", value=str(root.max_node_value))
+                    embed.add_field(name="Min Node Value:", value=str(root.min_node_value))
+                    embed.add_field(name="Entries:", value=str(root.size))
+                    embed.add_field(name="Pre-Order Traversal:", value=" ".join([str(n.val) for n in root.preorder]))
+                    embed.add_field(name="In-Order Traversal:", value=" ".join([str(n.val) for n in root.inorder]))
+                    embed.add_field(name="Level-Order Traversal:", value=" ".join([str(n.val) for n in root.levelorder]))
+                    embed.add_field(name="Post-Order Traversal:", value=" ".join([str(n.val) for n in root.postorder]))
 
-                    if math.modf(num)[0] == 0:
-                        num = int(round(num))
+                    if root.left:
+                        embed.add_field(name="In-Order Predecessor:", value=str(max(filter(lambda x: x is not None, root.left.values))))
 
-                    if not get_node(num):
-                        continue
+                    if root.right:
+                        embed.add_field(name="In-Order Successor:", value=str(min(filter(lambda x: x is not None, root.right.values))))
 
-                    remove.append(str(num))
-                    root = delete(root, num)
+                    await ctx.send(embed=embed, file=discord.File("bst.png"))
+                case "pause":
+                    timeout = 86400
+                    await ctx.send("Timeout paused.")
+                case "unpause":
+                    timeout = 60
+                    await ctx.send("Timeout reset to 60 seconds.")
+                case "show":
+                    display = True
+                case "exit":
+                    for f in glob.glob("bst*"):
+                        os.remove(f)
 
-                await ctx.send(f"Deleted {','.join(remove)}.")
-                display = True
-            elif command.startswith("exit"):
-                for f in glob.glob("bst*"):
-                    os.remove(f)
-
-                return await ctx.send("Exiting.")
-            elif command.startswith("bst"):
-                return
+                    return await ctx.send("Exiting.")
+                case "bst":
+                    return
 
 
 def setup(bot: commands.Bot) -> None:
