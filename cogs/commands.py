@@ -2,7 +2,7 @@ import mimetypes
 import random
 import re
 import string
-import urllib.parse
+from urllib import parse
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from os.path import isfile
@@ -25,8 +25,8 @@ POLL_FILE = "data/poll.json"
 
 # This is a huge hack but it technically works
 def _urlencode(*args, **kwargs) -> str:
-    kwargs.update(quote_via=urllib.parse.quote)
-    return urllib.parse.urlencode(*args, **kwargs)
+    kwargs.update(quote_via=parse.quote)
+    return parse.urlencode(*args, **kwargs)
 
 
 requests.models.urlencode = _urlencode

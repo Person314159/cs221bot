@@ -15,7 +15,7 @@ from canvasapi.module import Module, ModuleItem
 from discord.ext import commands
 from dotenv import load_dotenv
 
-import util.canvas_handler
+from util import canvas_handler
 from util.badargs import BadArgs
 from util.canvas_handler import CanvasHandler
 from util.create_file import create_file_if_not_exists
@@ -167,8 +167,8 @@ class Canvas(commands.Cog):
             c_handler.live_channels.append(ctx.message.channel)
 
             for course in c_handler.courses:
-                modules_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course.id}/modules.txt"
-                watchers_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course.id}/watchers.txt"
+                modules_file = f"{canvas_handler.COURSES_DIRECTORY}/{course.id}/modules.txt"
+                watchers_file = f"{canvas_handler.COURSES_DIRECTORY}/{course.id}/watchers.txt"
                 c_handler.store_channels_in_file([ctx.message.channel], watchers_file)
 
                 create_file_if_not_exists(modules_file)
@@ -205,12 +205,12 @@ class Canvas(commands.Cog):
             write_json(self.canvas_dict, "data/canvas.json")
 
             for course in c_handler.courses:
-                watchers_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course.id}/watchers.txt"
+                watchers_file = f"{canvas_handler.COURSES_DIRECTORY}/{course.id}/watchers.txt"
                 c_handler.delete_channels_from_file([ctx.message.channel], watchers_file)
 
                 # If there are no more channels watching the course, we should delete that course's directory.
                 if os.stat(watchers_file).st_size == 0:
-                    shutil.rmtree(f"{util.canvas_handler.COURSES_DIRECTORY}/{course.id}")
+                    shutil.rmtree(f"{canvas_handler.COURSES_DIRECTORY}/{course.id}")
 
             await ctx.send("Removed channel from live tracking.")
         else:
@@ -473,8 +473,8 @@ class Canvas(commands.Cog):
 
             return embed_list
 
-        if os.path.exists(util.canvas_handler.COURSES_DIRECTORY):
-            courses = [name for name in os.listdir(util.canvas_handler.COURSES_DIRECTORY)]
+        if os.path.exists(canvas_handler.COURSES_DIRECTORY):
+            courses = [name for name in os.listdir(canvas_handler.COURSES_DIRECTORY)]
 
             # each folder in the courses directory is named with a course id (which is a positive integer)
             for course_id_str in courses:
@@ -483,8 +483,8 @@ class Canvas(commands.Cog):
 
                     try:
                         course = CANVAS_INSTANCE.get_course(course_id)
-                        modules_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course_id}/modules.txt"
-                        watchers_file = f"{util.canvas_handler.COURSES_DIRECTORY}/{course_id}/watchers.txt"
+                        modules_file = f"{canvas_handler.COURSES_DIRECTORY}/{course_id}/modules.txt"
+                        watchers_file = f"{canvas_handler.COURSES_DIRECTORY}/{course_id}/watchers.txt"
 
                         create_file_if_not_exists(modules_file)
                         create_file_if_not_exists(watchers_file)
