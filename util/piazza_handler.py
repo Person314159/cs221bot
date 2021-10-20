@@ -169,7 +169,7 @@ class PiazzaHandler:
             if self.check_if_private(post):
                 continue
 
-            if post["bucket_name"] and post["bucket_name"] == "Pinned":
+            if post.get("bucket_name", "") == "Pinned":
                 response.append(post)
 
         return response
@@ -208,8 +208,7 @@ class PiazzaHandler:
 
         for post in posts:
             # [2020,9,19] from 2020-09-19T22:41:52Z
-            created_at = [int(x) for x in post["created"][:10].split("-")]
-            created_at = datetime.date(created_at[0], created_at[1], created_at[2])
+            created_at = datetime.date(*[int(x) for x in post["created"][:10].split("-")])
 
             if self.check_if_private(post):
                 continue
@@ -287,7 +286,7 @@ class PiazzaHandler:
 
     async def get_posts_in_range(self, show_limit: int = 10, days: int = 1, seconds: int = 0) -> List[List[dict]]:
         if show_limit < 1:
-            raise ValueError(f"Invalid showLimit for get_posts_in_range(): {show_limit}")
+            raise ValueError(f"Invalid show_limit for get_posts_in_range(): {show_limit}")
 
         posts = await self.fetch_posts_in_range(days=days, seconds=seconds, lim=self.fetch_max)
         instr, stud = [], []
@@ -347,7 +346,10 @@ class PiazzaHandler:
     def check_if_private(self, post: dict) -> bool:
         return post["status"] == "private"
 
-    def clean_response(self, res: str) -> str:
+    def clean_response(self, res: Optional[str]) -> Optional[str]:
+        if not res:
+            return None
+
         if len(res) > 1024:
             res = res[:1000]
             res += "...\n\n *(Read more)*"
@@ -355,27 +357,22 @@ class PiazzaHandler:
         tag_regex = re.compile("<.*?>")
         res = html.unescape(re.sub(tag_regex, "", res))
 
-        if len(res) < 1:
-            res += "An image or video was posted in response."
-
         return res
 
-    def get_body(self, res: dict) -> str:
+    def get_body(self, res: dict) -> Optional[str]:
         body = res["history"][0]["content"]
 
         if not body:
-            raise Exception("Body not found.")
+            return None
 
         return body
 
     def get_first_image_url(self, res: str) -> Optional[str]:
-        if not res:
-            raise Exception("Body not found.")
+        if res:
+            soup = BeautifulSoup(res, "html.parser")
+            img = soup.find('img')
 
-        soup = BeautifulSoup(res, "html.parser")
-        img = soup.find('img')
-
-        if img:
-            return f"https://piazza.com{img['src']}" if img["src"].startswith("/") else img["src"]
+            if img:
+                return f"https://piazza.com{img['src']}" if img["src"].startswith("/") else img["src"]
 
         return None
