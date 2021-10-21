@@ -181,7 +181,7 @@ class Piazza(commands.Cog):
     def create_post_embed(self, post: dict) -> discord.Embed:
         if post:
             post_embed = discord.Embed(title=post["subject"], url=post["url"], description=post["num"])
-            post_embed.add_field(name=post["post_type"], value=post["post_body"], inline=False)
+            post_embed.add_field(name=post["post_type"], value=post["post_body"] or None, inline=False)
             post_embed.add_field(name=f"{post['num_followups']} followup comments hidden", value="Click the title above to access the rest of the post.", inline=False)
 
             if post["post_type"] != "Note":
