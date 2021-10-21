@@ -346,9 +346,9 @@ class PiazzaHandler:
     def check_if_private(self, post: dict) -> bool:
         return post["status"] == "private"
 
-    def clean_response(self, res: Optional[str]) -> Optional[str]:
+    def clean_response(self, res: Optional[str]) -> str:
         if not res:
-            return None
+            return ""
 
         if len(res) > 1024:
             res = res[:1000]
@@ -359,15 +359,10 @@ class PiazzaHandler:
 
         return res
 
-    def get_body(self, res: dict) -> Optional[str]:
-        body = res["history"][0]["content"]
+    def get_body(self, res: dict) -> str:
+        return res["history"][0]["content"]
 
-        if not body:
-            return None
-
-        return body
-
-    def get_first_image_url(self, res: str) -> Optional[str]:
+    def get_first_image_url(self, res: str) -> str:
         if res:
             soup = BeautifulSoup(res, "html.parser")
             img = soup.find('img')
@@ -375,4 +370,4 @@ class PiazzaHandler:
             if img:
                 return f"https://piazza.com{img['src']}" if img["src"].startswith("/") else img["src"]
 
-        return None
+        return ""

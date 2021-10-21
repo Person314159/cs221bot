@@ -185,8 +185,8 @@ class Piazza(commands.Cog):
             post_embed.add_field(name=f"{post['num_followups']} followup comments hidden", value="Click the title above to access the rest of the post.", inline=False)
 
             if post["post_type"] != "Note":
-                post_embed.add_field(name="Instructor Answer", value=post["i_answer"], inline=False)
-                post_embed.add_field(name="Student Answer", value=post["s_answer"], inline=False)
+                post_embed.add_field(name="Instructor Answer", value=post["i_answer"] or None, inline=False)
+                post_embed.add_field(name="Student Answer", value=post["s_answer"] or None, inline=False)
 
             if post["first_image"]:
                 post_embed.set_image(url=post["first_image"])
