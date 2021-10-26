@@ -19,10 +19,10 @@ The bot requires the following pip packages:
 - `chess`
 - `discord.py`
 - `piazza-api`
+- `PyNaCl`
 - `python-dateutil`
 - `python-dotenv`
-- `pytz`
-- `requests`
+- `youtube-dl`
 
 You can install all of them using `pip install -r requirements.txt`.
 
