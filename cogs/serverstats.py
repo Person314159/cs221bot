@@ -2,8 +2,7 @@ import subprocess
 
 from discord.ext import commands
 
-SERVER_LIST = ("valdes", "remote", "anvil", "gambier", "pender")
-OTHER_SERVER_NAMES = ("thetis",)
+SERVER_LIST = ("valdes", "remote", "anvil", "gambier", "pender", "thetis")
 
 
 class ServerStats(commands.Cog):
@@ -24,7 +23,7 @@ class ServerStats(commands.Cog):
         **Examples:**
         `!checkservers` checks all server statuses
         `!checkservers thetis` checks status of thetis server
-        `!checkservers thetis remote` checks status of thetis and remote servers
+        `!checkservers thetis gambier` checks status of thetis and gambier servers
         """
 
         msgs = []
@@ -39,7 +38,7 @@ class ServerStats(commands.Cog):
                 ip = f"{server_name}.students.cs.ubc.ca"
                 status = await can_connect_ssh(ip)
 
-                if server_name in SERVER_LIST or server_name in OTHER_SERVER_NAMES:
+                if server_name in SERVER_LIST:
                     msgs.append(f"{'✅' if status else '❌'} {server_name} is {'online' if status else 'offline'}")
                 else:
                     msgs.append(f"{server_name} is not a valid server name.")
