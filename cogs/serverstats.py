@@ -10,7 +10,7 @@ class ServerStats(commands.Cog):
         self.bot = bot
 
     @commands.command(name="checkservers")
-    @commands.cooldown(1, 60)
+    @commands.cooldown(1, 600)
     async def check_servers(self, ctx: commands.Context, *args: str):
         """
         `!checkservers` __`Check if the remote CS servers are online`__
@@ -63,12 +63,8 @@ async def can_connect_ssh(server_ip: str) -> bool:
 
     try:
         # Command from https://stackoverflow.com/a/47166507
-        output = subprocess.run(["ssh", "-o", "BatchMode=yes", "-o", "PubkeyAuthentication=no", "-o",
-                                 "PasswordAuthentication=no", "-o", "KbdInteractiveAuthentication=no",
-                                 "-o", "ChallengeResponseAuthentication=no", server_ip,
-                                 "2>&1"], capture_output=True, timeout=5).stderr.decode("utf-8")
-
-        return "Permission denied" in output or "verification failed" in output
+        output = subprocess.run(["ssh", "-o", "BatchMode=yes", server_ip, "2>&1"], capture_output=True, timeout=3)
+        return output.returncode == 0
     except subprocess.TimeoutExpired:
         return False
 

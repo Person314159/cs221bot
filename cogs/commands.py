@@ -147,11 +147,9 @@ class Commands(commands.Cog):
         formula = " ".join(args).strip("\n ")
 
         if sm := re.match(r"```(latex|tex)", formula):
-            formula = formula[6 if sm.group(1) == "tex" else 8:]
+            formula = formula[6 if sm.group(1) == "tex" else 8:].strip("`")
 
-        formula = formula.strip("`")
-
-        data = requests.get(f"https://latex.codecogs.com/png.image?\dpi{{300}}\colorbox{{white}}{{{formula}}}")
+        data = requests.get(f"https://latex.codecogs.com/png.image?\dpi{{300}} \\bg_white {formula}")
 
         await ctx.send(file=discord.File(BytesIO(data.content), filename="latex.png"))
 
