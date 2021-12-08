@@ -132,7 +132,7 @@ class Piazza(commands.Cog):
             for post in posts:
                 embed.add_field(name=f"@{post['num']}", value=f"[{post['subject']}]({post['url']})", inline=False)
 
-            embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=str(ctx.author.avatar_url))
+            embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=str(ctx.author.avatar.url))
 
             await ctx.send(embed=embed)
         else:

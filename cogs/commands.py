@@ -213,7 +213,7 @@ class Commands(commands.Cog):
                 raise BadArgs("No active poll found.")
 
             try:
-                poll_message = await ctx.channel.fetch_message(id_)
+                poll_message = await ctx.channel.fetch_message(int(id_))
             except discord.NotFound:
                 raise BadArgs("Looks like someone deleted the poll, or there is no active poll.")
 
