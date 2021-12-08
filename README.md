@@ -10,6 +10,8 @@ Additionally, you will need a Piazza email + password and a Canvas API key set a
 
 ## Dependencies
 
+To install py-cord, install the development version as outlined [here](https://github.com/Pycord-Development/pycord#installing). Voice support is required, speed optional.
+
 The bot requires the following pip packages:
 
 - `beautifulsoup4`
@@ -18,7 +20,6 @@ The bot requires the following pip packages:
 - `canvasapi`
 - `chess`
 - `piazza-api`
-- `py-cord`
 - `PyNaCl`
 - `python-dateutil`
 - `python-dotenv`
