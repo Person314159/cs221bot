@@ -1,6 +1,6 @@
 # CS221Bot
 
-CS221Bot is a [Discord](https://discord.com/) [bot](https://discord.com/developers/docs/intro) using [Discord.py](https://discordpy.readthedocs.io/en/latest/) for managing the official [UBC CS221](https://www.ubc.ca/) class server.
+CS221Bot is a [Discord](https://discord.com/) [bot](https://discord.com/developers/docs/intro) using [Pycord](https://docs.pycord.dev/en/master/index.html) for managing the official [UBC CS221](https://www.ubc.ca/) class server.
 
 ## Installation
 
@@ -17,8 +17,8 @@ The bot requires the following pip packages:
 - `cairosvg`
 - `canvasapi`
 - `chess`
-- `discord.py`
 - `piazza-api`
+- `py-cord`
 - `PyNaCl`
 - `python-dateutil`
 - `python-dotenv`
