@@ -79,7 +79,7 @@ class Canvas(commands.Cog):
         write_json(self.canvas_dict, "data/canvas.json")
 
         embed_var = self._get_tracking_courses(c_handler)
-        embed_var.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=str(ctx.author.avatar.url))
+        embed_var.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=str(ctx.author.display_avatar.url))
         await ctx.send(embed=embed_var)
 
     @commands.command(hidden=True)
