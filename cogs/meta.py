@@ -2,8 +2,8 @@ import random
 from datetime import datetime
 
 import discord
+from discord import ExtensionError
 from discord.ext import commands
-from discord.ext.commands import ExtensionError
 
 from util.badargs import BadArgs
 
