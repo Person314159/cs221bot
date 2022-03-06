@@ -1,6 +1,6 @@
 # CS221Bot
 
-CS221Bot is a [Discord](https://discord.com/) [bot](https://discord.com/developers/docs/intro) using [Pycord](https://docs.pycord.dev/en/master/index.html) for managing the official [UBC CS221](https://www.ubc.ca/) class server.
+CS221Bot is a [Discord](https://discord.com/) [bot](https://discord.com/developers/docs/intro) using [Discord.py](https://discordpy.readthedocs.io/en/latest/) for managing the official [UBC CS221](https://www.ubc.ca/) class server.
 
 ## Installation
 
@@ -10,8 +10,6 @@ Additionally, you will need a Piazza email + password and a Canvas API key set a
 
 ## Dependencies
 
-To install py-cord, install the development version as outlined [here](https://github.com/Pycord-Development/pycord#installing). Voice support is required, speed optional.
-
 The bot requires the following pip packages:
 
 - `beautifulsoup4`
@@ -19,6 +17,7 @@ The bot requires the following pip packages:
 - `cairosvg`
 - `canvasapi`
 - `chess`
+- `discord.py`
 - `piazza-api`
 - `PyNaCl`
 - `python-dateutil`

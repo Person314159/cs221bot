@@ -2,8 +2,8 @@ import random
 from datetime import datetime
 
 import discord
-from discord import ExtensionError
 from discord.ext import commands
+from discord.ext.commands import ExtensionError
 
 from util.badargs import BadArgs
 
@@ -36,8 +36,8 @@ class Meta(commands.Cog):
             for k, v in sorted(self.bot.cogs.items(), key=lambda kv: kv[0]):
                 embed.add_field(name=k, value=" ".join(f"`{i}`" for i in v.get_commands() if not i.hidden), inline=False)
 
-            embed.set_thumbnail(url=self.bot.user.display_avatar.url)
-            embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=str(ctx.author.display_avatar.url))
+            embed.set_thumbnail(url=self.bot.user.avatar_url)
+            embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=str(ctx.author.avatar_url))
             await ctx.send(embed=embed)
         else:
             help_command = arg[0]
