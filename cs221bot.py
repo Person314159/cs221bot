@@ -15,7 +15,7 @@ from util.badargs import BadArgs
 CANVAS_COLOR = 0xe13f2b
 CANVAS_THUMBNAIL_URL = "https://lh3.googleusercontent.com/2_M-EEPXb2xTMQSTZpSUefHR3TjgOCsawM3pjVG47jI-BrHoXGhKBpdEHeLElT95060B=s180"
 POLL_FILE = "data/poll.json"
-GUILD_ID = 838813343611093032
+GUILD_ID = 974449980947464214
 
 load_dotenv()
 CS221BOT_KEY = os.getenv("CS221BOT_KEY")
@@ -79,18 +79,11 @@ async def on_message(message: discord.Message) -> None:
     if isinstance(message.channel, discord.abc.PrivateChannel):
         return
 
-    if not message.author.bot:
+    if not message.author.bot and message.guild.id == GUILD_ID:
         # debugging
         # with open("messages.txt", "a") as f:
         # 	print(f"{message.guild.name}: {message.channel.name}: {message.author.name}: \"{message.content}\" @ {str(datetime.datetime.now())} \r\n", file = f)
         # print(message.content)
-
-        if message.channel.id == 838813344160153608 and (message.attachments or message.embeds):
-            if (message.attachments[0].height, message.attachments[0].width) < (512, 512):
-                await message.delete()
-                await message.channel.send("Please submit an image with at least 512x512 dimensions!", delete_after=5)
-            else:
-                await message.add_reaction("⬆️")
 
         await bot.process_commands(message)
 
